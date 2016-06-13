@@ -1,0 +1,10 @@
+DS_Store
+Thumbs.db
+.idea/
+*.orig
+localize.php
+.application*
+..password
+.zend*
+.htaccess
+*.local.*

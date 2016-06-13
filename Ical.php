@@ -1,0 +1,298 @@
+<?php //#SCOPE_OS_PUBLIC
+/*******************************************************************************
+#LIC_FULL
+
+@author Troy Hurteau <jthurtea@ncsu.edu>
+
+Utility class for generating Ical
+
+*******************************************************************************/
+
+require_once(APPLICATION_ENV . '/Saf/Array.php');
+require_once(APPLICATION_ENV . '/Saf/Time.php');
+
+class Saf_Ical {
+	
+	const METHOD_REQUEST = 'Request';
+	const METHOD_PUBLISH = 'Publish';
+	const METHOD_CANCEL = 'Cancel';
+	const OUTPUT_COL_MAX = 70;
+	const OUTPUT_ESCAPE_CHARS = ':;,\\';
+	const OUTPUT_REMOVE_CHARS = "";
+	const OUTPUT_DATESTAMP = 'Ymd\THis\Z';
+	
+	protected $_ical = '';
+	protected $_attachment = '';
+	protected $_baseTime = NULL;
+	protected $_timeInterval = 60;
+	protected $_method = self::METHOD_REQUEST;
+	protected $_id = NULL;
+	protected $_filename = 'event.ics';
+	
+	protected $_hostId = '';
+	protected $_productId = '';
+	protected $_lang = 'EN';
+	protected $_version = '2.0';
+	
+	protected static $_itemProps = array(
+		'VEVENT' => array(
+			'UID' => 1,
+			'ORGANIZER' => '?',
+			'ATTENDEE[]' => '*',
+			'DTSTART' => 1,
+			'DTEND' => 1,
+			'DTSTAMP' => 1,
+			'LOCATION' => '?',
+			'SEQUENCE' => '?',
+			'SUMMARY' => 1,
+			'DESCRIPTION' => '?',
+			'URL' => '?',
+			'STATUS' => '?',
+			'CATEGORIES' => '?'
+		)
+	);
+	
+	protected static $_propHelperMap = array(
+		'start' => 'DTSTART',
+		'end' => 'DTEND',
+		'now' => 'DTSTAMP',
+		'modified' => 'DTSTAMP',
+		'title' => 'SUMMARY',
+		'name' => 'SUMMARY'
+	);
+	
+	public function __construct($config = array()){//#TODO unmuddle some of this...
+		$this->_hostId = Saf_Array::extract('hostId', $config, APPLICATION_ENV . '.' . APPLICATION_HOST);
+		$this->_productId = Saf_Array::extract('productId', $config, APPLICATION_ID . '.' . APPLICATION_INSTANCE);
+		$this->_baseTime = (int)Saf_Array::extract('baseTime', $config, $this->_baseTime);
+		$this->_timeInterval = (int)Saf_Array::extract('timeInterval', $config, $this->_timeInterval);
+		$this->_method = Saf_Array::extractOptional('method', $config);
+		$this->_id = Saf_Array::extractOptional('id', $config);
+		switch ($this->_method) {
+			case self::METHOD_REQUEST:
+				$this->setMethodRequest();
+				break;
+			case self::METHOD_PUBLISH:
+				$this->setMethodPublish();
+				break;
+			case self::METHOD_CANCEL:
+				$this->setMethodCancel();
+				break;
+		}
+		if (!is_null($this->_id) && (!is_array($this->_id) || count($this->_id) > 0)) {
+			$this->generate($config);
+		}
+	}
+	
+	public function setMethodRequest()
+	{
+		$this->_method = self::METHOD_REQUEST;
+	}
+	
+	public function setMethodPublish()
+	{
+		$this->_method = self::METHOD_PUBLISH;
+	}
+	
+	public function setMethodCancel()
+	{
+		$this->_method = self::METHOD_PUBLISH;
+	}
+	
+	public function generate($data)
+	{
+		if(is_array($this->_id)) {
+			self::_generateMulti($data);
+		} else {
+			self::_generate($data);
+		}
+	}
+	
+	public function getIcal(){
+		return $this->_ical;
+	}
+	
+	public function getAttachment(){
+		return $this->_attachment;
+	}
+	
+	protected function _getHeader()
+	{
+		$method = strtoupper($this->_method);
+		$product = self::escapeText("{$this->_productId} - {$this->_hostId}//{$this->_lang}");
+		$scale = ''; //#TODO #9.0.0 implement
+		$iana = ''; //#TODO #2.0.0 implement
+		$xprop = ''; //#TODO #2.0.0 implement
+		return "BEGIN:VCALENDAR\n"
+			. "METHOD:{$method}\n"
+			. "PRODID:-//{$product}\n"
+			. "VERSION:{$this->_version}\n"
+			. $xprop . $iana . $url;
+	}
+	
+	protected function _getFooter()
+	{
+		return "END:VCALENDAR";
+	}
+
+	protected function _generate($data, $id = NULL)
+	{
+		$type = 'VEVENT'; //#TODO #2.0.0 support other types
+		$itemData = $data;
+		$this->_ical =
+			(is_null($id) ? $this->_getHeader() : '')
+			. "BEGIN:{$type}\n"
+			. self::_renderItem($type, is_null($id) ? $this->_id : $id , $itemData)
+			. "END:{$type}\n"
+			. (is_null($id) ? $this->_getFooter() : '');
+		$this->_generateAttachment();
+	}
+	
+	protected function _generateMulti($data)
+	{
+		$items = array();
+		foreach($this->_id as $id => $item) {
+			$items[] = self::_generate($item, $id);
+		}
+		$this->_ical =
+		$this->_getHeader()
+			. implode("\n", $items)
+			. $this->_getFooter();
+		$this->_generateAttachment();		
+	}
+	
+	protected function _renderItem($type, $id, $data)
+	{
+		$out = '';
+		$outType = strtolower(substr($type, 1));
+		$outProp = "$prop:";
+		$dateStamp = gmdate(self::OUTPUT_DATESTAMP, Saf_Time::time());
+		$version = $this->getVersion($data);
+		$atProps = 'CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;'; //or just ROLE=REQ-PARTICIPANT;
+		$uid = "{$outType}{$id}@{$this->_host}";
+		//#TODO #2.0.0 see what more advanced attendee properties we can suppor...
+		foreach(self::$_itemProps[$type] as $prop => $card) {
+			$value = NULL;
+			$propKey = array_key_exists($prop, $data)
+				? $prop
+				: self::_resolvePropKey($prop, $data);
+			switch ($prop){
+				case 'ORGANIZER':
+				case 'ATTENDEE': 
+				case 'ATTENDEE[]':
+					$cn="CN={$name}";
+					$outProp = "ATTENDEE;{$atProps}{$cn}:";
+					break;
+				
+				case 'DTSTAMP':
+				case 'DTSTART':
+				case 'DTEND':
+					$value = 
+						$propKey
+							&& array_key_exists($propKey, $data)
+						? $data[$propKey]
+						: NULL;
+					if (!is_null($value)) {
+						if (Saf_Time::isTimeStamp($value)) {
+							$value = gmdate(self::OUTPUT_DATESTAMP, $value);
+						} else { //if {
+							//#TODO #1.1.0 detect non-GMT and convert
+						}
+					} else if ($prop == 'DTSTAMP') {
+						$value = gmdate(self::OUTPUT_DATESTAMP, Saf_Time::time());
+					}
+					break;
+					
+				case 'UID':
+					$value = $uid;
+					break;
+					
+				case 'STATUS':
+					switch (strtoupper($this->_method)) {
+						case 'CANCEL' :
+							$value = 
+								$propKey
+									&& array_key_exists($propKey, $data)
+								? strtoupper($data[$propKey])
+								: NULL;
+							break;
+						case 'PUBLISH' :
+						case 'REQUEST' :
+						default:
+							$value = 
+								$propKey
+									&& array_key_exists($propKey, $data)
+								? strtoupper($data[$propKey])
+								: 'CONFIRMED';
+					}
+					break;
+				default:
+					if ($propKey && array_key_exists($propKey, $data)) {
+						$value = self::escapeText($data[$propKey]);
+					}					
+			}
+			if ($card === '+' || $card === 1) {
+				if (is_null($value)) {
+					throw new Exception("Required value {$prop} missing to generate iCal for {$uid}");
+				}
+			} else if ($card === '?' || $card === 1) {
+				if (is_array($value)) {
+					throw new Exception("Too many values provided for {$prop} to generate iCal for {$uid}");
+				}
+			}
+			if (is_array($value)) {
+				foreach($value as $subValue) {
+					$out .= "{$outProp}{$subValue}\n";
+				}
+			} else {
+				$out .= "{$outProp}{$value}\n";
+			}
+		}
+	}
+	
+	protected function _resolvePropKey($key,$data)
+	{//#TODO #9.0.0 this could be optimized by flipping the mapping relation on the fly
+	//#NOTE #9.0.0. the relation is stored the way it is for readability.
+		foreach($data as $dataKey => $dataValue){
+			if (
+				array_key_exists(self::$_propHelperMap, $dataKey)
+				&& self::$_propHelperMap[$dataKey] == $key
+			) {
+				return $dataKey;
+			}
+		}
+		return NULL;
+	}
+	
+	protected function _generateAttachment()
+	{
+		$this->_attachment = new Zend_Mime_Part($this->_ical); //#TODO #2.0.0 drop Zend dependencies
+		$method = strtoupper($this->_method);
+		$this->_attachment->type = "text/calendar; method={$method}";
+		$this->_attachment->disposition = Zend_Mime::DISPOSITION_INLINE;
+		$this->_attachment->encoding = Zend_Mime::ENCODING_8BIT;
+		$this->_attachment->filename = $this->_filename;
+	}
+	
+	public static function escapeText($string)
+	{
+		$removeChars = str_split(self::OUTPUT_REMOVE_CHARS);
+		$filtered = addcslashes(
+			str_replace($removeChars, '', $string),	
+			self::OUTPUT_ESCAPE_CHARS
+		);
+		$lines = str_split($filtered, self::OUTPUT_COL_MAX);
+		if (strlen($lines[count($lines) - 1]) == 0) { //#TODO #2.0.0 research if this is needed
+			unset($lines[count($lines) - 1]);
+		}
+		return implode("\n ", $lines);
+	}
+	
+	public function getTimedVersion()
+	{
+		$versionTime = time() - $this->_baseTime;
+		return (
+			$versionTime - ($versionTime % $this->_timeInterval)
+		) / $this->_timeInterval;
+	}
+}
