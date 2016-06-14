@@ -153,16 +153,6 @@ class Saf_Kickstart {
 		return strtoupper($filteredName);
 	}
 
-	public static function cast($value, $type)
-	{
-		switch($type) {
-			case self::CAST_BOOL:
-				return Saf_Filter_Truthy::filter(trim(file_get_contents($sourceFilename)));
-			default: //#TODO #2.0.0 support the other cast features
-				return $value;
-		}
-	}
-
 	protected static function load($sourceConfig, $lineBreak = PHP_EOL)
 	{
 		if (is_array($sourceConfig)) {
@@ -403,7 +393,7 @@ class Saf_Kickstart {
 		switch ($cast) {
 			case self::CAST_BOOL :
 				return Saf_Filter_Truthy::filter($value);
-			default:
+			default: //#TODO #2.0.0 support the other cast features
 				return $value;
 		}
 	}
@@ -1137,16 +1127,6 @@ class Saf_Kickstart {
 		}
 		require_once('Zend/Application.php');
 		self::$_controllerPath = 'controllers';
-	}
-
-	/**
-	 * steps that can't wait for a bootstrap to kick in
-	 */
-	protected static function _goPreBoot()
-	{
-		if (function_exists('libxml_use_internal_errors')) {
-			libxml_use_internal_errors(TRUE);
-		}
 	}
 	
 	/**
