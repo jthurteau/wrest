@@ -10,42 +10,46 @@ Utility class for debugging
 require_once(LIBRARY_PATH . '/Saf/Status.php');
 require_once(LIBRARY_PATH . '/Saf/Layout.php');
 
-class Saf_Debug {
+class Saf_Debug
+{
 
 	protected static $_mode = NULL;
 	protected static $_locked = FALSE;
 	protected static $_enabled = NULL;
 	protected static $_verbose = FALSE;
 	protected static $_buffered = TRUE;
-	protected static $_muted = FALSE;
+	protected static $_muted = array();
+	protected static $_muteIndex = 0;
 	protected static $_sessionReady = FALSE;
 	public static $buffer = '';
-	
+
 	protected static $_enabledDisplayMode = 1;
 	protected static $_disabledDisplayMode = 0;
 	protected static $_enabledErrorLevel = -1; // seems to work where E_ALL | E_STRICT should...
 	protected static $_disabledErrorLevel = NULL;
-	
-	protected static $_notifyConsole = FALSE; 
-    protected static $_inControl = FALSE;
-    protected static $_alreadyPrintedDebugExit = FALSE;
-    protected static $_alreadyPrintedDebugEntry = FALSE;
-    
-    protected static $_oldErrorHandler = NULL;
-    protected static $_oldExceptionHandler = NULL;
-    protected static $_shutdownRegistered = FALSE;
-    protected static $_shuttingDown = FALSE;
-    
-    const DEBUG_MODE_OFF = 'off';
-    const DEBUG_MODE_SILENT = 'silent';
-    const DEBUG_MODE_ON = 'on';
-    const DEBUG_MODE_AUTO = 'auto';
-    const DEBUG_MODE_FORCE = 'force';
-    
-    const ERROR_MODE_INTERNAL = 'internal';
-    const ERROR_MODE_DEFAULT = 'default';
 
-	public static function init($mode = self::DEBUG_MODE_SILENT, $errorHandling = self::ERROR_MODE_DEFAULT, $sessionReady = FALSE){
+	protected static $_notifyConsole = FALSE;
+	protected static $_inControl = FALSE;
+	protected static $_alreadyPrintedDebugExit = FALSE;
+	protected static $_alreadyPrintedDebugEntry = FALSE;
+	protected static $_alreadyPrintedDebugShutdown = FALSE;
+
+	protected static $_oldErrorHandler = NULL;
+	protected static $_oldExceptionHandler = NULL;
+	protected static $_shutdownRegistered = FALSE;
+	protected static $_shuttingDown = FALSE;
+
+	const DEBUG_MODE_OFF = 'off';
+	const DEBUG_MODE_SILENT = 'silent';
+	const DEBUG_MODE_ON = 'on';
+	const DEBUG_MODE_AUTO = 'auto';
+	const DEBUG_MODE_FORCE = 'force';
+
+	const ERROR_MODE_INTERNAL = 'internal';
+	const ERROR_MODE_DEFAULT = 'default';
+
+	public static function init($mode = self::DEBUG_MODE_SILENT, $errorHandling = self::ERROR_MODE_DEFAULT, $sessionReady = FALSE)
+	{
 		if (self::$_locked) {
 			return;
 		}
@@ -59,7 +63,7 @@ class Saf_Debug {
 		self::switchMode(strtolower(trim($mode)));
 // 		print_r(array('switch debug mode', self::$_mode,isset($_SESSION)?$_SESSION:array(),self::$_enabled,self::$_verbose));
 	}
-	
+
 	public static function switchMode($mode)
 	{
 		if (self::$_locked || self::isForced()) {
@@ -67,14 +71,14 @@ class Saf_Debug {
 		}
 		$previousMode = self::$_mode;
 		self::$_mode = strtolower(trim($mode));
-		switch(self::$_mode) {
+		switch (self::$_mode) {
 			case self::DEBUG_MODE_OFF:
 				self::disable();
 				break;
 			case self::DEBUG_MODE_SILENT:
 			case self::DEBUG_MODE_ON:
 			case self::DEBUG_MODE_AUTO:
-				self::auto();	
+				self::auto();
 				break;
 			case self::DEBUG_MODE_FORCE:
 				self::enable();
@@ -85,13 +89,13 @@ class Saf_Debug {
 				throw new Exception("Unknown Debug Mode: {$badMode}");
 		}
 	}
-	
+
 	public static function sessionReadyListner()
 	{
 		if (
-			isset($_SESSION) 
+			isset($_SESSION)
 			&& (
-				!array_key_exists('debug', $_SESSION)
+			!array_key_exists('debug', $_SESSION)
 			)
 		) {
 			self::switchMode(self::$_mode);
@@ -102,7 +106,7 @@ class Saf_Debug {
 	{
 		self::$_locked = TRUE;
 	}
-	
+
 	public static function disable()
 	{
 		if (self::$_locked) {
@@ -113,18 +117,18 @@ class Saf_Debug {
 		}
 		self::hush();
 		self::$_enabled = FALSE;
-    }
-    
-    public static function hush()
-    {
+	}
+
+	public static function hush()
+	{
 		if (self::$_locked) {
 			return;
 		}
 		self::$_verbose = FALSE;
 		ini_set('display_errors', self::$_disabledDisplayMode);
 		error_reporting(self::$_disabledErrorLevel);
-    }
-	
+	}
+
 	public static function enable()
 	{
 		if (self::$_locked) {
@@ -136,7 +140,7 @@ class Saf_Debug {
 		self::on();
 		self::$_enabled = TRUE;
 	}
-	
+
 	public static function on()
 	{
 		if (self::$_locked) {
@@ -144,14 +148,14 @@ class Saf_Debug {
 		}
 		self::$_verbose = TRUE;
 		ini_set(
-				'display_errors',
-				self::$_inControl
+			'display_errors',
+			self::$_inControl
 				? self::$_disabledDisplayMode
 				: self::$_enabledDisplayMode
 		);
 		error_reporting(self::$_enabledErrorLevel);
 	}
-	
+
 	public static function auto()
 	{
 		if (self::$_locked) {
@@ -192,43 +196,43 @@ class Saf_Debug {
 	{
 		return self::DEBUG_MODE_OFF != self::$_mode;
 	}
-	
+
 	public static function isVerbose()
 	{
 		return self::$_verbose;
-	}	
-	
+	}
+
 	public static function isDefault()
 	{
-		return self::DEBUG_MODE_AUTO == self::$_mode 
+		return self::DEBUG_MODE_AUTO == self::$_mode
 		|| self::DEBUG_MODE_FORCE == self::$_mode;
 	}
-	
+
 	public static function isEnabled()
 	{
 		return self::$_enabled;
 	}
-	
+
 	public static function isForced()
 	{
 		return self::DEBUG_MODE_FORCE == self::$_mode;
 	}
-	
+
 	public static function isLocked()
 	{
 		return self::$_locked;
 	}
 
-	public static function out($message, $level='ERROR')
+	public static function out($message, $level = 'ERROR')
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
-		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon('search') . '</span>') : '';		
+		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon('search') . '</span>') : '';
 		$output = "<div class=\"debug{$level}\"><p>{$message}{$icon}</p>{$trace}</div>\n";
 		self::_out($output, $level != 'Status' && $level != 'Other');
-    }
+	}
 
-	public static function outRaw($message, $level='ERROR')
+	public static function outRaw($message, $level = 'ERROR')
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
@@ -237,7 +241,7 @@ class Saf_Debug {
 		self::_out($output);
 	}
 
-	public static function outData($message, $level='ERROR')
+	public static function outData($message, $level = 'ERROR')
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
@@ -254,26 +258,26 @@ class Saf_Debug {
 
 	public static function outRawData($message, $preformat = FALSE)
 	{
-		ob_start();			
+		ob_start();
 		print_r($message);
 		$output = ob_get_contents();
 		ob_end_clean();
-		self::_out( ($preformat ? '<pre class="data">' : '') . $output . ($preformat ? '</pre>' : ''));
+		self::_out(($preformat ? '<pre class="data">' : '') . $output . ($preformat ? '</pre>' : ''));
 	}
 
 	public static function introspectData($message)
 	{
-		ob_start();			
+		ob_start();
 		print_r($message);
 		$output = ob_get_contents();
 		ob_end_clean();
 		return $output;
 	}
-	
+
 	protected static function _out($output, $notifyConsole = TRUE)
 	{
-		self::$_notifyConsole = 
-			self::$_notifyConsole 
+		self::$_notifyConsole =
+			self::$_notifyConsole
 			|| $notifyConsole;
 		if (self::$_buffered) {
 			self::$buffer .= $output;
@@ -281,10 +285,10 @@ class Saf_Debug {
 			print($output);
 		}
 	}
-	
+
 	public static function getTrace()
 	{
-		try{
+		try {
 			throw new Exception('debug');
 		} catch (Exception $e) {
 			$trace = $e->getTrace();
@@ -297,11 +301,11 @@ class Saf_Debug {
 				: '';
 		}
 	}
-	
+
 	public static function formatTrace($trace)
 	{
 		$traceLines = array();
-		foreach($trace as $lineIndex=>$line) {
+		foreach ($trace as $lineIndex => $line) {
 			$traceLines[] = "#{$lineIndex} "
 				. (array_key_exists('file', $line) ? $line['file'] : '')
 				. (array_key_exists('line', $line) ? "({$line['line']}):" : '[internal function]:')
@@ -312,9 +316,9 @@ class Saf_Debug {
 				. "";
 			//{$line['line']} {$line['class']} {$line['function']} {$line['type']} {$line['args']}";
 		}
-		return htmlentities(implode("\r\n",$traceLines));
+		return htmlentities(implode("\r\n", $traceLines));
 	}
-	
+
 	public static function paramSummary($args)
 	{//#TODO #2.0.0
 		return '(args...)';
@@ -324,12 +328,12 @@ class Saf_Debug {
 	{
 		self::$_buffered = TRUE;
 	}
-	
+
 	public static function endBuffer()
 	{
 		self::$_buffered = FALSE;
 	}
-	
+
 	public static function getBuffer()
 	{
 		return self::$buffer;
@@ -337,41 +341,46 @@ class Saf_Debug {
 
 	public static function cleanBuffer()
 	{
-    	if (self::$_verbose && Saf_Layout::formatIsHtml()) {
-    		print('<!-- debug buffer cleared -->');
-    	}
+		if (self::$_verbose && Saf_Layout::formatIsHtml()) {
+			print('<!-- debug buffer cleared -->');
+		}
 		self::$buffer = '';
-    }
+	}
 
-    public static function flushBuffer($force = FALSE)
-    {
-        $return = self::getBuffer();
-        if ($force || self::$_verbose) {
-    		print('<!-- debug buffer contents ' . strlen($return) . ' -->');
-            print($return);
-        }
-        self::cleanBuffer();
-        return $return;
-    }
-    
-    public static function mute()
-    {
-    	self::$_muted = TRUE;
-    }
-    
-    public static function unmute()
-    {
-    	self::$_muted = FALSE;
-    }
-	
+	public static function flushBuffer($force = FALSE)
+	{
+		$return = self::getBuffer();
+		if ($force || self::$_verbose) {
+			print('<!-- debug buffer contents ' . strlen($return) . ' -->');
+			print($return);
+		}
+		self::cleanBuffer();
+		return $return;
+	}
+
+	public static function mute()
+	{
+		self::$_muted[self::$_muteIndex] = self::getTrace();
+		return self::$_muteIndex++;
+	}
+
+	public static function unmute($index = NULL)
+	{
+		if (!is_null($index)) {
+			unset(self::$_muted[$index]);
+		} else {
+			self::$_muted = array();
+		}
+	}
+
 	public static function getRequestString()
 	{
 		ob_start();
 		$sanitizedRequest = $_REQUEST;
-		if(array_key_exists('pwd',$sanitizedRequest)){
+		if (array_key_exists('pwd', $sanitizedRequest)) {
 			$sanitizedRequest['pwd'] = '***redacted***';
 		}
-		if(array_key_exists('password',$sanitizedRequest)){
+		if (array_key_exists('password', $sanitizedRequest)) {
 			$sanitizedRequest['password'] = '***redacted***';
 		}
 		print_r($sanitizedRequest);
@@ -379,10 +388,10 @@ class Saf_Debug {
 		ob_end_clean();
 		return $output;
 	}
-	
+
 	public static function outputRequest()
 	{
-		ob_start();	
+		ob_start();
 		print("\n<pre class=\"debugStatus\">Request:<br/>\n");
 		print_r(self::getRequestString());
 		print("\n</pre>\n");
@@ -390,18 +399,18 @@ class Saf_Debug {
 		ob_end_clean();
 		self::_out($output, FALSE);
 	}
-	
+
 	public static function printDebugExit($force = FALSE)
 	{
-		if (!self::$_alreadyPrintedDebugExit || $force) {		
+		if (!self::$_alreadyPrintedDebugExit || $force) {
 			if (Saf_Layout::formatIsHtml()) {
 				if (!self::isForced()) {
 					print("\n<p class=\"debugOther\"><a href=\"?nodebug=true\">Disable debugging for this session.</a></p>\n");
 				} else {
 					print("\n<p class=\"debugOther\">Debugging is forced to on.</p>\n");
 				}
-			}//#TODO #2.0.0 figure out what to do for other formats...		
-	        self::$_alreadyPrintedDebugExit = TRUE;
+			}//#TODO #2.0.0 figure out what to do for other formats...
+			self::$_alreadyPrintedDebugExit = TRUE;
 		}
 	}
 
@@ -414,15 +423,41 @@ class Saf_Debug {
 					print("\n<p class=\"debugEntry\"><a href=\"?debug=true\">Enable debugging for this session. Debug mode: {$mode}</a></p>\n");
 				} //#TODO #2.0.0 figure out what to do for other formats...
 			}
-			self::$_alreadyPrintedDebugEntry = TRUE;			
+			self::$_alreadyPrintedDebugEntry = TRUE;
 		}
 	}
-	
+
+	public static function printDebugShutdown()
+	{
+		if (!self::$_alreadyPrintedDebugShutdown) {
+			$loadTime = microtime(TRUE) - APPLICATION_START_TIME;
+			if (self::isVerbose()) {
+				if (self::$_muted) {
+					foreach (self::$_muted as $trace) {
+						$icon = ' <span class="debugExpand"> ' . Saf_Layout::getIcon('search') . '</span>';
+						print("\n<div class=\"debugStatus\"><pre>Data:{$icon}<br/>\n");
+						print($trace);
+						print('Unclosed Mute');
+						print("\n</pre></div>\n");
+					}
+				}
+			}
+			self::$_buffered = FALSE;
+			if (self::isVerbose() && strlen(self::$buffer) > 0) {
+				print('<div class="debugStatus">Unsent Debug Buffer:<br/><pre>');
+				print(self::$buffer);
+				print('</pre></div>');
+			}
+			self::out("This page took {$loadTime} seconds to load.", 'STATUS');
+			self::$_alreadyPrintedDebugShutdown = TRUE;
+		}
+	}
+
 	public static function printDebugAnchor()
 	{
 		print('<span id="debugTop"></span>');
 	}
-	
+
 	public static function printDebugReveal()
 	{
 		if (Saf_Layout::isReady()) {
@@ -437,228 +472,287 @@ class Saf_Debug {
 		);
 	}
 
+	public static function printProfileReveal()
+	{
+		if (Saf_Layout::isReady()) {
+			$icon = Saf_Layout::getIcon('dashboard');
+			$accessible = ' class="accessibleHidden"';
+		} else {
+			$icon = '';
+			$accessible = '';
+		}
+		print('<div id="showProfile"><a href="#">'
+			. "{$icon}<span{$accessible}>Show Profiling Information</span></a></div>"
+		);
+	}
+
 	public static function dieSafe($message = '')
 	{
 		if (self::isEnabled()) {
-			if (self::$_notifyConsole) {
-				print('<script type="text/javascript">throw new Error("' . APPLICATION_DEBUG_NOTIFICATION . '");</script>');
+			if (self::$_notifyConsole && Saf_Layout::formatIsHtml()) {
+				print('<script type="text/javascript">throw new Error("' . DEBUG_CONSOLE_NOTIFICATION . '");</script>');
 			}
-			$loadTime = microtime(true) - APPLICATION_START_TIME;
-			if (strlen(self::$buffer) > 0) {
-				print('<div class="debugStatus">Unsent Debug Buffer: ' . strlen(self::$buffer) . '<br/>');
-				print(self::$buffer);
-				print('</div>');
-			}
-			self::$_buffered = FALSE;
-			self::out("This page took {$loadTime} seconds to load.", 'STATUS');
+			self::printDebugShutdown();
 			self::printDebugExit();
-			$javascriptEnabled = //#TODO #2.0.0 detect current setting... not default
-				strpos(DEFAULT_RESPONSE_FORMAT, 'javascript' != FALSE);
-			if ($javascriptEnabled) {
+			if (Saf_Layout::formatIsHtml()) { //#TODO #2.0.0 use formatIncludesJavascript
 				print('<script type="text/javascript">if(saf && saf.hasOwnProperty(\'debugAlign\')) { saf.debugAlign();} </script>');
 			}
-		} else if (self::$_verbose) {
+		} else if (self::isVerbose()) {
 			self::printDebugEntry();
 		}
 		die($message);
-    }
-	
-	public static function outDebugBlockStart($level='ERROR')
+	}
+
+	public static function outDebugBlockStart($level = 'ERROR')
 	{
 		self::_out("<p class=\"debug{$level}\">");
 	}
-	
+
 	public static function outDebugBlockEnd()
 	{
 		self::_out("</p>");
-    }
+	}
 
-    public static function takeover()
-    {
-    	if (self::$_locked) {
-    		return;
-    	}
-    	if (!self::$_inControl) {
-            self::$_oldErrorHandler = set_error_handler('Saf_Debug::handle');
-            self::$_oldExceptionHandler = set_exception_handler('Saf_Debug::handleException');
-            if (!self::$_shutdownRegistered) {
-                register_shutdown_function('Saf_Debug::shutdown');
-                self::$_shutdownRegistered = TRUE;
-            }
-            self::$_inControl = TRUE;
-        }
-    }
+	public static function takeover()
+	{
+		if (self::$_locked) {
+			return;
+		}
+		if (!self::$_inControl) {
+			self::$_oldErrorHandler = set_error_handler('Saf_Debug::handle');
+			self::$_oldExceptionHandler = set_exception_handler('Saf_Debug::handleException');
+			if (!self::$_shutdownRegistered) {
+				register_shutdown_function('Saf_Debug::shutdown');
+				self::$_shutdownRegistered = TRUE;
+			}
+			ini_set('display_errors', self::$_disabledDisplayMode);
+			self::$_inControl = TRUE;
+		}
+	}
 
-    public static function relenquish()
-    {
-    	if (self::$_locked) {
-    		return;
-    	}
-    	if (
-            !is_null(self::$_oldErrorHandler)
-            && self::$_oldErrorHandler
-        ) {
-            set_error_handler(self::$_oldErrorHandler);
-            self::$_oldErrorHandler = NULL;
-        } else {
-            restore_exception_handler();
-        }
-        if (
-            !is_null(self::$_oldExceptionHandler)
-            && self::$_oldExceptionHandler
-        ) {
-            set_error_handler(self::$_oldExceptionHandler);
-            self::$_oldExceptionHandler = NULL;
-        } else {
-            restore_exception_handler();
-        }
-        self::$_inControl = FALSE;
-    }
+	public static function relenquish()
+	{
+		if (self::$_locked) {
+			return;
+		}
+		if (
+			!is_null(self::$_oldErrorHandler)
+			&& self::$_oldErrorHandler
+		) {
+			set_error_handler(self::$_oldErrorHandler);
+			self::$_oldErrorHandler = NULL;
+		} else {
+			restore_exception_handler();
+		}
+		if (
+			!is_null(self::$_oldExceptionHandler)
+			&& self::$_oldExceptionHandler
+		) {
+			set_error_handler(self::$_oldExceptionHandler);
+			self::$_oldExceptionHandler = NULL;
+		} else {
+			restore_exception_handler();
+		}
+		self::$_inControl = FALSE;
+	}
 
-    public static function shutdown()
-    {
-    	$handledErrors = array(
-    			1 => 'E_ERROR',
-    			//2 => 'E_WARNING',
-    			4 => 'E_PARSE',
-    			//8 => 'E_NOTICE',
-    			16 => 'E_CORE_ERROR',
-    			//32 => 'E_CORE_WARNING',
-    			64 => 'E_COMPILE_ERROR',
-    			//128 => 'E_COMPILE_WARNING',
-    			256 => 'E_USER_ERROR',
-    			//512 => 'E_USER_WARNING',
-    			//1024 => 'E_USER_NOTICE',
-    			2048 => 'E_STRICT',
-    			4096 => 'E_RECOVERABLE_ERROR',
-    			8192 => 'E_DEPRECATED',
-    			16384 => 'E_USER_DEPRECATED'
-    	
-    	);
-    	self::$_shuttingDown = TRUE;
-        if (self::$_inControl) {
-            	$error = error_get_last();
-                if ( array_key_exists($error["type"], $handledErrors) ) {
-                    self::handle($error["type"], $error["message"], $error["file"], $error["line"]);
-                }
-        }
-    }
+	public static function shutdown()
+	{
+		$handledErrors = array(
+			1 => 'E_ERROR',
+			//2 => 'E_WARNING',
+			4 => 'E_PARSE',
+			//8 => 'E_NOTICE',
+			16 => 'E_CORE_ERROR',
+			//32 => 'E_CORE_WARNING',
+			64 => 'E_COMPILE_ERROR',
+			//128 => 'E_COMPILE_WARNING',
+			256 => 'E_USER_ERROR',
+			//512 => 'E_USER_WARNING',
+			//1024 => 'E_USER_NOTICE',
+			2048 => 'E_STRICT',
+			4096 => 'E_RECOVERABLE_ERROR',
+			8192 => 'E_DEPRECATED',
+			16384 => 'E_USER_DEPRECATED'
 
-    public static function handleException($e)
-    {
-        $errorType = get_class($e);
-        $errorString = $e->getMessage();
-        $errorFile = $e->getFile();
-        $errorLine = $e->getLine();
-        self::outRaw('<span class="phpException">');
-        self::handle($errorType, $errorString, $errorFile, $errorLine);
-        self::outRaw('<pre class="phpErrorTrace">');
-        self::outRawData($e->getTraceAsString());
-        self::outRaw('</pre>');
-        if ($e->getPrevious()) {
-            self::handleException($e->getPrevious());
-        }
-        print('</span>');
-    }
+		);
+		self::$_shuttingDown = TRUE;
+		if (self::$_inControl) {
+			$error = error_get_last();
+			if (array_key_exists($error["type"], $handledErrors)) {
+				self::handle($error["type"], $error["message"], $error["file"], $error["line"]);
+			}
+		}
+	}
 
-    public static function handle($errorNo, $errorString, $errorFile = NULL, $errorLine = NULL, $errorContext = array())
-    {
-        $lookupTable = array(
-            1 => 'E_ERROR',
-            2 => 'E_WARNING',
-            4 => 'E_PARSE',
-            8 => 'E_NOTICE',
-            16 => 'E_CORE_ERROR',
-            32 => 'E_CORE_WARNING',
-            64 => 'E_COMPILE_ERROR',
-            128 => 'E_COMPILE_WARNING',
-            256 => 'E_USER_ERROR',
-            512 => 'E_USER_WARNING',
-            1024 => 'E_USER_NOTICE',
-            2048 => 'E_STRICT',
-            4096 => 'E_RECOVERABLE_ERROR',
-            8192 => 'E_DEPRECATED',
-            16384 => 'E_USER_DEPRECATED'
-        );
-        $fatalErrorList = array(1,4,16,64,256);
-        $fatal = in_array($errorNo,$fatalErrorList);
-        $description = 
-            array_key_exists($errorNo, $lookupTable) 
-            ? $lookupTable[$errorNo] 
-            : (is_numeric($errorNo) ? 'ERROR_NO_' . $errorNo : $errorNo);
-        $at = $errorLine ? " on line {$errorLine}" : ''; 
-        $in = $errorFile ? " in file {$errorFile}" . $at : $at;
-        if ($fatal) {
-            $caughtBy = self::$_shuttingDown ? 'SHUTDOWN' : 'DEBUG';
-            Saf_Status::set(Saf_Status::STATUS_500_ERROR);
-            $e = new Exception("{$description} {$in}");
-            Saf_Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
-        } else {
-        	if (!self::$_muted) {
-	            self::outRaw('<div class="phpError">'
-	                . "<span class=\"phpErrorWhat\">{$description} - </span>" 
-	                . "<span class=\"phpErrorMessage\">{$errorString}</span>"
-	                . "<span slass=\"phpErrorWhere\">{$in}</span> "
-	                . '</div>');
-        	}
-        }
-        return FALSE;        
- /*       $errorLog = Rd_Registry::get('root:errorLogPath');
-        try {
-            $cmd = Rd_Registry::get('root:requestCommand');
-        } catch (Exception $e) {
-            $cmd = '';
-        }
-        try {
-            $u = Rd_Registry::get('root:userInterface');
-        } catch (Exception $e) {
-            $u = NULL;
-        }
+	public static function handleException($e)
+	{
+		$errorType = get_class($e);
+		$errorString = $e->getMessage();
+		$errorFile = $e->getFile();
+		$errorLine = $e->getLine();
+		self::outRaw('<span class="phpException">');
+		self::handle($errorType, $errorString, $errorFile, $errorLine);
+		self::outRaw('<pre class="phpErrorTrace">');
+		self::outRawData($e->getTraceAsString());
+		self::outRaw('</pre>');
+		if ($e->getPrevious()) {
+			self::handleException($e->getPrevious());
+		}
+		print('</span>');
+	}
 
-        $dt = date('Y-m-d H:i:s (T)');
-        $errortype = array (
-            E_ERROR => "Error",
-            E_WARNING => "Warning",
-            E_PARSE => "Parsing Error",
-            E_NOTICE => "Notice",
-            E_CORE_ERROR => "Core Error",
-            E_CORE_WARNING => "Core Warning",
-            E_COMPILE_ERROR => "Compile Error",
-            E_COMPILE_WARNING => "Compile Warning",
-            E_USER_ERROR => "User Error",
-            E_USER_WARNING => "User Warning",
-            E_USER_NOTICE => "User Notice",
-            E_STRICT => "Runtime Notice"
-            );
-        // set of errors for which a var trace will be saved
-        $user_errors = array(E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE, E_USER_ERROR);
-        $err = "<errorentry>\n"
-            . "\t<datetime>" . $dt . "</datetime>\n"
-            . "\t<errornum>" . $errno . "</errornum>\n"
-            . "\t<errortype>" . (array_key_exists($errno,$errortype) ? $errortype[$errno] : '') . "</errortype>\n"
-            . "\t<errormsg>" . $errmsg . "</errormsg>\n"
-            . "\t<scriptname>" . $filename . "</scriptname>\n"
-            . "\t<scriptlinenum>" . $linenum . "</scriptlinenum>\n";
-        if ($u instanceof user) {
-            $err .= "\t<user><username>" . $u->getUsername() . "</username><userID>" . $u->getUserID() . "</userID></user>\n";
-        }
-        $err .= "\t<cmd>$cmd</cmd>\n";
-        if (in_array($errno, $user_errors)) {
-            //$err .= "\t<vartrace>" . wddx_serialize_value($vars, "Variables") . "</vartrace>\n";
-        }
-        $err .= "</errorentry>\n\n";
-        
-        if(Rd_Debug::isEnabled()) {
-            print('<pre>' . htmlentities($err) . '</pre>');
-        }
-        if ($errno <> E_NOTICE && $errno <> E_STRICT && $errno <> E_WARNING) {
-            // save to the error log, and e-mail me if there is a critical user error
-            if('' != $errorLog) {
-                error_log($err, 3, $errorLog);
-            }
-            include_once('error.php');
-            die;
-        }*/
-    }
+	public static function handle($errorNo, $errorString, $errorFile = NULL, $errorLine = NULL, $errorContext = array())
+	{
+		$lookupTable = array(
+			1 => 'E_ERROR',
+			2 => 'E_WARNING',
+			4 => 'E_PARSE',
+			8 => 'E_NOTICE',
+			16 => 'E_CORE_ERROR',
+			32 => 'E_CORE_WARNING',
+			64 => 'E_COMPILE_ERROR',
+			128 => 'E_COMPILE_WARNING',
+			256 => 'E_USER_ERROR',
+			512 => 'E_USER_WARNING',
+			1024 => 'E_USER_NOTICE',
+			2048 => 'E_STRICT',
+			4096 => 'E_RECOVERABLE_ERROR',
+			8192 => 'E_DEPRECATED',
+			16384 => 'E_USER_DEPRECATED'
+		);
+		$simplifyTable = array(
+			'E_ERROR' => 'error',
+			'E_WARNING' => 'warning',
+			'E_PARSE' => 'error',
+			'E_NOTICE' => 'notice',
+			'E_CORE_ERROR' => 'error',
+			'E_CORE_WARNING' => 'warning',
+			'E_COMPILE_ERROR' => 'error',
+			'E_COMPILE_WARNING' => 'notice',
+			'E_USER_ERROR' => 'error',
+			'E_USER_WARNING' => 'warning',
+			'E_USER_NOTICE' => 'notice',
+			'E_STRICT' => 'warning',
+			'E_RECOVERABLE_ERROR' => 'error',
+			'E_DEPRECATED' => 'warning',
+			'E_USER_DEPRECATED' => 'warning'
+		);
+		$fatalErrorList = array(1, 4, 16, 64, 256);
+		$fatal = in_array($errorNo, $fatalErrorList);
+		$description =
+			array_key_exists($errorNo, $lookupTable)
+				? $lookupTable[$errorNo]
+				: (is_numeric($errorNo) ? 'ERROR_NO_' . $errorNo : $errorNo);
+		$at = $errorLine ? " on line {$errorLine}" : '';
+		$in = $errorFile ? " in file {$errorFile}" . $at : $at;
+		if ($fatal) {
+			$caughtBy = self::$_shuttingDown ? 'SHUTDOWN' : 'DEBUG';
+			Saf_Status::set(Saf_Status::STATUS_500_ERROR);
+			$e = new Exception("{$description} {$in}");
+			Saf_Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
+		} else {
+			if (!self::$_muted) {
+				$message = "<span class=\"phpErrorWhat\">{$description} - </span>"
+					. "<span class=\"phpErrorMessage\">{$errorString}</span>"
+					. "<span slass=\"phpErrorWhere\">{$in}</span> ";
+				$trace = self::getTrace();
+				$level =
+					array_key_exists($description, $simplifyTable)
+						? $simplifyTable[$description]
+						: 'error';
+				$level = htmlentities(ucfirst(strtolower($level)));
+				$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon('search') . '</span>') : '';
+				$output = "{$message}{$icon}{$trace}\n";
+				self::_out(
+					"<div class=\"debug{$level}\">"
+					. '<div class="phpError">' . $output . '</div>'
+					. '</div>'
+				);
+			}
+		}
+		return FALSE;
+		/*	$errorLog = Rd_Registry::get('root:errorLogPath');
+				try {
+					$cmd = Rd_Registry::get('root:requestCommand');
+				} catch (Exception $e) {
+					$cmd = '';
+				}
+				try {
+					$u = Rd_Registry::get('root:userInterface');
+				} catch (Exception $e) {
+					$u = NULL;
+				}
+
+				$dt = date('Y-m-d H:i:s (T)');
+				$errortype = array (
+					E_ERROR => "Error",
+					E_WARNING => "Warning",
+					E_PARSE => "Parsing Error",
+					E_NOTICE => "Notice",
+					E_CORE_ERROR => "Core Error",
+					E_CORE_WARNING => "Core Warning",
+					E_COMPILE_ERROR => "Compile Error",
+					E_COMPILE_WARNING => "Compile Warning",
+					E_USER_ERROR => "User Error",
+					E_USER_WARNING => "User Warning",
+					E_USER_NOTICE => "User Notice",
+					E_STRICT => "Runtime Notice"
+					);
+				// set of errors for which a var trace will be saved
+				$user_errors = array(E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE, E_USER_ERROR);
+				$err = "<errorentry>\n"
+					. "\t<datetime>" . $dt . "</datetime>\n"
+					. "\t<errornum>" . $errno . "</errornum>\n"
+					. "\t<errortype>" . (array_key_exists($errno,$errortype) ? $errortype[$errno] : '') . "</errortype>\n"
+					. "\t<errormsg>" . $errmsg . "</errormsg>\n"
+					. "\t<scriptname>" . $filename . "</scriptname>\n"
+					. "\t<scriptlinenum>" . $linenum . "</scriptlinenum>\n";
+				if ($u instanceof user) {
+					$err .= "\t<user><username>" . $u->getUsername() . "</username><userID>" . $u->getUserID() . "</userID></user>\n";
+				}
+				$err .= "\t<cmd>$cmd</cmd>\n";
+				if (in_array($errno, $user_errors)) {
+					//$err .= "\t<vartrace>" . wddx_serialize_value($vars, "Variables") . "</vartrace>\n";
+				}
+				$err .= "</errorentry>\n\n";
+
+				if(Rd_Debug::isEnabled()) {
+					print('<pre>' . htmlentities($err) . '</pre>');
+				}
+				if ($errno <> E_NOTICE && $errno <> E_STRICT && $errno <> E_WARNING) {
+					// save to the error log, and e-mail me if there is a critical user error
+					if('' != $errorLog) {
+						error_log($err, 3, $errorLog);
+					}
+					include_once('error.php');
+					die;
+				}*/
+	}
+
+	//#TODO #2.1.0 clean up the below (used in J and RD
+
+	protected static $_debugStack = array();
+
+	public static function addMessage($message, $nameSpace = NULL)
+	{
+		if (is_null($nameSpace)) {
+			self::$_debugStack[] = $message;
+		} else if (array_key_exists($nameSpace, self::$_debugStack)) {
+			self::$_debugStack[$nameSpace][] = $message;
+		} else {
+			self::$_debugStack[$nameSpace] = array($message);
+		}
+	}
+
+	public static function getMessages()
+	{
+		return self::$_debugStack;
+	}
+
+	public static function clearMessages()
+	{
+		self::$_debugStack = array();
+	}
 
 }

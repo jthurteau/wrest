@@ -9,16 +9,16 @@ Utility class for layout handling
 *******************************************************************************/
 
 class Saf_Layout {
-	
-	const LAYOUT_DEFAULT_HTML_FORMAT = 'html+javascript+css';
+
+	const LAYOUT_DEFAULT_HTML_FORMAT = 'html+javascript:css';
 	const LAYOUT_BASE_HTML_FORMAT = 'html';
 	const LAYOUT_DEFAULT_AJAX_FORMAT = 'json';
 	const LAYOUT_DEFAULT_FILE_FORMAT = 'binary';
-	
+
 	protected static $_format = DEFAULT_RESPONSE_FORMAT;
 	protected static $_css = array();
 	protected static $_js = array();
-	
+
 	protected static $_formatMap = array(
 		'text/html' => self::LAYOUT_DEFAULT_HTML_FORMAT,
 		'application/xhtml+xml' => self::LAYOUT_DEFAULT_HTML_FORMAT,
@@ -27,7 +27,7 @@ class Saf_Layout {
 		'application/json' => self::LAYOUT_DEFAULT_AJAX_FORMAT,
 		'text/javascript' => self::LAYOUT_DEFAULT_AJAX_FORMAT //#TODO #2.0.0 css?
 	);
-	
+
 	/**
 	 * sets the preferred output format
 	 * @param string $format
@@ -38,8 +38,9 @@ class Saf_Layout {
 			$format = self::$_formatMap[$format];
 		}
 		self::$_format = $format;
+		return self::$_format;
 	}
-	
+
 	/**
 	 * returns the preferred output format
 	 * @return string
@@ -48,12 +49,17 @@ class Saf_Layout {
 	{
 		return self::$_format;
 	}
-	
+
 	public static function formatIsHtml()
 	{
 		return strpos(self::$_format, 'html') === 0;
 	}
-	
+
+	public static function formatIsJson()
+	{
+		return strpos(self::$_format, 'json') === 0;
+	}
+
 	/**
 	 * autodetect the preferred output format
 	 * @param unknown_type $hint
@@ -63,7 +69,7 @@ class Saf_Layout {
 		$headers = apache_request_headers();
 		$isAjax = array_key_exists('X-Requested-With', $headers)
 			&& 'xmlhttprequest' == strtolower($headers['X-Requested-With']);
-		$accept = 
+		$accept =
 			array_key_exists('Accept', $headers)
 			? explode(',', $headers['Accept'])
 			: array();
@@ -75,7 +81,7 @@ class Saf_Layout {
 			}
 		}
 	}
-	
+
 	/**
 	 * ensure relative URLs work regardless of where the application is served from
 	 * @param string $url
@@ -88,16 +94,16 @@ class Saf_Layout {
 		}
 		print($baseUrl . $url);
 	}
-	
+
 	/**
 	 * output the tag for an RSS Link
 	 * @param string $url
 	 */
 	public static function printRssLink($url)
 	{
-		
+
 	}
-	
+
 	public static function printCss($css, $media = 'screen')
 	{
 		$baseCssUrl = Zend_Registry::get('baseUrl') . 'css/';
@@ -105,12 +111,12 @@ class Saf_Layout {
 			strpos($css, '/') === 0
 			? $css
 			: "{$baseCssUrl}{$css}.css";
-		
+
 ?>
 		<link href="<?php print($css); ?>" rel="stylesheet" type="text/css" media="<?php print($media);?>"/>
-<?php 
+<?php
 	}
-	
+
 	/**
 	 * store a css file to render a link to during layout
 	 * @param string $css
@@ -140,14 +146,14 @@ class Saf_Layout {
 			foreach($css as $currentCss) {
 				self::printCss($currentCss, $media);
 			}
-		} 
+		}
 	}
-	
+
 	public static function printCoreCss()
 	{
 		$coreCss = array(
-			'reset', 
-			'jquery/ui/jquery-ui', 
+			'reset',
+			'jquery/ui/jquery-ui',
 			'foundation/5/foundation',
 			'fontawesome/font-awesome',
 			'saf',
@@ -163,16 +169,16 @@ class Saf_Layout {
 			self::printCss($css,$media);
 		}
 	}
-	
+
 	public static function printPreloadJs()
 	{
 ?>
 <script>
 
 </script>
-<?php 
+<?php
 	}
-	
+
 	public static function printJs($js)
 	{
 		$baseJsUrl = Zend_Registry::get('baseUrl') . 'javascript/';
@@ -182,9 +188,9 @@ class Saf_Layout {
 			: "{$baseJsUrl}{$js}.js";
 ?>
 		<script src="<?php print($js); ?>"></script>
-<?php 
+<?php
 	}
-	
+
 	public static function printCoreJs()
 	{
 		$baseUrl = Zend_Registry::get('baseUrl') . 'javascript/';
@@ -202,7 +208,7 @@ class Saf_Layout {
 				} else {
 ?>
 <!-- unavailable cdn <?php print($js);?> -->
-<?php 
+<?php
 				}
 			} else if ('_init' != $js) {
 				self::printJs($js);
@@ -214,7 +220,7 @@ $(document).ready(function() {
 		baseUrl: '<?php print($baseUrl); ?>'});
 });
 </script>
-<?php 
+<?php
 			}
 		}
 	}
@@ -223,11 +229,11 @@ $(document).ready(function() {
 	{
 ?>
 	<script>
-	
+
 	</script>
-<?php 
+<?php
 		}
-	
+
 	public static function autoJs($path){
 		self::$_js[] = $path;
 	}
@@ -240,8 +246,8 @@ $(document).ready(function() {
 		foreach(self::$_js as $script) {
 ?>
 <script src="<?php self::printLink("javascript/{$script}.js")?>"></script>
-<?php 
-		}	
+<?php
+		}
 	}
 
 	/**
@@ -253,17 +259,17 @@ $(document).ready(function() {
 		if(count($crumbs) > 0) {
 ?>
 		<ul class="breadcrumbs">
-<?php 
+<?php
 			foreach($crumbs as $label=>$info) {
 				$url = is_array($info)
 					? (
 						array_key_exists('url', $info)
-						? $info['url'] 
+						? $info['url']
 						: ''
 					) : $info;
-				$class = 
-					is_array($info) && array_key_exists('status', $info) 
-					? " class=\"{$info['status']}\"" 
+				$class =
+					is_array($info) && array_key_exists('status', $info)
+					? " class=\"{$info['status']}\""
 					: '';
 				if (is_array($info) && Saf_Array::keyExistsAndIsArray('options', $info)) {
 					$prefix = Saf_Array::keyExistsAndNotBlank('prefix', $info['options'])
@@ -272,51 +278,62 @@ $(document).ready(function() {
 				} else {
 					$prefix = '';
 				}
-				
+
 				if ('' != $url) {
 					$baseUrl = Zend_Registry::get('baseUrl');
-						$url = str_replace('[[baseUrl]]', $baseUrl, $url);	
+						$url = str_replace('[[baseUrl]]', $baseUrl, $url);
 ?>
 		<li<?php print($class);?>><?php print($prefix); ?><a href="<?php print($url); ?>"><?php print($label);?></a></li>
-<?php 
+<?php
 				} else {
 ?>
 		<li<?php print($class);?>><?php print($prefix . $label);?></li>
-<?php 			
+<?php
 				}
-			} 
+			}
 		?>
 		</ul>
-<?php 
+<?php
 		}
 	}
-	
+
 	/**
 	 * output any buffered messages
 	 */
 	public static function outputMessages()
 	{
-		
+
 	}
-	
+
+	/**
+	 * output any buffered messages
+	 */
+	public static function setMessage()
+	{
+
+	}
+
 	public static function debugHeader()
 	{
 		if(Saf_Debug::isVerbose()) {
 			Saf_Debug::printDebugAnchor();
 			Saf_Debug::printDebugReveal();
+			Saf_Debug::printProfileReveal();
 		}
 	}
-	
+
 	public static function debugFooter()
 	{
 		if(Saf_Debug::isEnabled()){
 ?>
 <!-- debug buffer -->
-<?php 
+<?php
 			Saf_Debug::flushBuffer();
 			Saf_Debug::printDebugExit();
 		}
-		Saf_Debug::printDebugEntry();
+		if (Saf_Debug::isVerbose()) {
+			Saf_Debug::printDebugEntry();
+		}
 	}
 
 	/**
@@ -339,7 +356,7 @@ $(document).ready(function() {
 		$title = $altText ? ' title="' . htmlentities($altText) . '"' : '';
 		return "<span{$title} class=\"fa fa-{$symbol}\"></span>";
 	}
-	
+
 	public static function isReady()
 	{
 		return TRUE; //#TODO #1.2.0 return false if not rendering an html view.
