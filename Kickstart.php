@@ -108,6 +108,15 @@ class Saf_Kickstart {
 	);
 
 	/**
+	 * specifies the path to the exception display view script
+	 * defaults to (set to) APPLICATION_PATH . '/views/scripts/error/error.php'
+	 * the first time exceptionDisplay() is called if not already set by
+	 * setExceptionDisplayScript().
+	 * @var string
+	 */
+	protected static $_exceptionView = NULL;
+
+	/**
 	 * Accepts a constant name and optional default value. Will attempt to
 	 * see if the constant is already defined. If not it will see if there
 	 * is a local dot file in the pwd or path that specifies this value.
@@ -120,6 +129,24 @@ class Saf_Kickstart {
 	 */
 	public static function defineLoad($constantName, $constantDefault = NULL, $cast = self::CAST_STRING)
 	{
+		if (is_array($constantName)){
+			foreach($constantName as $currentConstantIndex => $currentConstantValue) {
+				$currentConstantName =
+					is_array($currentConstantValue)
+					? $currentConstantIndex
+					: $currentConstantValue;
+				$currentDefault =
+					is_array($currentConstantValue) && array_key_exists(0, $currentConstantValue)
+						? $currentConstantValue[0]
+						: $constantDefault;
+				$currentCast =
+					is_array($currentConstantValue) && array_key_exists(1, $currentConstantValue)
+						? $currentConstantValue[1]
+						: $cast;
+				self::defineLoad($currentConstantName, $currentDefault, $currentCast);
+			}
+			return TRUE;
+		}
 		$constantName = self::filterConstantName($constantName);
 		$sourceFileMatch = self::dotFileMatch($constantName);
 		$sourceFilename =
@@ -1146,11 +1173,23 @@ class Saf_Kickstart {
 	 */
 	public static function exceptionDisplay($e, $caughtLevel = 'BOOTSTRAP', $additionalError = '')
 	{
-		$rootUrl = APPLICATION_BASE_URL;
+		$rootUrl = defined('APPLICATION_BASE_URL') ? APPLICATION_BASE_URL : '';
 		$title = 'Configuration Error';
-		include(APPLICATION_PATH . '/views/scripts/error/error.php');
+		if (is_null(self::$_exceptionView)) {
+			self::$_exceptionView = APPLICATION_PATH . '/views/scripts/error/error.php';
+		}
+		include(self::$_exceptionView);
 		if (class_exists('Saf_Debug', FALSE)) {
 			Saf_Debug::dieSafe();
 		}
+	}
+
+	/**
+	 * sets the path to the php script used by exceptionDisplay()
+	 * @param string $path
+	 */
+	public static function setExceptionDisplayScript($path)
+	{
+		self::$_exceptionView = realpath($path);
 	}
 }

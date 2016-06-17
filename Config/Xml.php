@@ -8,6 +8,8 @@ Utility functions for loading configuration from XML files
 
 *******************************************************************************/
 
+require_once(LIBRARY_PATH . '/Saf/Config.php');
+
 class Saf_Config_Xml extends Saf_Config{
 	
 	public function open($filePath, $section = '', $merge = self::LOAD_MERGE) 
@@ -112,10 +114,13 @@ class Saf_Config_Xml extends Saf_Config{
 						: $sourceMap[$targetSection][0];
 				}
 			}
-			$return = $sourceMap[$section];
+			$return =
+				array_key_exists($section, $sourceMap) && !is_null($sourceMap[$section])
+				? $sourceMap[$section]
+				: array();
 			$inherit = array_shift($extending);
 			while($inherit) {
-				$return = self::merge($sourceMap[$inherit],$return);
+				$return = self::merge($sourceMap[$inherit], $return);
 				$inherit = array_shift($extending);
 			}
 			return $return;

@@ -59,6 +59,13 @@ class Saf_Config {
 	{//#TODO
 	}
 
+	/**
+	 * @param string $filePath
+	 * @param string $section
+	 * @param int $merge
+	 * @return Saf_Config
+	 * @throws Exception
+	 */
 	public static function load($filePath = '', $section = '', $merge = self::LOAD_MERGE)
 	{
 		if ('' == trim($filePath)) {
@@ -80,11 +87,11 @@ class Saf_Config {
 		$fileType = ucFirst(strtolower(substr($filePath, $fileTypeStart + 1)));
 		try{
 			$configLoaderClass = self::_prepareLoader($fileType);
-			$loaderConfig = new $configLoaderClass(
+			$configData =
 				$merge != self::LOAD_QUARANTINED
 				? Saf_Config::$_current
-				: array()
-			);
+				: array();
+			$loaderConfig = new $configLoaderClass($configData);
 		} catch (Exception $e) {
 			$debugData = (
 			Saf_Debug::isEnabled()

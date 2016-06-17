@@ -158,7 +158,7 @@ class Saf_Array {
 	 * @param int $mode
 	 * @return array
 	 */
-	public static function coerce($maybeArray, $mode = self::MODE_EXACT)
+	public static function coerce($maybeArray, $mode = self::MODE_VERBOSE)
 	{
 		return
 			is_array($maybeArray)

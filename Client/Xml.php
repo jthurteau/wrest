@@ -6,6 +6,8 @@
 
 *******************************************************************************/
 
+require_once(LIBRARY_PATH . '/Saf/Client/Http.php');
+
 class Saf_Client_Xml
 {
 	const PARSE_PATTERN_NONE = 0;
