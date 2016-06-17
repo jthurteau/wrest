@@ -77,7 +77,7 @@ class Saf_Registry {
 			: explode(':', $name);
 		$facet = array_shift($request);
 		if ('config' == $facet) {
-			return Rd_Config::get($request);
+			return self::_get('root:config', self::$_configuration); //#TODO #1.0.0 Saf_Config is not currently setup as a singleton...
 		} else {
 			try{
 				if(array_key_exists($facet, self::$_configuration)){
