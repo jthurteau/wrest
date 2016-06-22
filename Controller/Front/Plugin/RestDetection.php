@@ -30,16 +30,26 @@ class Saf_Controller_Front_Plugin_RestDetection extends Zend_Controller_Plugin_A
 	public function parseAccept($string, $table = self::ACCEPT_FORMAT)
 	{
 		$default = self::$_acceptTables[$table][0];
+		if ('' == trim($string)) {
+			Saf_Debug::out("No accept format specified, using default ({$default}).", 'NOTICE');
+			return $default;
+		}
 		$array = explode(',', $string);
 		foreach($array as $option){
 			$format = 
 				strpos($option, ';') !== FALSE
 				? substr($option, 0, strpos($option, ';'))
 				: $option;
-			if (array_key_exists($option, self::$_acceptTables[$table])) {
-				return self::$_acceptTables[$table][$option];
+			if (array_key_exists($format, self::$_acceptTables[$table])) {
+				$notice =
+					"Accept format ({$format}), using "
+					. self::$_acceptTables[$table][$format]
+					. '.';
+				Saf_Debug::out($notice, 'NOTICE');
+				return self::$_acceptTables[$table][$format];
 			}
-		} //#TODO #2.0.0 log that it wasn't found
+		}
+		Saf_Debug::out("Unrecognized accept format ({$format}), using default ({$default}).", 'NOTICE');
 		return $default;
 	}
 

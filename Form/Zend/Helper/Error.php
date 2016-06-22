@@ -30,14 +30,18 @@ class Saf_Form_Zend_Helper_Error extends Zend_Form_Decorator_Abstract
         if ($element instanceof Zend_Form
             && NULL !== $element->getElementsBelongTo()
         ) {
+        	if (FALSE) {
  ?>
  <!-- <?php print_r(array('a',get_class($element),get_class($element->getElementsBelongTo()))); ?> -->
  <?php 
+        	}
             $errors = $element->getMessages(NULL, TRUE);
         } else {
+        	if (FALSE) {
  ?>
  <!-- <?php print_r(array('b',get_class($element),get_class($element->getElementsBelongTo()))); ?> -->
- <?php 
+ <?php
+        	}
             $errors = $element->getMessages();
         }
         if (empty($errors)) {

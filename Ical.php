@@ -20,7 +20,8 @@ class Saf_Ical {
 	const OUTPUT_ESCAPE_CHARS = ':;,\\';
 	const OUTPUT_REMOVE_CHARS = "";
 	const OUTPUT_DATESTAMP = 'Ymd\THis\Z';
-	
+	const MIME_TYPE = 'text/calendar';
+
 	protected $_ical = '';
 	protected $_attachment = '';
 	protected $_baseTime = NULL;
@@ -53,12 +54,19 @@ class Saf_Ical {
 	);
 	
 	protected static $_propHelperMap = array(
+		'fullStart' => 'DTSTART',
 		'start' => 'DTSTART',
+		'fullEnd' => 'DTEND',
 		'end' => 'DTEND',
 		'now' => 'DTSTAMP',
 		'modified' => 'DTSTAMP',
 		'title' => 'SUMMARY',
-		'name' => 'SUMMARY'
+		'name' => 'SUMMARY',
+		'description' => 'SUMMARY',
+		'userEmail' => 'ATTENDEE',
+		'attendeeEmail' => 'ATTENDEE',
+		'ownerEmail' => 'ORGANIZER',
+		'userLocation' => 'LOCATION',
 	);
 	
 	public function __construct($config = array()){//#TODO unmuddle some of this...
@@ -84,6 +92,10 @@ class Saf_Ical {
 		}
 	}
 	
+	public function __toString(){
+		return $this->getIcal();
+	}
+
 	public function setMethodRequest()
 	{
 		$this->_method = self::METHOD_REQUEST;
@@ -123,6 +135,7 @@ class Saf_Ical {
 		$scale = ''; //#TODO #9.0.0 implement
 		$iana = ''; //#TODO #2.0.0 implement
 		$xprop = ''; //#TODO #2.0.0 implement
+		$url = '';
 		return "BEGIN:VCALENDAR\n"
 			. "METHOD:{$method}\n"
 			. "PRODID:-//{$product}\n"
@@ -168,7 +181,7 @@ class Saf_Ical {
 		$outProp = "$prop:";
 		$dateStamp = gmdate(self::OUTPUT_DATESTAMP, Saf_Time::time());
 		$version = $this->getVersion($data);
-		$atProps = 'CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;'; //or just ROLE=REQ-PARTICIPANT;
+		$atProps = 'CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE'; //or just ROLE=REQ-PARTICIPANT;
 		$uid = "{$outType}{$id}@{$this->_host}";
 		//#TODO #2.0.0 see what more advanced attendee properties we can suppor...
 		foreach(self::$_itemProps[$type] as $prop => $card) {
@@ -176,14 +189,45 @@ class Saf_Ical {
 			$propKey = array_key_exists($prop, $data)
 				? $prop
 				: self::_resolvePropKey($prop, $data);
+			$outProp = "$prop:";
 			switch ($prop){
 				case 'ORGANIZER':
 				case 'ATTENDEE': 
-				case 'ATTENDEE[]':
-					$cn="CN={$name}";
-					$outProp = "ATTENDEE;{$atProps}{$cn}:";
+					$attendeeMail =
+						$propKey
+							&& array_key_exists($propKey, $data)
+						? $data[$propKey]
+						: NULL;
+					$cnSource =
+						array_key_exists('USER:CN', $data)
+						? $data['USER:CN']
+						: (
+							array_key_exists('userFullname', $data)
+							? $data['userFullname']
+							: NULL
+						);
+					if (is_array($attendeeMail)) {
+						foreach($attendeeMail as $email) {
+							$outProp = array();
+							if (
+								is_array($cnSource) && array_key_exists($email, $cnSource)
+							) {
+								$cn = ";CN={$cnSource[$email]}";
+							} else {
+								$cn = '';
+							}
+							$outProp = 'ATTENDEE;';
+							$value[] = "{$atProps}{$cn}:MAILTO:{$email}";
+						}
+					} else if (!is_null($attendeeMail)) {
+						$attendeeCn =
+							is_array($cnSource)
+							? ''
+							: ";CN={$cnSource}";
+						$outProp = 'ATTENDEE;';
+						$value = "{$atProps}{$attendeeCn}:MAILTO:{$attendeeMail}";
+					}
 					break;
-				
 				case 'DTSTAMP':
 				case 'DTSTART':
 				case 'DTEND':
@@ -240,22 +284,23 @@ class Saf_Ical {
 					throw new Exception("Too many values provided for {$prop} to generate iCal for {$uid}");
 				}
 			}
-			if (is_array($value)) {
+			if (is_array($value) && count($value) > 0) {
 				foreach($value as $subValue) {
 					$out .= "{$outProp}{$subValue}\n";
 				}
-			} else {
+			} else if (!is_array($value) && !is_null($value)) {
 				$out .= "{$outProp}{$value}\n";
 			}
 		}
+		return $out;
 	}
 	
-	protected function _resolvePropKey($key,$data)
+	protected function _resolvePropKey($key, $data)
 	{//#TODO #9.0.0 this could be optimized by flipping the mapping relation on the fly
 	//#NOTE #9.0.0. the relation is stored the way it is for readability.
-		foreach($data as $dataKey => $dataValue){
+		foreach(self::$_propHelperMap as $dataKey => $propKey){
 			if (
-				array_key_exists(self::$_propHelperMap, $dataKey)
+				array_key_exists($dataKey, $data)
 				&& self::$_propHelperMap[$dataKey] == $key
 			) {
 				return $dataKey;
@@ -288,11 +333,21 @@ class Saf_Ical {
 		return implode("\n ", $lines);
 	}
 	
+	public function getVersion()
+	{
+		return $this->_version;
+	}
+
 	public function getTimedVersion()
 	{
-		$versionTime = time() - $this->_baseTime;
+		$versionTime = time() - self::$_baseTime;
 		return (
 			$versionTime - ($versionTime % $this->_timeInterval)
 		) / $this->_timeInterval;
+	}
+
+	public static function setBaseTime($timestamp)
+	{
+		self::$_baseTime = $timestamp;
 	}
 }

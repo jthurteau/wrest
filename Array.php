@@ -238,6 +238,9 @@ class Saf_Array {
 	
 	public static function toHtml($array, $ordered = FALSE, $nested = TRUE)
 	{
+		if (!is_array($array)) {
+			return '<ul><li>' . gettype($array) . ' ' . Saf_Debug::introspectData($value) . '</li></ul>';
+		}
 		$return = '';
 		$return .= ($ordered ? '<ol>' : '<ul>');
 		if (count($array) == 0) {
@@ -407,7 +410,9 @@ class Saf_Array {
 	
 	public static function isNumericArray($array)
 	{
-		return array_key_exists(0, $array) && array_key_exists(count($array) - 1, $array);
+		return is_array($array)
+			&& array_key_exists(0, $array)
+			&& array_key_exists(count($array) - 1, $array);
 	}
 	
 	public static function keysExist($keys, $array)

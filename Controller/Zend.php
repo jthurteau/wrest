@@ -10,6 +10,19 @@ Base class for Zend Action Controllers with patches to SAF
 
 abstract class Saf_Controller_Zend extends Zend_Controller_Action {
 
+	/**
+	 * Auto extract a request param from one or more sources, substituting
+	 * optional default if not present.
+	 * $sources will be searched iteratively, and the first match returned.
+	 * $sources can be an integer as a shortcut for array('stack' => <int>)
+	 * $sources can be a string as a shortcut for array('request' => <string>)
+	 * the 'request' facet is anything in the controller's "request" object.
+	 * #NOTE the session is intentionally excluded as an option
+	 * @param mixed $sources string, int, array indicating one or more sources
+	 * @param mixed $default value to return if no match is found, defaults to NULL
+	 * @param Zend_Controller_Request_Abstract $request optional alternate request object to use
+	 * #TODO #1.5.0 add option for each source to be an array so more than one value in each can be searched
+	 */
 	protected function _extractRequestParam($sources, $default = NULL, $request = NULL)
 	{
 		$result = $default;
@@ -125,10 +138,11 @@ abstract class Saf_Controller_Zend extends Zend_Controller_Action {
 	 */
 	public function json($data, $pretty = FALSE)
 	{
+		header('Content-Type: application/json');
 		$options = (
-			FALSE !== strpos(APPLICATION_ENV, 'development') && defined('JSON_PRETTY_PRINT') 
+			$pretty && defined('JSON_PRETTY_PRINT')
 			//#TODO #2.0.0 remove the last condition when 5.4 is more standard
-			? (JSON_PRETTY_PRINT || JSON_FORCE_OBJECT)
+			? (JSON_PRETTY_PRINT | JSON_FORCE_OBJECT)
 			: JSON_FORCE_OBJECT
 		);
 		print(json_encode($this->_neverReturnNull($data), $options));

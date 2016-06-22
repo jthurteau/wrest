@@ -20,7 +20,9 @@ class Saf_Auth{
 	protected static $_activePlugin = null;
 	protected static $_userObject = null;
 	protected static $_errorMessages = array();
-	
+	protected static $_loadedConfig = NULL;
+	protected static $_supportsInternal = FALSE;
+
 	const PLUGIN_INFO_USERNAME = 'username';
 	const PLUGIN_INFO_REALM = 'realm';
 	const PLUGIN_INFO_FIRSTNAME = 'firstName';
@@ -28,6 +30,8 @@ class Saf_Auth{
 	const PLUGIN_INFO_FULLNAME = 'fullName';
 	const PLUGIN_INFO_EMAIL = 'email';
 	
+	const USER_AUTODETECT = NULL;
+
 	const MODE_SIMULATED = 1;
 
 	public static function init($config = array())
@@ -35,19 +39,34 @@ class Saf_Auth{
 		if (self::$_initialized) {
 			return;
 		}
-		$plugins = 
+		self::$_loadedConfig = $config;
+		if (
+			array_key_exists('supportsInternal', $config)
+			&& Saf_Filter_Truthy::filter($config['supportsInternal'])
+		) {
+			self::$_activePlugin = new Saf_Auth_Plugin_Local();
+			self::$_supportsInternal = TRUE;
+		}
+
+		$plugins =
 			array_key_exists('plugin', $config)
-			? (is_array($config['plugin']) ? $config['plugin'] : array($config['plugin'])) 
-			: array();
+			? (
+				Saf_Array::isNumericArray($config['plugin'])
+				? $config['plugin']
+				: array($config['plugin'])
+			) : array();
 		self::$_autocreate = 
 			array_key_exists('autocreateUsers', $config)
 			? $config['autocreateUsers']
 			: FALSE;
 		$firstPass = TRUE;
 		foreach($plugins as $pluginConfig) {
-			if (is_array($pluginConfig) && array_key_exists('name', $pluginConfig)) {
+			if (
+				is_array($pluginConfig)
+				&& array_key_exists('name', $pluginConfig)
+			) {
 				$pluginName = $pluginConfig['name'];
-				$pluginConfig = array_key_exists('config', $pluginConfig) ? $pluginConfig : array();
+				$pluginConfig = $pluginConfig;
 			} else {
 				$pluginName = trim($pluginConfig);
 				$pluginConfig = array();
@@ -69,8 +88,11 @@ class Saf_Auth{
 				} else {
 					Saf_Kickstart::autoload($className);
 				}
-				
-				self::$_classMap[$pluginName] = $className;
+				if ($pluginConfig) {
+					self::$_classMap[$pluginName] = array($className => $pluginConfig);
+				} else {
+					self::$_classMap[$pluginName] = $className;
+				}
 			}
 			$firstPass = FALSE;
 		}
@@ -79,32 +101,57 @@ class Saf_Auth{
 
 	public static function autodetect($mode = NULL)
 	{
-		if (array_key_exists('simulated_login_lock', $_SESSION)) {
-			$mode = self::MODE_SIMULATED;
-			Saf_Kickstart::defineLoad('APPLICATION_SIMULATED_USER', '');
-		}
-		if (self::_login(
-			$mode == self::MODE_SIMULATED
-				&& APPLICATION_SIMULATED_USER
-			? APPLICATION_SIMULATED_USER
-			: NULL
-		)){
-			if ($mode == self::MODE_SIMULATED) {
-				self::$_activePlugin = new Saf_Auth_Plugin_Local();
-				$_SESSION['simulated_login_lock'] = TRUE;
-				self::$_activePlugin->auth();
-			}	
-			return TRUE;
+		$originalActivePlugin = self::$_activePlugin;
+		if (self::$_supportsInternal && self::$_activePlugin) {
+			$simulatedLockOn =
+				isset($_SESSION)
+				&& array_key_exists('simulated_login_lock', $_SESSION);
+			$currentSimulatedUser =
+				array_key_exists('simulated_user', $_SESSION)
+				? $_SESSION['simulated_user']
+				: '';
+			if ($simulatedLockOn) {
+				$mode = self::MODE_SIMULATED;
+				Saf_Kickstart::defineLoad(
+					'AUTH_SIMULATED_USER',
+					$currentSimulatedUser
+				);
+			}
+			$userToLogin =
+				$mode == self::MODE_SIMULATED
+					&& AUTH_SIMULATED_USER
+				? AUTH_SIMULATED_USER
+				: self::USER_AUTODETECT;
+			if (
+				self::_login($userToLogin) && self::$_activePlugin->auth()
+			){
+				if (
+					self::$_authenticated
+					&& $mode == self::MODE_SIMULATED
+				) {
+					$_SESSION['simulated_login_lock'] = TRUE;
+					$_SESSION['simulated_user'] = AUTH_SIMULATED_USER;
+				}
+				return self::$_authenticated;
+			}
 		}
 		self::init();
 		$plugins = (
-				!array_key_exists('loginRealm', $_GET)
-				|| !in_array(trim($_GET['loginRealm']),self::$_loadedPlugins)
-				? self::$_defaultPlugins
-				: array(trim($_GET['loginRealm']))
+			!array_key_exists('loginRealm', $_GET)
+			|| !in_array(trim($_GET['loginRealm']),self::$_loadedPlugins)
+			? self::$_defaultPlugins
+			: array(trim($_GET['loginRealm']))
 		);
 		foreach($plugins as $pluginName){
 			try {
+				$plugin = self::_getPlugin($pluginName);
+				self::$_activePlugin = $plugin;
+				if($plugin->auth()) {
+					return self::_login($plugin->getProvidedUsername(), TRUE);
+				} else {
+					self::$_activePlugin = NULL;
+				}
+/*
 				$pluginClass = self::$_classMap[$pluginName];
 				$plugin = new $pluginClass();
 				self::$_activePlugin = $plugin;
@@ -113,6 +160,7 @@ class Saf_Auth{
 				} else {
 					self::$_activePlugin = NULL;
 				}
+*/
 			} catch (Exception $e) {
 				self::$_activePlugin = NULL;
 				if (Saf_Debug::isEnabled()) {
@@ -143,6 +191,9 @@ class Saf_Auth{
 		//$usersObject = new users();
 		//Rd_Registry::set('root:userInterface',$usersObject->initUser('', ''));
 		//Account_Rd::init();
+		if (is_null(self::$_activePlugin)) {
+			self::$_activePlugin = $originalActivePlugin;
+		}
 		return FALSE;
 	}
 /*
@@ -155,8 +206,11 @@ class Saf_Auth{
 		return self::_login($userObject);
 	}
 */
-	protected static function _login($username = NULL, $logInDb = FALSE){
-		if (!is_null($username)){
+	protected static function _login($username = self::USER_AUTODETECT, $logInDb = FALSE){
+		if (
+			$username !== self::USER_AUTODETECT
+			&& '' != trim($username)
+		){
 			$_SESSION['username'] = $username;
 		} else if (
 			array_key_exists('username', $_SESSION)
@@ -166,6 +220,10 @@ class Saf_Auth{
 		}  else {
 			return FALSE;
 		}
+		if (self::$_activePlugin) {
+			self::$_activePlugin->postLogin();
+		}
+		//#TODO #1.5.0 log if requested
 		//#TODO #1.1.0
 		//#NOTE anything else we want to do at login time. i.e. auto create groups?
 		return TRUE;
@@ -174,16 +232,19 @@ class Saf_Auth{
 	public static function isLoggedIn()
 	{
 		self::init();
-		return self::isExternallyLoggedIn()
-			|| self::isInternallyLoggedIn();
+		return
+			self::isExternallyLoggedIn()
+			|| (
+				self::$_supportsInternal
+				&& self::isInternallyLoggedIn()
+			);
 	}
 
 	public static function isExternallyLoggedIn()
 	{
 		self::init();
-		foreach(self::$_loadedPlugins as $pluginName){ //#TODO this should be stored as objects...
-			$pluginClass = self::$_classMap[$pluginName];
-			$plugin = new $pluginClass();
+		foreach(self::$_loadedPlugins as $pluginName){
+			$plugin = self::_getPlugin($pluginName);
 			if($plugin->isLoggedIn()){
 				return true;
 			}
@@ -217,8 +278,7 @@ class Saf_Auth{
 			$realms = self::$_loadedPlugins;
 		}
 		foreach($realms as $pluginName){
-			$pluginClass = self::$_classMap[$pluginName];
-			$plugin = new $pluginClass();
+			$plugin = self::_getPlugin($pluginName);
 			$plugin->logout();
 		}
 	}
@@ -229,11 +289,20 @@ class Saf_Auth{
 			$pluginName = self::$_defaultPlugins[0];
 		}
 		$pluginClass =
-		array_key_exists($pluginName, self::$_classMap)
-		? self::$_classMap[$pluginName]
-		: NULL;
+			array_key_exists($pluginName, self::$_classMap)
+			? self::$_classMap[$pluginName]
+			: NULL;
 		if ($pluginClass) {
-			$plugin = new $pluginClass();
+			if (is_object($pluginClass)) {
+				return $pluginClass;
+			} else if (is_array($pluginClass)) {
+				reset($pluginClass);
+				$pluginClassName = key($pluginClass);
+				$pluginConfig = current($pluginClass);
+				$plugin = new $pluginClassName($pluginConfig);
+			} else {
+				$plugin = new $pluginClass();
+			}
 			return $plugin;
 		} else {
 			throw new Exception('No such Plugin: ' . htmlentities($pluginName));
@@ -384,5 +453,10 @@ class Saf_Auth{
 		if (self::$_activePlugin) {
 			self::$_activePlugin->fail();
 		}
+	}
+
+	public static function getConfig()
+	{
+		return self::$_loadedConfig;
 	}
 }

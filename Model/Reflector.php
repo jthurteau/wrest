@@ -14,9 +14,13 @@ class Saf_Model_Reflector
 
 		public static function dereference($string, &$config = array(), $depth = 0)
 		{
+			$zendAutoloader = Zend_Loader_Autoloader::getInstance();
+			$currentZendAutoloaderSetting = $zendAutoloader->suppressNotFoundWarnings();
+			$zendAutoloader->suppressNotFoundWarnings(TRUE);
 			if ($depth > self::MAX_DEREF_DEPTH) {
 				throw new Exepction('Model Reflection error: dereferenced too deeply.');	
-			}	
+			}
+			$myMute = Saf_Debug::mute();
 			if (!array_key_exists('_lateBindingParams', $config)) {
 				$config['_lateBindingParams'] = array();
 			}
@@ -33,25 +37,37 @@ class Saf_Model_Reflector
 				$endCut = strpos($newString, ']]', $startCut);
 				if ($endCut !== FALSE) {
 					$term = substr($newString, $startCut + 2, $endCut - ($startCut + 2));
-					$translatedTerm = self::translate($term, $config, $depth + 1);
+					try {
+						$translatedTerm = self::translate($term, $config, $depth + 1);
+					} catch (Exception $e) {
+						Saf_Debug::unmute($myMute);
+						throw $e;
+					}
 					$unique = strpos($term, '*') === 0;
 					$newString = 
 						$unique
 						? str_replace("[[{$term}]]", $translatedTerm, $newString, $unique)
 						: str_replace("[[{$term}]]", $translatedTerm, $newString);
 				} else {
+					Saf_Debug::unmute($myMute);
 					throw new Exception("Model Reflection Error: Unterminated term {$supplemental}");
 				}
 				$startCut = strpos($newString, '[[', $startCut + 2); //#TODO #2.0.0 make sure we skip anything just transplanted in
 			}
+			Saf_Debug::unmute($myMute);
+			$zendAutoloader->suppressNotFoundWarnings($currentZendAutoloaderSetting);
 			return $newString;
 		}
 		
 		public static function translate($term, &$config = array(), $depth = 0)
 		{
+			$zendAutoloader = Zend_Loader_Autoloader::getInstance();
+			$currentZendAutoloaderSetting = $zendAutoloader->suppressNotFoundWarnings();
+			$zendAutoloader->suppressNotFoundWarnings(TRUE);
 			if ($depth > self::MAX_DEREF_DEPTH) {
 				throw new Exepction('Model Reflection error: translated too deeply.');
 			}
+			$myMute = Saf_Debug::mute();
 			if (!array_key_exists('_lateBindingParams', $config)) {
 				$config['_lateBindingParams'] = array();
 			}
@@ -60,66 +76,78 @@ class Saf_Model_Reflector
 			$allowsNonString = 
 				array_key_exists('allowNonStrings', $config) 
 				&& $config['allowNonStrings'];
+			$termIsIterable = !array_key_exists('termIterable', $config) || $config['termIterable'];
 			$term = trim($term);
 			if (strpos($term, '*') === 0) {
 				$term = substr($term, 1); //#TODO #2.0.0 if not unique, pull from cache
 			}
-			if (strpos($term, ';') !== FALSE) {
+			if ($termIsIterable && strpos($term, ';') !== FALSE) {
 				$terms = explode(';', $term);
 			} else {
 				$terms = array($term);
 			}
-			foreach($terms as $currentTerm) {
-				$conditional = FALSE;
-				if (strpos($currentTerm, '?') === 0) {
-					$conditional = TRUE;
-					$currentTerm = trim(substr($currentTerm, 1));
-				}
-				$currentTerm = trim(self::_translateVariables($currentTerm, $conditional, $config));
-				if (strpos($currentTerm, '=') !== FALSE) {
-					$tagParts = explode('=', $currentTerm, 2);
-					$model[] = self::_translateTag(trim($tagParts[0]),trim($tagParts[1]), $conditional, $config, $depth + 1);
-				} else {
-					if(self::_validClassName($currentTerm)){
-						try {
-							if(Saf_Kickstart::autoload($currentTerm)){
-								$modelObject = new $currentTerm();
-								$model[] = $modelObject;
-							}else{
-								//#TODO #1.1.0
-								$model[] = $currentTerm;
-
-							}
-
-						} catch (Exception $e) {
-							$model[] = $currentTerm;
-						}
+			try {
+				foreach($terms as $currentTerm) {
+					$conditional = FALSE;
+					if (strpos($currentTerm, '?') === 0) {
+						$conditional = TRUE;
+						$currentTerm = trim(substr($currentTerm, 1));
+					}
+					$currentTerm = trim(self::_translateVariables($currentTerm, $conditional, $config));
+					if (strpos($currentTerm, '=') !== FALSE) {
+						$tagParts = explode('=', $currentTerm, 2);
+						$model[] = self::_translateTag(trim($tagParts[0]),trim($tagParts[1]), $conditional, $config, $depth + 1);
 					} else {
-						$nextComment = strpos($currentTerm, '<!--');
-						$nextObjectRef = strpos($currentTerm,'->');
-						while ($nextComment !== FALSE && $nextObjectRef !== FALSE && $nextComment < $nextObjectRef) {
-							$nextComment = strpos($currentTerm, '<!--', $nextObjectRef + 1);
-							$nextObjectRef = strpos($currentTerm,'->', $nextObjectRef + 1);
-						}
-						$nextClassRef = strpos($currentTerm,'::'); //#TODO #2.0.0 simplify this logic since it can only be the first in the stack.
-						if (
-							$nextObjectRef !== FALSE 
-							&& ($nextClassRef === FALSE || $nextObjectRef < $nextClassRef) 
-						) {
-							$termObject = substr($currentTerm, 0, strpos($currentTerm,'->'));
-							$termRest = substr($currentTerm, strpos($currentTerm,'->') + 2);
-							$model[] = self::_translateObject($termObject, $termRest, $conditional, $config, $depth + 1);
-						} else if ($nextClassRef !== FALSE) {
-							$termClass = substr($currentTerm, 0, strpos($currentTerm,'::'));
-							$termRest = substr($currentTerm, strpos($currentTerm,'::') + 2);
-							$model[] = self::_translateClass($termClass, $termRest, $conditional, $config, $depth + 1);//call_user_func(array($termParts[0],$termParts[1]));
+						if(self::_validClassName($currentTerm)){
+							//#TODO #2.0.0 branch this out so it is framework agnostic
+							$autoloader = Zend_Loader_Autoloader::getInstance();
+							$autoloader->suppressNotFoundWarnings(TRUE);
+							try {
+								if(Zend_Loader_Autoloader::autoload($currentTerm)){
+									$modelObject = new $currentTerm();
+									$model[] = $modelObject;
+								}else{
+									//#TODO #1.1.0
+									$model[] = $currentTerm;
+
+								}
+
+							} catch (Exception $e) {
+								$model[] = $currentTerm;
+							}
+							$autoloader->suppressNotFoundWarnings(FALSE);
 						} else {
-							$model[] = $currentTerm;
-						}						
+							$nextComment = strpos($currentTerm, '<!--');
+							$nextObjectRef = strpos($currentTerm,'->');
+							while ($nextComment !== FALSE && $nextObjectRef !== FALSE && $nextComment < $nextObjectRef) {
+								$nextComment = strpos($currentTerm, '<!--', $nextObjectRef + 1);
+								$nextObjectRef = strpos($currentTerm,'->', $nextObjectRef + 1);
+							}
+							$nextClassRef = strpos($currentTerm,'::'); //#TODO #2.0.0 simplify this logic since it can only be the first in the stack.
+							if (
+								$nextObjectRef !== FALSE
+								&& ($nextClassRef === FALSE || $nextObjectRef < $nextClassRef)
+							) {
+								$termObject = substr($currentTerm, 0, strpos($currentTerm,'->'));
+								$termRest = substr($currentTerm, strpos($currentTerm,'->') + 2);
+								$model[] = self::_translateObject($termObject, $termRest, $conditional, $config, $depth + 1);
+							} else if ($nextClassRef !== FALSE) {
+								$termClass = substr($currentTerm, 0, strpos($currentTerm,'::'));
+								$termRest = substr($currentTerm, strpos($currentTerm,'::') + 2);
+								$model[] = self::_translateClass($termClass, $termRest, $conditional, $config, $depth + 1);//call_user_func(array($termParts[0],$termParts[1]));
+							} else {
+								$model[] = $currentTerm;
+							}
+						}
 					}
 				}
+			} catch (Exception $e) {
+				Saf_Debug::unmute($myMute);
+				throw $e;
 			}
-			return 
+			Saf_Debug::unmute($myMute);
+			$zendAutoloader->suppressNotFoundWarnings($currentZendAutoloaderSetting);
+			return
 				$allowsNonString
 				? ($modelIsIterable ? $model : $model[0])
 				: implode('', $model);
@@ -140,7 +168,9 @@ class Saf_Model_Reflector
 			if (array_key_exists($tagContents, $config['_lateBindingParams'])){
 				$contents = $config['_lateBindingParams'][$tagContents];
 			} else {
-				$contents = trim(self::translate("{$conditionalFlag}{$tagContents}", $config, $depth + 1));
+				$blockingConfig = $config;
+				$blockingConfig['termIterable'] = FALSE;
+				$contents = trim(self::translate("{$conditionalFlag}{$tagContents}", $blockingConfig, $depth + 1));
 			}			
 			if (is_array($contents)) {
 				$contentString = '';
@@ -153,19 +183,22 @@ class Saf_Model_Reflector
 						$contentString = "<$tagName/>";
 					}
 				}
+// if ($tagName == 'EventName') {
+// 	print_r(array($tagName, $tagContents, $contentString, $conditional, $config, $contents)); die;
+// }
 				return $contentString;
 			} else {
 				$trimContents = trim($contents);
 				$ommitedContents = 
 					strpos($trimContents, '<!--') === 0
 					&& strrpos($trimContents,'->') === strlen($trimContents) - 2; //#TODO #2.0.0 not flawless
-//print_r(array($tagName, $tagContents, $conditional, $config, $ommitedContents,strpos($trimContents, '<!--'), strrpos($trimContents,'->'),strlen($trimContents) - 2));die;
-				return 
+				$contentString = "<{$tagName}>{$contents}</{$tagName}>";
+				$return =
 					!is_null($contents) && '' !== $contents
 					? (
 						$ommitedContents && $conditional
 						? ''
-						: "<{$tagName}>{$contents}</{$tagName}>"
+						: $contentString
 					) : (
 						$conditional 
 						? (
@@ -174,6 +207,10 @@ class Saf_Model_Reflector
 							: ''
 						) : "<{$tagName}/>"
 					);
+// if ($tagName == 'EventName') {
+//  	print_r(array($tagName, $tagContents, $contents, $return, $conditional, $config, $ommitedContents,strpos($trimContents, '<!--'), strrpos($trimContents,'->'),strlen($trimContents) - 2));die;
+// }
+				return $return;
 			}
 		}
 		

@@ -50,7 +50,7 @@ class Saf_Controller_Front_Plugin_RouteResourceStack extends Zend_Controller_Plu
 			$router = ROUTER_NAME;
 			$controllerReflector = NULL;
 			foreach ($stack as $part) {
-	//Saf_Debug::outData(array($part));
+//Saf_Debug::outData(array($part));
 				$routerFound = $routerFound || TRUE; //#TODO #2.0.0 is this still needed for non Zend Routing?
 				if(!$moduleFound && $request->getModuleName() == $part){
 					$moduleFound = TRUE;
@@ -73,21 +73,23 @@ class Saf_Controller_Front_Plugin_RouteResourceStack extends Zend_Controller_Plu
 				} else if (!$actionFound && $request->getActionName() == $part){
 					$actionFound = TRUE;
 					$actionName = ucfirst($request->getActionName());
-					$controllerHasAction = $controllerReflector->hasMethod("{$actionName}Action");
+					$controllerHasAction =
+						$controllerReflector
+						&& $controllerReflector->hasMethod("{$actionName}Action");
 					if ($controllerHasAction) {
 						array_shift($stack);
 					}
 					continue;
 				}	
 				if ($routerFound && $moduleFound && $controllerFound && $actionFound){
-	//Saf_Debug::outData(array('stacking...', $routerFound, $moduleFound, $controllerFound, $request->getActionName(), $actionFound, $part));
+//Saf_Debug::outData(array('stacking...', $routerFound, $moduleFound, $controllerFound, $request->getActionName(), $actionFound, $part));
 					$newStack[] = array_shift($stack);
 				} else {
-	//Saf_Debug::outData(array('prerouting...', $routerFound, $moduleFound, $controllerFound, $request->getActionName(), $actionFound, $part));
+//Saf_Debug::outData(array('prerouting...', $routerFound, $moduleFound, $controllerFound, $request->getActionName(), $actionFound, $part));
 					$preRouter[] = array_shift($stack);
 				}
 			}
-	//Saf_Debug::outData(array('preparts',$pathParts,$newStack));
+//Saf_Debug::outData(array('preparts',$pathParts,$newStack));
 			if (count($stack)) {
 				$newStack = array_merge($newStack, $stack);
 			}
@@ -101,6 +103,11 @@ class Saf_Controller_Front_Plugin_RouteResourceStack extends Zend_Controller_Plu
 			Saf_Debug::outData(array('preRouter' => $preRouter));
 		}
 		$request->setParam('resourceStack', $newStack);
+		$stackString = implode('/', $newStack);
+		$module = $request->getModuleName();
+		$controller = $request->getControllerName();
+		$action = $request->getActionName();
+		Saf_Debug::out("Resolved to path: {$module} {$controller} {$action} {$stackString}", 'NOTICE');
 	}
 }
 

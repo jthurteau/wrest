@@ -7,10 +7,21 @@
 Base Auth Plugin Class and handler for Apache Basic Auth integration
 
 *******************************************************************************/
-class Saf_Auth_Plugin_Basic {
+class Saf_Auth_Plugin_Basic { //#TODO #1.5.0 make a base class extend
 
-	public static function auth(){
-		$username = self::getProvidedUsername();
+	protected $_pluginName = 'Apache Basic Auth';
+	protected $_config = array();
+
+	public function __construct($config = array())
+	{
+		$this->_config = $config;
+		if (is_array($this->_config) && array_key_exists('publicLabel', $this->_config)) {
+			$this->_pluginName = $this->_config['publicLabel'];
+		}
+	}
+
+	public function auth(){
+		$username = $this->getProvidedUsername();
 		if ($username) {
 			Saf_Auth::setStatus(TRUE);
 			return TRUE;
@@ -18,32 +29,33 @@ class Saf_Auth_Plugin_Basic {
 		return FALSE;
 	}
 
-	public static function isLoggedIn()
+	public function isLoggedIn()
 	{
-		return self::getProvidedUsername();
+		$username = $this->getProvidedUsername();
+		return !is_null($username) && '' != trim($username);
 	}
 
-	public static function logout()
+	public function logout()
 	{
 		return TRUE;
 	}
 
-	public static function getPublicName()
+	public function getPublicName()
 	{
-		return 'Apache Basic Auth';
+		return $this->_pluginName;
 	}
 
-	public static function getExternalLoginUrl()
-	{
-		return '';
-	}
-
-	public static function getExternalLogoutUrl()
+	public function getExternalLoginUrl()
 	{
 		return '';
 	}
 
-	public static function getProvidedUsername()
+	public function getExternalLogoutUrl()
+	{
+		return '';
+	}
+
+	public function getProvidedUsername()
 	{
 		return 
 			array_key_exists('PHP_AUTH_USER', $_SERVER)
@@ -51,21 +63,21 @@ class Saf_Auth_Plugin_Basic {
 			: NULL;
 	}
 
-	public static function getProvidedPassword()
+	public function getProvidedPassword()
 	{
 		return '';
 	}
 
-	public static function getUserInfo($what = NULL){
+	public function getUserInfo($what = NULL){
 		if (is_null($what)) {
 			return array(
-				Saf_Auth::PLUGIN_INFO_USERNAME => self::getProvidedUsername(),
+				Saf_Auth::PLUGIN_INFO_USERNAME => $this->getProvidedUsername(),
 				Saf_Auth::PLUGIN_INFO_REALM => 'apache'
 			);
 		} else {
 			switch($what){
 				case Saf_Auth::PLUGIN_INFO_USERNAME :
-					return self::getProvidedUsername();
+					return $this->getProvidedUsername();
 				case Saf_Auth::PLUGIN_INFO_REALM :
 					return 'apache';
 				default:
@@ -74,24 +86,29 @@ class Saf_Auth_Plugin_Basic {
 		}
 	}
 
-	public static function fail()
+	public function fail()
 	{
 		if (Saf_Debug::isEnabled()) {
 			Saf_Debug::out('Authentication Declined.');
 		}
 	}
 
-	protected static function _succeed()
+	protected function _succeed()
 	{
-		parent::_succeed();
+		return TRUE;
 	}
 
-	public static function setPluginStatus($success, $errorCode)
+	public function setPluginStatus($success, $errorCode)
 	{
 		//only some plugins will need to do this.
 	}
 
-	public static function promptsForInfo()
+	public function promptsForInfo()
+	{
+		return TRUE;
+	}
+
+	public function postLogin()
 	{
 		return TRUE;
 	}

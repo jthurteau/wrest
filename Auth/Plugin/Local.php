@@ -8,7 +8,7 @@ Base Auth Plugin Class and handler for internal application authentication and
 authentication spoofing
 
 *******************************************************************************/
-class Saf_Auth_Plugin_Local {
+class Saf_Auth_Plugin_Local { //#TODO #1.5.0 make a base class extend
 
 	public static function auth(){
 		$username = self::getProvidedUsername();
@@ -93,6 +93,11 @@ class Saf_Auth_Plugin_Local {
 	}
 
 	public static function promptsForInfo()
+	{
+		return TRUE;
+	}
+
+	public function postLogin()
 	{
 		return TRUE;
 	}

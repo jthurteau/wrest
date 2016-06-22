@@ -68,6 +68,14 @@ class Saf_Config {
 	 */
 	public static function load($filePath = '', $section = '', $merge = self::LOAD_MERGE)
 	{
+/*
+        if (!(isset($this) && get_class($this) == __CLASS__)) {
+        	self::_init();
+        	$currentConfig = self::$_current;
+        } else {
+        	$currentConfig = $this;
+        }
+*/
 		if ('' == trim($filePath)) {
 			$filePath = APPLICATION_CONFIG;
 		}
@@ -204,6 +212,10 @@ class Saf_Config {
 
 	public function get($name, $cast = NULL)
 	{
+/*
+		self::_init();
+ */
+
 		$nameComponents =
 			is_array($name) 
 			? $name 
@@ -285,7 +297,7 @@ class Saf_Config {
 			foreach ($data as $key=>$value) {
 				if(array_key_exists($key, $return)) {
 					$return[$key . ($increment++)] = self::valueMap($value);
-				} else{
+				} else {
 					$return[$key] = self::valueMap($value);
 				}
 			}
@@ -300,7 +312,7 @@ class Saf_Config {
 				foreach ($data as $key=>$value) {
 					if(array_key_exists($key, $return)) {
 						$return[$key . ($increment++)] = self::valueMap($value);
-					} else{
+					} else {
 						$return[$key] = self::valueMap($value);
 					}
 				}

@@ -12,7 +12,7 @@ class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abst
 {
 
 	protected static $_redactedKeys = array(
-		'password', 'loggedout','forwardCode','forwardUrl'		
+		'password', 'loggedout', 'forwardCode', 'forwardUrl'
 	);
 	
 	public function routeShutdown(Zend_Controller_Request_Abstract $request)
@@ -69,13 +69,18 @@ class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abst
 				)
 			);
 		}
+		$bootstrap = Zend_Controller_Front::getInstance()->getParam('bootstrap');
+		$e = $bootstrap->getStartupException();
+		$applicationAcl = Saf_Acl::getInstance();
+		if ($e && !$applicationAcl->allowStartupException($module, $controller, $action, $stack)) {
+			throw new Saf_Exception_Public('An error occured during startup.', 0, $e);
+		}
 	}
 
 	protected function _aclRules($module, $controller, $action, $stack, $get = array())
 	{
-		
-		$username = Saf_Auth::getPluginProvidedUsername();
-		$applicationAcl = new Acl($username);
+		$applicationAcl = Saf_Acl::getInstance();
+
 		$url = (
 			'default' != $module
 			? "{$module}/"
@@ -109,12 +114,12 @@ class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abst
 		switch ($whoCan) {
 			case Saf_Acl::ACL_WHO_ANYUSER:
 			case Saf_Acl::ACL_WHO_USER:
-				if (!$username) {
+				if (!Saf_Auth::isLoggedIn()) {
 					throw new Saf_Exception_Redirect($redirectUrl);
 				}
 				break;
 			case Saf_Acl::ACL_WHO_SOMEUSER:
-				if (!$username) {
+				if (!Saf_Auth::isLoggedIn()) {
 					throw new Saf_Exception_Redirect($redirectUrl);
 				} else {
 					throw new Saf_Exception_NotAllowed('Insufficient permissions for operation.');
@@ -126,6 +131,7 @@ class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abst
 				if (!$username) {
 					throw new Saf_Exception_NotAllowed('Insufficient permissions for operation.');
 				}
+				//#TODO #1.3.0 verify this works preoprly
 				break;
 			case Saf_Acl::ACL_WHO_NOONE:
 				throw new Saf_Exception_NotAllowed('Operation Not Allowed.');

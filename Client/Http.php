@@ -23,6 +23,7 @@ class Saf_Client_Http{
 	protected $_authenticate = false;
 	protected $_lastStatus = '';
 	protected $_lastError = '';
+	protected $_lastResult = NULL;
 	protected $_debugEnabled = FALSE;
 	protected $_connection = NULL;
 	protected $_curlConfig = array(
@@ -120,6 +121,11 @@ class Saf_Client_Http{
 		);
 	}
 	
+	public function getLastResult()
+	{
+		return $this->_lastResult;
+	}
+
 	public static function buildQuery($queryArray)
 	{
 		if(count($queryArray) > 0){
@@ -314,6 +320,11 @@ class Saf_Client_Http{
 			$resultBody = $resultRest;
 			$this->_lastError = curl_error($this->_connection);
 			$resultInfo = curl_getinfo($this->_connection);
+			$this->_lastResult = array(
+				'response' => $result,
+				'status' => $resultInfo,
+				'error' => $this->_lastError
+			);
 			$this->_lastStatus = $resultInfo['http_code'];
 		} catch (Exception $e){
 			$this->_lastError = $e->getMessage();
@@ -355,6 +366,11 @@ class Saf_Client_Http{
 			'receivedHeaders' => $resultHead,
 			'raw' => $resultBody
 		);
+		if ($resultInfo['size_upload'] < $resultInfo['upload_content_length']) {
+			$return['up'] = floor($resultInfo['size_upload'] /  $resultInfo['upload_content_length'] * 100);
+		} if ($resultInfo['size_download'] < $resultInfo['download_content_length']) {
+			$return['down'] = floor($resultInfo['size_download'] /  $resultInfo['download_content_length'] * 100);
+		}
 		if ($fullUrl != $resultInfo['url']) {
 			$return['effectiveUrl'] = $resultInfo['url'];
 		}

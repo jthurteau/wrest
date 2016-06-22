@@ -165,11 +165,11 @@ class Saf_Time {
 					? $day
 					: $nextDay;
 				$modMonth =
-					$modDay == $day
+					$modDay >= $day
 					? $month
 					: $nextMonth;
 				$modYear =
-					$modMonth == $month
+					$modMonth >= $month
 					? $year
 					: $nextYear;
 				break;
@@ -183,15 +183,15 @@ class Saf_Time {
 					? $hour
 					: $nextHour;
 				$modDay =
-					$modHour == $hour
+					$modHour >= $hour
 					? $day
 					: $nextDay;
 				$modMonth =
-					$modDay == $day
+					$modDay >= $day
 					? $month
 					: $nextMonth;
 				$modYear =
-					$modMonth == $month
+					$modMonth >= $month
 					? $year
 					: $nextYear;
 				break;
@@ -208,29 +208,29 @@ class Saf_Time {
 					? $month
 					: $nextMonth;
 				$modYear =
-					$modMonth == $month
+					$modMonth >= $month
 					? $year
 					: $nextYear;
 				break;
 			case Saf_Time::MODIFIER_ADD_DAY:
 				$modDay = $nextDay;
 				$modMonth =
-				$modDay > $day
+					$modDay > $day
 					? $month
 					: $nextMonth;
 				$modYear =
-				$modMonth == $month
+					$modMonth >= $month
 					? $year
 					: $nextYear;
 				break;
 			case Saf_Time::MODIFIER_SUB_DAY:
 				$modDay = $prevDay;
 				$modMonth =
-				$modDay < $day
+					$modDay < $day
 					? $month
 					: $prevMonth;
 				$modYear =
-				$modMonth == $month
+					$modMonth <= $month
 					? $year
 					: $prevYear;
 				break;

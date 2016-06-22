@@ -348,6 +348,30 @@ class Saf_Kickstart {
 		return FALSE;
 	}
 
+	/**
+	 * @param string $filepath
+	 * @param int $order
+	 */
+	public static function addIfNotInPath($filePath, $order = self::POSITION_AFTER)
+	{
+		$includePaths = explode(PATH_SEPARATOR, get_include_path());
+		$inPath = FALSE;
+		foreach($includePaths as $includePath) {
+			if (realpath($includePath) == realpath($filePath)) {
+				$inPath = TRUE;
+				break;
+			}
+		}
+		if (!$inPath) {
+			if ($order === self::POSITION_AFTER) {
+				$includePaths[] = $filePath;
+			} else {
+				$includePaths = array_unshift($includePaths, $filePath);
+			}
+			set_include_path(implode(PATH_SEPARATOR, $includePaths));
+		}
+	}
+
 	public static function translatePath($path)
 	{
 		return str_replace(
@@ -1125,21 +1149,11 @@ class Saf_Kickstart {
 	{
 		Saf_Kickstart::defineLoad('ZEND_PATH', '');
 		if (ZEND_PATH != '') {
-			$includePaths = explode(PATH_SEPARATOR, get_include_path());
-			$inPath = FALSE;
-			foreach($includePaths as $includePath) {
-				if (realpath($includePath) == realpath(ZEND_PATH)) {
-					$inPath = TRUE;
-					break;
-				}
-			}
-			if (!$inPath) {
-				$includePaths[] = ZEND_PATH;
-				set_include_path(implode(PATH_SEPARATOR, $includePaths));
-			}
+			self::addIfNotInPath(ZEND_PATH);
 		}
 		if (
-			!file_exists(ZEND_PATH . 'Zend/Application.php')
+			!file_exists(ZEND_PATH . '/Zend/Application.php')
+			&& !file_exists(LIBRARY_PATH . '/Zend/Application.php')
 			&& !self::fileExistsInPath('Zend/Application.php')
 		) {
 			header('HTTP/1.0 500 Internal Server Error');
@@ -1148,9 +1162,17 @@ class Saf_Kickstart {
 		if (
 			!is_readable('Zend/Application.php')
 			&& !is_readable(ZEND_PATH . '/Zend/Application.php')
+			&& !is_readable(LIBRARY_PATH . '/Zend/Application.php')
 		) {
 			header('HTTP/1.0 500 Internal Server Error');
 			die('Unable to access Zend Framework.');
+		}
+		if (
+			file_exists(LIBRARY_PATH . '/Zend/Application.php')
+			&& is_readable(LIBRARY_PATH . '/Zend/Application.php')
+			&& !self::fileExistsInPath('Zend/Application.php')
+		) {
+			self::addIfNotInPath(LIBRARY_PATH);
 		}
 		require_once('Zend/Application.php');
 		self::$_controllerPath = 'controllers';
