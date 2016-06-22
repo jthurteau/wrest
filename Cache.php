@@ -165,7 +165,7 @@ class Saf_Cache {
 		return $value;
 	}
 	
-	public static function get($file, $minDate = NULL, $cache = FALSE)
+	public static function get($file, $minDate = NULL, $cacheInMemory = FALSE)
 	{
 		if (array_key_exists($file, self::$_memory)) {
 			return self::$_memory[$file];
@@ -177,6 +177,7 @@ class Saf_Cache {
 			&& is_array($contents)
 			&& array_key_exists('payload', $contents)
 		) {
+//Saf_Debug::outData(array('Cache', $minDate, array_key_exists('stamp', $contents) ? $contents['stamp'] : 'NONE' ), 'PROFILE');
 			if (
 				is_null($minDate)
 				|| (
@@ -187,7 +188,7 @@ class Saf_Cache {
 				$payload = $contents['payload'];
 				$stamp = array_key_exists('stamp', $contents) ? $contents['stamp'] : NULL;
 //	Saf_Debug::out("loaded cached {$file} {$stamp}" . ($cache ? ', caching to memory' : ''));
-				if ($cache) {
+				if ($cacheInMemory) {
 					self::$_memory[$file] = $payload;
 				}
 			} else {
@@ -286,13 +287,15 @@ class Saf_Cache {
 	}
 	
 	public static function fuzzyLoad($file, $threshold, $default = NULL) {
-		$rand = rand(0,ceil($threshold * self::$_fuzzyFactor));
+		$rand = rand(0, ceil($threshold * self::$_fuzzyFactor));
 		$now = time();
 		$fuzzyFreshness = $now - ($threshold + $rand);
 //Saf_Debug::outData(array('fuzzyLoad', $file, $now, $fuzzyFreshness));
 		$payload = self::get($file, $fuzzyFreshness, TRUE);
 		if (is_null($payload)) {
 			self::_increaseFuzz($file);
+		} else {
+//Saf_Debug::outData(array('Cache', "accepted cache for {$file}"), 'PROFILE');
 		}
 		return !is_null($payload) ? $payload : $default;
 	}
@@ -301,7 +304,7 @@ class Saf_Cache {
 	{
 		self::$_fuzzyExpires++;
 		self::$_fuzzyFactor = 1 + log(self::$_fuzzyExpires);
-		Saf_Debug::outData(array('Cache', "increasing ff for {$what} during load", self::$_fuzzyFactor), 'PROFILE');
+		Saf_Debug::outData(array('Cache', "increasing cacheff for {$what} during load", self::$_fuzzyFactor), 'PROFILE');
 	}
 	
 	public static function save($file, $value, $mode = self::STAMP_MODE_REPLACE)

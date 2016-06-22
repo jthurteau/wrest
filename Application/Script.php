@@ -17,7 +17,7 @@ class Saf_Application_Script extends Saf_Application{
 		$this->_path = $configEnvironment;
 	}
 	
-	public function run($request = NULL) {
+	public function run(&$request = NULL, &$response = NULL) {
 		if (is_array($request)) {
 			//#TODO #3.0.0 not supported yet
 			throw new Exception('Running scripts with $request as an array not supported.');
