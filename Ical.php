@@ -8,8 +8,8 @@ Utility class for generating Ical
 
 *******************************************************************************/
 
-require_once(APPLICATION_ENV . '/Saf/Array.php');
-require_once(APPLICATION_ENV . '/Saf/Time.php');
+require_once(LIBRARY_PATH . '/Saf/Array.php');
+require_once(LIBRARY_PATH . '/Saf/Time.php');
 
 class Saf_Ical {
 	
@@ -34,6 +34,8 @@ class Saf_Ical {
 	protected $_productId = '';
 	protected $_lang = 'EN';
 	protected $_version = '2.0';
+
+	protected static $_systemBaseTime = 0;
 	
 	protected static $_itemProps = array(
 		'VEVENT' => array(
@@ -45,6 +47,7 @@ class Saf_Ical {
 			'DTSTAMP' => 1,
 			'LOCATION' => '?',
 			'SEQUENCE' => '?',
+			'LAST-MODIFIED' => '?',
 			'SUMMARY' => 1,
 			'DESCRIPTION' => '?',
 			'URL' => '?',
@@ -59,8 +62,9 @@ class Saf_Ical {
 		'fullEnd' => 'DTEND',
 		'end' => 'DTEND',
 		'now' => 'DTSTAMP',
-		'modified' => 'DTSTAMP',
+		'modified' => 'LAST-MODIFIED',
 		'title' => 'SUMMARY',
+		'sequence' => 'SEQUENCE',
 		'name' => 'SUMMARY',
 		'description' => 'SUMMARY',
 		'userEmail' => 'ATTENDEE',
@@ -72,7 +76,7 @@ class Saf_Ical {
 	public function __construct($config = array()){//#TODO unmuddle some of this...
 		$this->_hostId = Saf_Array::extract('hostId', $config, APPLICATION_ENV . '.' . APPLICATION_HOST);
 		$this->_productId = Saf_Array::extract('productId', $config, APPLICATION_ID . '.' . APPLICATION_INSTANCE);
-		$this->_baseTime = (int)Saf_Array::extract('baseTime', $config, $this->_baseTime);
+		$this->_baseTime = (int)Saf_Array::extract('baseTime', $config, self::$_systemBaseTime);
 		$this->_timeInterval = (int)Saf_Array::extract('timeInterval', $config, $this->_timeInterval);
 		$this->_method = Saf_Array::extractOptional('method', $config);
 		$this->_id = Saf_Array::extractOptional('id', $config);
@@ -114,9 +118,9 @@ class Saf_Ical {
 	public function generate($data)
 	{
 		if(is_array($this->_id)) {
-			self::_generateMulti($data);
+			$this->_generateMulti($data);
 		} else {
-			self::_generate($data);
+			$this->_generate($data);
 		}
 	}
 	
@@ -131,14 +135,14 @@ class Saf_Ical {
 	protected function _getHeader()
 	{
 		$method = strtoupper($this->_method);
-		$product = self::escapeText("{$this->_productId} - {$this->_hostId}//{$this->_lang}");
+		$product = self::escapeText("{$this->_productId}//{$this->_hostId}");
 		$scale = ''; //#TODO #9.0.0 implement
 		$iana = ''; //#TODO #2.0.0 implement
 		$xprop = ''; //#TODO #2.0.0 implement
 		$url = '';
 		return "BEGIN:VCALENDAR\n"
 			. "METHOD:{$method}\n"
-			. "PRODID:-//{$product}\n"
+			. "PRODID:-//{$product}//{$this->_lang}\n"
 			. "VERSION:{$this->_version}\n"
 			. $xprop . $iana . $url;
 	}
@@ -155,7 +159,7 @@ class Saf_Ical {
 		$this->_ical =
 			(is_null($id) ? $this->_getHeader() : '')
 			. "BEGIN:{$type}\n"
-			. self::_renderItem($type, is_null($id) ? $this->_id : $id , $itemData)
+			. $this->_renderItem($type, is_null($id) ? $this->_id : $id , $itemData)
 			. "END:{$type}\n"
 			. (is_null($id) ? $this->_getFooter() : '');
 		$this->_generateAttachment();
@@ -165,7 +169,7 @@ class Saf_Ical {
 	{
 		$items = array();
 		foreach($this->_id as $id => $item) {
-			$items[] = self::_generate($item, $id);
+			$items[] = $this->_generate($item, $id);
 		}
 		$this->_ical =
 		$this->_getHeader()
@@ -182,13 +186,13 @@ class Saf_Ical {
 		$dateStamp = gmdate(self::OUTPUT_DATESTAMP, Saf_Time::time());
 		$version = $this->getVersion($data);
 		$atProps = 'CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE'; //or just ROLE=REQ-PARTICIPANT;
-		$uid = "{$outType}{$id}@{$this->_host}";
+		$uid = "{$outType}{$id}@{$this->_hostId}";
 		//#TODO #2.0.0 see what more advanced attendee properties we can suppor...
 		foreach(self::$_itemProps[$type] as $prop => $card) {
 			$value = NULL;
 			$propKey = array_key_exists($prop, $data)
 				? $prop
-				: self::_resolvePropKey($prop, $data);
+				: $this->_resolvePropKey($prop, $data);
 			$outProp = "$prop:";
 			switch ($prop){
 				case 'ORGANIZER':
@@ -231,6 +235,7 @@ class Saf_Ical {
 				case 'DTSTAMP':
 				case 'DTSTART':
 				case 'DTEND':
+				case 'LAST-MODIFIED':
 					$value = 
 						$propKey
 							&& array_key_exists($propKey, $data)
@@ -249,6 +254,21 @@ class Saf_Ical {
 					
 				case 'UID':
 					$value = $uid;
+					break;
+
+				case 'SEQUENCE':
+					if (
+						$propKey
+						&& array_key_exists($propKey, $data)
+						&& $data[$propKey] == '*'
+					) {
+						$value = Saf_Time::time() - $this->_baseTime;
+					} else if (
+						$propKey
+						&& array_key_exists($propKey, $data)
+					) {
+						$value = (int)$data[$propKey];
+					}
 					break;
 					
 				case 'STATUS':
@@ -273,7 +293,7 @@ class Saf_Ical {
 				default:
 					if ($propKey && array_key_exists($propKey, $data)) {
 						$value = self::escapeText($data[$propKey]);
-					}					
+					}
 			}
 			if ($card === '+' || $card === 1) {
 				if (is_null($value)) {
@@ -340,7 +360,7 @@ class Saf_Ical {
 
 	public function getTimedVersion()
 	{
-		$versionTime = time() - self::$_baseTime;
+		$versionTime = time() - $this->_baseTime;
 		return (
 			$versionTime - ($versionTime % $this->_timeInterval)
 		) / $this->_timeInterval;
@@ -348,6 +368,6 @@ class Saf_Ical {
 
 	public static function setBaseTime($timestamp)
 	{
-		self::$_baseTime = $timestamp;
+		self::$_systemBaseTime = $timestamp;
 	}
 }

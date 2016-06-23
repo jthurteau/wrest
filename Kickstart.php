@@ -14,6 +14,7 @@ require_once(LIBRARY_PATH . '/Saf/Status.php');
 require_once(LIBRARY_PATH . '/Saf/Debug.php');
 require_once(LIBRARY_PATH . '/Saf/Layout.php');
 
+//#TODO #1.0.0 update function header docs
 class Saf_Kickstart {
 
 	/**
@@ -173,6 +174,81 @@ class Saf_Kickstart {
 		}
 		return TRUE;
 	}
+
+	public static function valueLoad($valueName, $valueDefault = NULL, $cast = self::CAST_STRING)
+	{
+		if (is_array($valueName)){
+			$return = array();
+			foreach($valueName as $currentValueIndex => $currentValue) {
+				$currentValueName =
+					is_array($currentValue)
+						? $currentValueIndex
+						: $currentValue;
+				$currentDefault =
+					is_array($currentValue) && array_key_exists(0, $currentValue)
+						? $currentValue[0]
+						: $valueDefault;
+				$currentCast =
+					is_array($currentValue) && array_key_exists(1, $currentValue)
+						? $currentValue[1]
+						: $cast;
+				$return[$valueName] = self::valueLoad($currentValueName, $currentDefault, $currentCast);
+			}
+			return $return;
+		}
+		$valueName = self::filterConstantName($valueName);
+		$sourceFileMatch = self::dotFileMatch($valueName);
+		$sourceFilename =
+			is_array($sourceFileMatch)
+				? $sourceFileMatch[0]
+				: $sourceFileMatch;
+		$lowerValueName = strtolower($valueName);
+		$failureMessage = 'This application is not fully configured. '
+			. "Please set a value for {$valueName}. "
+			. (
+				$sourceFilename
+				? "There is a {$sourceFilename} file that may specify this configuration option, but it is not readable."
+				: "This value can be specified locally in a .{$lowerValueName} file."
+			);
+		if ($sourceFileMatch) {
+			$sourceValue = self::load($sourceFileMatch);
+			return self::cast($sourceValue, $cast);
+		} else if (!is_null($valueDefault)) {
+			return $valueDefault;
+		} else {
+			die($failureMessage);
+		}
+	}
+
+	public static function mapLoad($valueName, $memberCast = self::CAST_STRING)
+	{
+		$valueName = self::filterConstantName($valueName);
+		$sourceFileMatch = self::dotFileMatch($valueName, TRUE);
+		$sourceFilename =
+			is_array($sourceFileMatch)
+				? $sourceFileMatch[0]
+				: $sourceFileMatch;
+		$lowerValueName = strtolower($valueName);
+		$failureMessage = 'This application is not fully configured. '
+			. "Please set a map of values for {$valueName}. "
+			. (
+				$sourceFilename
+				? "There is a {$sourceFilename} file that may specify this configuration option, but it is not readable."
+				: "This value can be specified locally in a .{$lowerValueName} file."
+			);
+		if ($sourceFileMatch) {
+			$sourceValues = self::load($sourceFileMatch);
+			$castValues = array();
+			foreach($sourceValues as $index=>$value) {
+				$castValues[$index] = self::cast($value, $cast);
+			}
+			return $castValues;
+		} else if (!is_null($valueDefault)) {
+			return $valueDefault;
+		} else {
+			die($failureMessage);
+		}
+	}
 	
 	public static function filterConstantName($name)
 	{
@@ -180,20 +256,35 @@ class Saf_Kickstart {
 		return strtoupper($filteredName);
 	}
 
-	protected static function load($sourceConfig, $lineBreak = PHP_EOL)
+	protected static function load($sourceConfig, $lineBreak = PHP_EOL, $delim = ':')
 	{
 		if (is_array($sourceConfig)) {
 			$lines = explode($lineBreak, trim(file_get_contents($sourceConfig[0])));
-			$matchLine = NULL;
-			foreach($lines as $line) {
-				$upperMatch = strtoupper($sourceConfig[1] . ':');
-				$upperLine = strtoupper($line);
-				if (strpos($upperLine,$upperMatch) === 0) {
-					$matchLine = substr($line, strlen($upperMatch));
-					break;
+			if ('' != trim($sourceConfig[1])) {
+				$matchLine = NULL;
+				foreach($lines as $line) {
+					$upperMatch = strtoupper(trim($sourceConfig[1]) . $delim);
+					$upperLine = strtoupper($line);
+					if (strpos($upperLine,$upperMatch) === 0) {
+						$matchLine = substr($line, strlen($upperMatch));
+						break;
+					}
 				}
+				return $matchLine;
+			} else {
+				$values = array();
+				foreach($lines as $line) {
+					$index = NULL;
+					$indexEnd = strpos($line, $delim);
+					if ($indexEnd !== FALSE) {
+						$index = substr($line, 0, $indexEnd);
+						$values[$index] = substr($line, $indexEnd + strlen($delim));
+					} else {
+						$values[] = $line;
+					}
+				}
+				return $values;
 			}
-			return $matchLine;
 		} else {
 			return (trim(file_get_contents($sourceConfig)));
 		}
@@ -219,26 +310,31 @@ class Saf_Kickstart {
 		: FALSE;
 	}
 
-	public static function dotFileMatch($constantName)
+	public static function dotFileMatch($constantName, $allowMulti = FALSE)
 	{
 		$sourceFilename = self::_filterDotFileName($constantName);
 		if(is_readable($sourceFilename)){
 			return $sourceFilename;
 		} else {
-			return self::_doubleDotFileScan($constantName);
+			return self::_doubleDotFileScan($constantName, $allowMulti);
 		}
 	}
 
-	protected static function _doubleDotFileScan($constantName)
+	protected static function _doubleDotFileScan($constantName, $allowMulti = FALSE)
 	{
 		$sourceFilename = self::_filterDoubleDotFileName($constantName);
 		$scans = array();
 		$components = explode('_', $sourceFilename);
 		foreach($components as $componentIndex => $componentName) {
-			$scans[] = array(
-				implode('_', array_slice($components, 0, $componentIndex + 1)),
-				implode('_', array_slice($components, $componentIndex + 1))
-			);
+			$fullMatch = implode('_', array_slice($components, 0, $componentIndex + 1));
+			if ($fullMatch != $sourceFilename) {
+				$scans[] = array(
+					$fullMatch,
+					implode('_', array_slice($components, $componentIndex + 1))
+				);
+			} else if ($allowMulti && is_readable($fullMatch)) {
+				return array($fullMatch, '');
+			}
 		}
 		foreach($scans as $scanParts) {
 			if (is_readable($scanParts[0])) {
