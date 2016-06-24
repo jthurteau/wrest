@@ -327,7 +327,7 @@ class Saf_Kickstart {
 			? (
 				file_exists(APPLICATION_PATH . "/{$file}")				
 				? APPLICATION_PATH
-				: ($ifExists ? '.' : array('.', APPLICATION_PATH))
+				: ($ifExists ? '.' : array(APPLICATION_PATH, '.'))
 			) : '.'
 		);
 	}
