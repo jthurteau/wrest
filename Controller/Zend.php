@@ -39,9 +39,9 @@ abstract class Saf_Controller_Zend extends Zend_Controller_Action {
 			if (is_int($source)) {
 				$source = is_int($index)
 					? 'stack'
-					:'request';
+					: 'request';
 			}
-			switch ((string)$source) {
+			switch ($source) {
 				case 'stack' :
 					$stack = $request->getParam('resourceStack');
 					if (array_key_exists($index, $stack)) {
