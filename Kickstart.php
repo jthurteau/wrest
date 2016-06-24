@@ -294,9 +294,10 @@ class Saf_Kickstart {
 	{
 		$lowerConstantName = strtolower($constantName);
 		$safeConstantName = preg_replace('/[^a-z0-9_.]/', '', $lowerConstantName);
+		$prefSource = self::_prefFileSource('.' . $safeConstantName);
 		return
 			strlen($safeConstantName) > 1
-			? "./.{$safeConstantName}"
+			? "{$prefSource}/.{$safeConstantName}"
 			: FALSE;
 	}
 	
@@ -304,10 +305,31 @@ class Saf_Kickstart {
 	{
 		$lowerConstantName = strtolower($constantName);
 		$safeConstantName = preg_replace('/[^a-z0-9_.]/', '', $lowerConstantName);
-		return
-		strlen($safeConstantName) > 1
-		? "./..{$safeConstantName}"
-		: FALSE;
+		$prefSource = self::_prefFileSource('..' . $safeConstantName, FALSE);
+		if (strlen($safeConstantName) <= 1) {
+			return FALSE;
+		}
+		if (is_array($prefSource)) {
+			$result = array();
+			foreach($prefSource as $prefSourceOption) {
+				$result[] = "{$prefSourceOption}/..{$safeConstantName}";
+			}
+			return $result;
+		} else {
+			return "{$prefSource}/..{$safeConstantName}";
+		}
+	}
+
+	protected static function _prefFileSource($file, $ifExists = TRUE)
+	{
+		return (
+			defined('APPLICATION_PATH')
+			? (
+				file_exists(APPLICATION_PATH . "/{$file}")				
+				? APPLICATION_PATH
+				: ($ifExists ? '.' : array('.', APPLICATION_PATH))
+			) : '.'
+		);
 	}
 
 	public static function dotFileMatch($constantName, $allowMulti = FALSE)
@@ -323,17 +345,22 @@ class Saf_Kickstart {
 	protected static function _doubleDotFileScan($constantName, $allowMulti = FALSE)
 	{
 		$sourceFilename = self::_filterDoubleDotFileName($constantName);
+		if (!is_array($sourceFilename)) {
+			$sourceFilename = array($sourceFilename);
+		}
 		$scans = array();
-		$components = explode('_', $sourceFilename);
-		foreach($components as $componentIndex => $componentName) {
-			$fullMatch = implode('_', array_slice($components, 0, $componentIndex + 1));
-			if ($fullMatch != $sourceFilename) {
-				$scans[] = array(
-					$fullMatch,
-					implode('_', array_slice($components, $componentIndex + 1))
-				);
-			} else if ($allowMulti && is_readable($fullMatch)) {
-				return array($fullMatch, '');
+		foreach($sourceFilename as $currentSourceFilename) {
+			$components = explode('_', $currentSourceFilename);
+			foreach($components as $componentIndex => $componentName) {
+				$fullMatch = implode('_', array_slice($components, 0, $componentIndex + 1));
+				if ($fullMatch != $currentSourceFilename) {
+					$scans[] = array(
+						$fullMatch,
+						implode('_', array_slice($components, $componentIndex + 1))
+					);
+				} else if ($allowMulti && is_readable($fullMatch)) {
+					return array($fullMatch, '');
+				}
 			}
 		}
 		foreach($scans as $scanParts) {
