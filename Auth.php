@@ -22,6 +22,7 @@ class Saf_Auth{
 	protected static $_errorMessages = array();
 	protected static $_loadedConfig = NULL;
 	protected static $_supportsInternal = FALSE;
+	protected static $_serviceKeys = array();
 
 	const PLUGIN_INFO_USERNAME = 'username';
 	const PLUGIN_INFO_REALM = 'realm';
@@ -459,4 +460,29 @@ class Saf_Auth{
 	{
 		return self::$_loadedConfig;
 	}
+
+	public static function setServiceKeys($keyArray)
+	{
+		if (!is_array($keyArray)) {
+			$keyArray = array($keyArray);
+		}
+		self::$_serviceKeys = $keyArray;
+	}
+
+	public static function validKey($keyValue, $name = NULL)
+	{
+		$keyValue = trim((string)$keyValue);
+		if (!is_null($name)) {
+			return array_key_exists($name,self::$_serviceKeys)
+				&& trim(self::$_serviceKeys[$name]) === $keyValue;
+		}
+		foreach(self::$_serviceKeys as $key) {
+			if ($keyValue === trim($key)) {
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+
 }

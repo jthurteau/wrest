@@ -25,6 +25,7 @@ class Saf_Acl{
 	protected $_whiteList = array();
 	protected $_blackList = array();
 	protected $_authenticationEnabled = TRUE;
+	protected $_keyChain = array();
 
 	protected static $_instance = NULL;
 
