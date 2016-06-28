@@ -400,13 +400,27 @@ class Saf_Cache {
 
 	public static function clear($file)
 	{
-		if (file_exists(self::$_path . '/' . $file)) {
-			unlink(self::$_path . '/' . $file);
+		if (strpos($file, '/*') == strlen($file) - 2) {
+			$path = substr($file, 0, strlen($file) - 2);
+			$clearableFiles = self::dir($path);
+			if (count($clearableFiles) > 0) {
+				foreach($clearableFiles as $clearable) {
+					if (!self::clear($clearable)) {
+						return FALSE;
+					}
+				}
+			}
+			return TRUE;
+		} else {
+			if (file_exists(self::$_path . '/' . $file)) {
+				unlink(self::$_path . '/' . $file);
+			}
+			if (array_key_exists($file, self::$_memory)) {
+				unset(self::$_memory[$file]);
+			}
+			clearstatcache(FALSE, self::$_path . '/' . $file);
+			return !file_exists(self::$_path . '/' . $file);
 		}
-		if (array_key_exists($file, self::$_memory)) {
-			unset(self::$_memory[$file]);
-		}
-		clearstatcache(FALSE, self::$_path . '/' . $file);
-		return !file_exists(self::$_path . '/' . $file);
+
 	}
 }
