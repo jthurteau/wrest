@@ -240,7 +240,7 @@ class Saf_Kickstart {
 			$sourceValues = self::load($sourceFileMatch);
 			$castValues = array();
 			foreach($sourceValues as $index=>$value) {
-				$castValues[$index] = self::cast($value, $cast);
+				$castValues[$index] = self::cast($value, $memberCast);
 			}
 			return $castValues;
 		} else if (!is_null($valueDefault)) {
