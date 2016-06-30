@@ -259,8 +259,9 @@ class Saf_Time {
 	 */
 	public static function isTimeStamp($string)
 	{
-		$numberPattern = '/^[0-9]+$/';
+		$numberPattern = '/^[-]?[0-9]+$/';
 		return !is_null($string) && preg_match($numberPattern, $string);
+		//#TODO #2.0.0 does not factor in max int size
 	}
 	
 	/**

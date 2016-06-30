@@ -86,12 +86,14 @@ class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abst
 			? "{$module}/"
 			: ''
 		) . (
-			'index' != $controller || 'index' != $action || count($stack)
+			'index' != $controller || 'index' != $action || count($stack) //#TODO #2.0.0 handle module/[[index/index/]resourcestack
 			? "{$controller}/"
 			: ''
 		) . (				
-			'index' != $action || count($stack)
-			? "{$action}/"
+			(
+				('index' != $action || count($stack))
+				&& '' != $action
+			) ? "{$action}/"
 			: ''
 		) . (				
 			count($stack)
@@ -108,6 +110,7 @@ class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abst
 			$getStack
 			? ('?' . implode('&', $getStack))
 			: '';
+//Saf_Debug::outdata((array($url,$module,$controller,$action,$stack));
 		$forward = Saf_UrlRewrite::encodeForward($url . $get);
 		$redirectUrl = 'login/' . ($forward ? "?{$forward}" : '') ;
 		$whoCan = $applicationAcl->who($module, $controller, $action, $stack);

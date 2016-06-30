@@ -57,7 +57,7 @@ class Saf_Controller_Front_Plugin_RouteResourceStack extends Zend_Controller_Plu
 					array_shift($stack);
 				} else if (!$controllerFound && $request->getControllerName() == $part){
 					$controllerFound = TRUE;
-					//#TODO #1.1.0 handle bug with routing with path
+					//#TODO #9.9.9 handle bug with routing with path #¯\_(ツ)_/¯
 					$controllerName = ucfirst($request->getControllerName());
 					$front = Zend_Controller_Front::getInstance();
 					$paths = $front->getControllerDirectory();
@@ -68,6 +68,7 @@ class Saf_Controller_Front_Plugin_RouteResourceStack extends Zend_Controller_Plu
 						}
 					}
 					$controllerReflector = new ReflectionClass($controllerClass);
+					//#TODO #2.0.0 handle the case where class is non-existant (i.e. module/[index/index/]resourcestack)
 					array_shift($stack);
 					continue;
 				} else if (!$actionFound && $request->getActionName() == $part){
@@ -78,6 +79,8 @@ class Saf_Controller_Front_Plugin_RouteResourceStack extends Zend_Controller_Plu
 						&& $controllerReflector->hasMethod("{$actionName}Action");
 					if ($controllerHasAction) {
 						array_shift($stack);
+					} else {
+						$request->setActionName('');
 					}
 					continue;
 				}	
