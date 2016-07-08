@@ -66,9 +66,9 @@ abstract class Saf_Controller_Zend extends Zend_Controller_Action {
 					}
 					break;
 				case 'request' :
-					return $request->has($index)
-						? $request->getParam($index)
-						: $default;
+					if ($request->has($index)) {
+						return $request->getParam($index);
+					}
 			}
 		}
 		return $default;

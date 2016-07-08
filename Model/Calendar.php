@@ -10,7 +10,7 @@ base class for calendar models
 
 abstract class Saf_Model_Calendar
 {
-	public function __construct($config)
+	public function __construct($config = array())
 	{
 
 	}
