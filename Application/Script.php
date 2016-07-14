@@ -29,14 +29,14 @@ class Saf_Application_Script extends Saf_Application{
 		$outputLines = array();
 		$status = NULL;
 		$return = "Running {$fullPath} \n------------------------------------------------------------\n";
-		$result =  exec($fullPath, $outputLines, $status);
+		exec($fullPath, $outputLines, $status);
 		$fullResult = implode("\n",$outputLines);
 		$statusDescription = $this->_explainStatus($status);
 		$return .= (
 			is_null($status)
-			? 'An error occured attempting to run the script.'
-			: "Status: {$statusDescription}\n" . $fullResult
-		);
+			? "An error occured attempting to run the script.\n"
+			: "Status: {$statusDescription}\n"
+		) . $fullResult;
 		return $return;
 	}
 	
