@@ -16,7 +16,7 @@ Middleware class for PDO
  *
  */
 
-class Saf_Pdo_connection{
+class Saf_Pdo_Connection{
 
 	const TYPE_MYSQL = 'mysql';
 
@@ -68,7 +68,7 @@ class Saf_Pdo_connection{
 		return $this->_connectAs($this->_userName,$password,$this->_schemaName);
 	}
 
-	protected function _connectAs($user, $password, $dnName = '')
+	protected function _connectAs($user, $password, $dbName = '')
 	{
 		$this->_userName = $user;
 		if ('' != $dbName) {
@@ -126,10 +126,14 @@ class Saf_Pdo_connection{
 
 	public function query($query, $args = NULL)
 	{
+		if ($this->_lastResult) {
+			$this->_lastResult->closeCursor();
+		}
 		if (!is_null($args)) {
 			return $this->prepareExecute($query, $args);
 		}
-		$statement = $this->connection->query($query, PDO::FETCH_ASSOC);
+		$statement = $this->_connection->query($query, PDO::FETCH_ASSOC);
+//print_r(array('query', $statement, $statement->rowCount()));
 		if (!$statement) {
 			$this->addError('Query Failed');
 			$this->_pullError();
@@ -142,8 +146,8 @@ class Saf_Pdo_connection{
 	{
 		return
 			!is_null($args)
-			? $this->prepareExecute($query, $args) //#TODO #1.0.0 why not just prep?
-			: $this->query($query, PDO::FETCH_ASSOC);
+			? $this->prepareExecute($query, $args)
+			: $this->query($query);
 	}
 
 	public function insert($query, $args = NULL)
@@ -151,7 +155,7 @@ class Saf_Pdo_connection{
 		if(strpos(strtoupper($query),'INSERT') === FALSE) {
 			throw new Saf_Pdo_Exception('Attempting to call ::insert on a non-INSERT statement.');
 		}
-		$statement = $this->_prepStatement($query,$args);
+		$statement = $this->_prepStatement($query, $args);
 		return
 			$statement
 			? $this->_connection->lastInsertId()
@@ -163,7 +167,7 @@ class Saf_Pdo_connection{
 		if(strpos(strtoupper($query),'DELETE') === FALSE) {
 			throw new Saf_Pdo_Exception('Attempting to call ::delete on a non-DELETE statement.');
 		}
-		$statement = $this->_prepStatement($query,$args);
+		$statement = $this->_prepStatement($query, $args);
 		return
 			$statement
 			? $this->count()
@@ -175,7 +179,8 @@ class Saf_Pdo_connection{
 		if(strpos(strtoupper($query),'UPDATE') === FALSE) {
 			throw new Saf_Pdo_Exception('Attempting to call ::update on a non-UPDATE statement.');
 		}
-		$statement = $this->_prepStatement($query,$args);
+		$statement = $this->_prepStatement($query, $args);
+//print_r(array('update',$query,$statement,$this->count(),$statement->rowCount(),$this->getError()));
 		return
 			$statement
 			? $this->count()
@@ -184,6 +189,9 @@ class Saf_Pdo_connection{
 
 	public function prepareExecute($query, $args)
 	{
+		if ($this->_lastResult) {
+			$this->_lastResult->closeCursor();
+		}
 		$cleanArgs = array();
 		if (!is_array($args)) {
 			$cleanArgs = array($args);
@@ -209,14 +217,15 @@ class Saf_Pdo_connection{
 			$query = self::_explodePreparedQuery($query, $explodingBinds);
 			$cleanArgs = self::_flattenParams($cleanArgs);
 		}
-		$statement = $this->prepare($query);
+		$statement = $this->_connection->prepare($query);
 		if (!$statement) {
 			$this->addError('Query Failed');
 			$this->_pullError();
 		}
-		self::$_lastResult = $statement;
+		$this->_lastResult = $statement;
 		if ($statement) {
 			$result = $statement->execute($cleanArgs);
+//print_r(array('exec', $statement, $result, $statement->rowCount()));
 			if('00000' != $statement->errorCode()) {
 				$errorInfo = $statement->errorInfo();
 				$errorMessage = (array_key_exists(2, $errorInfo)) && '' != trim($errorInfo[2])
@@ -319,6 +328,7 @@ class Saf_Pdo_connection{
 		if (is_null($result)) {
 			$result = $this->_lastResult;
 		}
+		Saf_Debug::outData(array('count', $result, $result->rowCount()));
 		return ($result ? $result->rowCount() : NULL);
 	}
 
