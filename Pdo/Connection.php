@@ -328,7 +328,9 @@ class Saf_Pdo_Connection{
 		if (is_null($result)) {
 			$result = $this->_lastResult;
 		}
-		Saf_Debug::outData(array('count', $result, $result->rowCount()));
+		if ($this->_debugMode) {
+			Saf_Debug::outData(array('count', $result, $result->rowCount()));
+		}
 		return ($result ? $result->rowCount() : NULL);
 	}
 
@@ -355,6 +357,22 @@ class Saf_Pdo_Connection{
 			return $this->_connection->errorInfo();
 		}
 		return array(0, NULL, 'Not Connected');
+	}
+
+	public function getInfo()
+	{
+		if ($this->_lastResult) {
+			ob_start();
+			$this->_lastResult->debugDumpParams();
+			$debug = ob_get_contents();
+			ob_end_clean();
+			return array(
+				'debug' => $debug,
+				'count' => $this->_lastResult->rowCount(),
+				'status' => $this->_lastResult->errorInfo()
+			);
+		}
+		return NULL;
 	}
 
 	public function hasError(){
