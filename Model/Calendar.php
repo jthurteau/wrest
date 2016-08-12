@@ -15,6 +15,19 @@ abstract class Saf_Model_Calendar
 
 	}
 
+	public function getUserMonthYear($time = NULL)
+	{
+		if (is_null($time)) {
+			$time = Saf_Time::time();
+		}
+		return date('F Y', $time);
+	}
+
+	public function fullView()
+	{
+		return TRUE;
+	}
+
 	public function getMinDate()
 	{
 		return date('Y-m-d', PHP_INT_MIN);
