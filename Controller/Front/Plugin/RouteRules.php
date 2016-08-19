@@ -73,7 +73,7 @@ class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abst
 		$e = $bootstrap->getStartupException();
 		$applicationAcl = Saf_Acl::getInstance();
 		if ($e && !$applicationAcl->allowStartupException($module, $controller, $action, $stack)) {
-			throw new Saf_Exception_Public('An error occured during startup.', 0, $e);
+			throw new Saf_Exception_Startup('An error occured during startup.', 0, $e);
 		}
 	}
 

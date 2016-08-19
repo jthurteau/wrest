@@ -4,15 +4,16 @@
 
 @author Troy Hurteau <jthurtea@ncsu.edu>
 
-Base class for exceptions that should provide user help
+Indicates an exception that should be shown to the user 
+(but does not replace the default support message like Saf_Exception_Workflow
 
 *******************************************************************************/
 
-class Saf_Exception_Workflow extends Exception
-{
+class Saf_Exception_Startup extends Exception {
+
 	public function getTitle()
 	{
-		return 'Prerequisite Unmet';
+		return 'An Error Occured During Startup';
 	}
 
 	public function getAdditionalInfo()
