@@ -95,7 +95,7 @@ class Saf_Time {
 	 * @param unknown_type $modifier
 	 */
 	public static function modify($timestamp, $modifier = NULL)
-	{
+	{ //#TODO #2.0.0 needs to factor in DST
 		if (is_null($modifier)) {
 			$modifier = $timestamp;
 			$timestamp = self::time();
