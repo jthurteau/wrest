@@ -167,8 +167,8 @@ class Saf_Debug
 			self::enable();
 		} else if (self::$_sessionReady) {
 			if (
-				array_key_exists('nodebug', $_SESSION)
-				&& $_SESSION['nodebug']
+				array_key_exists('debug', $_SESSION)
+				&& !$_SESSION['debug']
 			) {
 				self::disable();
 			} else if (
