@@ -56,6 +56,7 @@ class Saf_Time {
 	const MAX_HOUR_STAMP = 86399;
 	
 	const QUANT_MINTUTE = 60;
+	const QUANT_HALFHOUR = 1800;
 	const QUANT_HOUR = 3600;
 	const QUANT_DAY = 86400;
 	
@@ -194,10 +195,6 @@ class Saf_Time {
 					$modMonth >= $month
 					? $year
 					: $nextYear;
-				break;
-			case Saf_Time::MODIFIER_START_DAY :
-				$modMin = 0;
-				$modHour = 0;
 				break;
 			case Saf_Time::MODIFIER_START_TOMORROW :
 				$modMin = 0;
