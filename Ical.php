@@ -182,7 +182,7 @@ class Saf_Ical {
 	{
 		$out = '';
 		$outType = strtolower(substr($type, 1));
-		$outProp = "$prop:";
+		$outProp = '';
 		$dateStamp = gmdate(self::OUTPUT_DATESTAMP, Saf_Time::time());
 		$version = $this->getVersion($data);
 		$atProps = 'CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE'; //or just ROLE=REQ-PARTICIPANT;
@@ -193,7 +193,7 @@ class Saf_Ical {
 			$propKey = array_key_exists($prop, $data)
 				? $prop
 				: $this->_resolvePropKey($prop, $data);
-			$outProp = "$prop:";
+			$outProp = "{$prop}:";
 			switch ($prop){
 				case 'ORGANIZER':
 				case 'ATTENDEE': 
