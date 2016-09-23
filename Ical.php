@@ -175,7 +175,7 @@ class Saf_Ical {
 		$this->_getHeader()
 			. implode("\n", $items)
 			. $this->_getFooter();
-		$this->_generateAttachment();		
+		$this->_generateAttachment();
 	}
 	
 	protected function _renderItem($type, $id, $data)

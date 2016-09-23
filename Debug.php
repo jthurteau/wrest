@@ -223,6 +223,14 @@ class Saf_Debug
 		return self::$_locked;
 	}
 
+	public static function setErrorLevel($level)
+	{
+		self::$_enabledErrorLevel = $level;
+		if (self::$_verbose) {
+			error_reporting($level);
+		}
+	}
+
 	public static function out($message, $level = 'ERROR')
 	{
 		$trace = self::getTrace();
@@ -652,7 +660,8 @@ class Saf_Debug
 			$e = new Exception("{$description} {$in}");
 			Saf_Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
 		} else {
-			if (!self::$_muted) {
+			$show = self::$_enabledErrorLevel === -1 || $errorNo & self::$_enabledErrorLevel;
+			if ($show && !self::$_muted) {
 				$message = "<span class=\"phpErrorWhat\">{$description} - </span>"
 					. "<span class=\"phpErrorMessage\">{$errorString}</span>"
 					. "<span slass=\"phpErrorWhere\">{$in}</span> ";
