@@ -253,6 +253,20 @@ class Saf_Cache {
 		}
 		return $payload;
 	}
+
+	public static function getHashTime($file, $uname)
+	{
+		$contents = self::getRawHash($file, $uname);
+		if ( //#TODO consolidate this block with get
+			$contents
+			&& is_array($contents)
+			&& array_key_exists('stamp', $contents)
+		) {
+			return $contents['stamp'];
+		} else {
+			return NULL;
+		}
+	}
 	
 	public static function analyze($file)
 	{

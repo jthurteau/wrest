@@ -22,6 +22,8 @@ class Saf_Debug
 	protected static $_muteIndex = 0;
 	protected static $_sessionReady = FALSE;
 	public static $buffer = '';
+	protected static $_maxBufferSize = 1000000;
+	protected static $_bufferOverflow = FALSE;
 
 	protected static $_enabledDisplayMode = 1;
 	protected static $_disabledDisplayMode = 0;
@@ -288,7 +290,11 @@ class Saf_Debug
 			self::$_notifyConsole
 			|| $notifyConsole;
 		if (self::$_buffered) {
-			self::$buffer .= $output;
+			if (strlen(self::$buffer) + strlen($output) > self::$_maxBufferSize) {
+				self::$_bufferOverflow = TRUE; //#TODO #2.0.0 do something with the overflow indicator at render time.
+			} else {
+				self::$buffer .= $output;
+			}
 		} else {
 			print($output);
 		}
@@ -353,6 +359,7 @@ class Saf_Debug
 			print('<!-- debug buffer cleared -->');
 		}
 		self::$buffer = '';
+		self::$_bufferOverflow = FALSE;
 	}
 
 	public static function flushBuffer($force = FALSE)
