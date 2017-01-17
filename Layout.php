@@ -359,6 +359,18 @@ $(document).ready(function() {
 
 	public static function isReady()
 	{
-		return TRUE; //#TODO #1.2.0 return false if not rendering an html view.
+		return TRUE; //#TODO #2.0.0 return false if not rendering an html view.
+	}
+
+	public static function stateCheck($request = array()) //#TODO #2.0.0 decouple from Session
+	{
+		if(array_key_exists('forceDesktop', $request)) {
+			if (Saf_Filter_Truthy::filter($request['forceDesktop'])) {
+				$_SESSION['forceDesktopView'] = TRUE;
+			} else if (array_key_exists('forceDesktopView', $_SESSION)) {
+				unset($_SESSION['forceDesktopView']);
+			}
+		}
+		return array_key_exists('forceDesktopView', $_SESSION);
 	}
 }
