@@ -253,6 +253,20 @@ class Saf_Cache {
 		}
 		return $payload;
 	}
+
+	public static function getHashTime($file, $uname)
+	{
+		$contents = self::getRawHash($file, $uname);
+		if ( //#TODO consolidate this block with get
+			$contents
+			&& is_array($contents)
+			&& array_key_exists('stamp', $contents)
+		) {
+			return $contents['stamp'];
+		} else {
+			return NULL;
+		}
+	}
 	
 	public static function analyze($file)
 	{
@@ -309,6 +323,9 @@ class Saf_Cache {
 	
 	public static function save($file, $value, $mode = self::STAMP_MODE_REPLACE)
 	{
+		if (is_null($value)) {
+			Saf_Debug::outData(array("saving null value to cache, {$file}"));
+		}
 		self::$_memory[$file] = $value;
 		$path = self::$_path . '/' . $file;
 		$pointer = fopen($path, 'c+');
@@ -356,6 +373,9 @@ class Saf_Cache {
 	
 	public static function saveHash($file, $uname, $value)
 	{
+		if (is_null($value)) {
+			Saf_Debug::outData(array("saving null value to hash, {$file}:{$uname}"));
+		}
 		if (!array_key_exists($file, self::$_hashMemory)) {
 			self::$_hashMemory[$file] = array();
 		}

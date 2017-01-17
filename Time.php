@@ -56,6 +56,7 @@ class Saf_Time {
 	const MAX_HOUR_STAMP = 86399;
 	
 	const QUANT_MINTUTE = 60;
+	const QUANT_HALFHOUR = 1800;
 	const QUANT_HOUR = 3600;
 	const QUANT_DAY = 86400;
 	
@@ -74,6 +75,15 @@ class Saf_Time {
 	 * @var int
 	 */
 	protected static $_microDiff = 0;
+
+	public static function set($seconds, $micro = 0)
+	{
+		$now = microtime(TRUE);
+		$new = $seconds + ($micro / 1000);
+		$offset = $new - $now;
+		self::$_diff = floor($offset);
+		self::$_microDiff = $offset * 1000 % 1000;
+	}
 
 	/**
 	 * returns the timestamp, including any differential
@@ -195,10 +205,6 @@ class Saf_Time {
 					? $year
 					: $nextYear;
 				break;
-			case Saf_Time::MODIFIER_START_DAY :
-				$modMin = 0;
-				$modHour = 0;
-				break;
 			case Saf_Time::MODIFIER_START_TOMORROW :
 				$modMin = 0;
 				$modHour = 0;		
@@ -319,6 +325,16 @@ class Saf_Time {
 		);
 		//Saf_Debug::outData(array('hourStamp',$string,$parts[0],$parts[1],$calc)); //#DEBUG #1.5.0
 		return $calc; 
+	}
+
+	public static function getOffset()
+	{
+		return self::$_diff;
+	}
+
+	public static function getMicroOffset()
+	{
+		return self::$_microDiff;
 	}
 
 }

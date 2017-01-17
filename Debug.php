@@ -22,6 +22,8 @@ class Saf_Debug
 	protected static $_muteIndex = 0;
 	protected static $_sessionReady = FALSE;
 	public static $buffer = '';
+	protected static $_maxBufferSize = 1000000;
+	protected static $_bufferOverflow = FALSE;
 
 	protected static $_enabledDisplayMode = 1;
 	protected static $_disabledDisplayMode = 0;
@@ -167,8 +169,8 @@ class Saf_Debug
 			self::enable();
 		} else if (self::$_sessionReady) {
 			if (
-				array_key_exists('nodebug', $_SESSION)
-				&& $_SESSION['nodebug']
+				array_key_exists('debug', $_SESSION)
+				&& !$_SESSION['debug']
 			) {
 				self::disable();
 			} else if (
@@ -221,6 +223,14 @@ class Saf_Debug
 	public static function isLocked()
 	{
 		return self::$_locked;
+	}
+
+	public static function setErrorLevel($level)
+	{
+		self::$_enabledErrorLevel = $level;
+		if (self::$_verbose) {
+			error_reporting($level);
+		}
 	}
 
 	public static function out($message, $level = 'ERROR')
@@ -280,7 +290,11 @@ class Saf_Debug
 			self::$_notifyConsole
 			|| $notifyConsole;
 		if (self::$_buffered) {
-			self::$buffer .= $output;
+			if (strlen(self::$buffer) + strlen($output) > self::$_maxBufferSize) {
+				self::$_bufferOverflow = TRUE; //#TODO #2.0.0 do something with the overflow indicator at render time.
+			} else {
+				self::$buffer .= $output;
+			}
 		} else {
 			print($output);
 		}
@@ -345,6 +359,7 @@ class Saf_Debug
 			print('<!-- debug buffer cleared -->');
 		}
 		self::$buffer = '';
+		self::$_bufferOverflow = FALSE;
 	}
 
 	public static function flushBuffer($force = FALSE)
@@ -652,7 +667,8 @@ class Saf_Debug
 			$e = new Exception("{$description} {$in}");
 			Saf_Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
 		} else {
-			if (!self::$_muted) {
+			$show = self::$_enabledErrorLevel === -1 || $errorNo & self::$_enabledErrorLevel;
+			if ($show && !self::$_muted) {
 				$message = "<span class=\"phpErrorWhat\">{$description} - </span>"
 					. "<span class=\"phpErrorMessage\">{$errorString}</span>"
 					. "<span slass=\"phpErrorWhere\">{$in}</span> ";
