@@ -23,28 +23,28 @@ class Saf_Client_Ldap
 	 *
 	 * @var bool
 	 */
-	protected $_connected = false;	
+	protected $_connected = FALSE;
 	
 	/**
 	 * Indicates a secure connection was made.
 	 *
 	 * @var bool
 	 */
-	protected $_connectedSecurely = false;	
+	protected $_connectedSecurely = FALSE;
 	
 	/**
 	 * The object's binding status.
 	 *
 	 * @var bool
 	 */
-	protected $_bound = false;		
+	protected $_bound = FALSE;
 	
 	/**
 	 * The object's setup status.
 	 *
 	 * @var bool
 	 */
-	protected $_setup = false;		
+	protected $_setup = FALSE;
 	
 	/**
 	 * Array of errors (strings) encountered by the object.
@@ -125,7 +125,7 @@ class Saf_Client_Ldap
 	 *
 	 * @var bool
 	 */
-	protected $_allowInsecureAuth = false;		
+	protected $_allowInsecureAuth = FALSE;
 	
 	/**
 	 * Sets the ldap protocol version to be used.
@@ -138,7 +138,7 @@ class Saf_Client_Ldap
 	 * Create a new Ldap connection adapter. Accepts a config array, or a connection 
 	 * address string and context with optional login Id and password.
 	 */
-	public function __construct($addressOrConfig, $context='', $login='', $password='' )
+	public function __construct($addressOrConfig, $context = '', $login = '', $password = '' )
 	{
 		Saf_Debug::outData(array($addressOrConfig, $context, $login, $password));
 		if(is_array($addressOrConfig)){
@@ -166,9 +166,9 @@ class Saf_Client_Ldap
 	/**
 	 * Uses the provided information to prepare the object for a connection.
 	 */
-	private function _setupConnection($address, $context, $login='', $password='')
+	private function _setupConnection($address, $context, $login = '', $password = '')
 	{
-		if (strpos($address,":") !== false){
+		if (strpos($address,":") !== FALSE){
 			$address = explode(":", $address, 2);
 			$port = ':' . $address[1];
 			$address = $address[0];
@@ -178,7 +178,7 @@ class Saf_Client_Ldap
 			$this->_remotePort = $port;
 		}
 		$this->_context	 = $context;
-		if ($login !== false){
+		if ($login !== FALSE){
 			if (!$this->_allowInsecureAuth){
 				$this->_remoteProtocol = 'ldaps://';
 			}
@@ -188,7 +188,7 @@ class Saf_Client_Ldap
 			$this->_remoteLogin = '';
 			$this->_remotePassword = '';			
 		}
-		$this->_setup = true;
+		$this->_setup = TRUE;
 	}			
 	
 	/**
@@ -207,9 +207,9 @@ class Saf_Client_Ldap
 		if ($this->_connection !== NULL){
 			ldap_unbind($this->_connection);
 			$this->_connection = NULL;
-			$this->_connected = false;
-			$this->_connectedSecurely = false;
-			$this->_bound = false;
+			$this->_connected = FALSE;
+			$this->_connectedSecurely = FALSE;
+			$this->_bound = FALSE;
 		}
 	}	
 
@@ -227,24 +227,24 @@ class Saf_Client_Ldap
      * stored options. If they are not specified, the most recently supplied 
      * options will be used instead.
      */ 
-	public function open($address='', $context='', $login=false, $password='')
+	public function open($address = '', $context = '', $login = FALSE, $password = '')
 	{
 		$this->close();
 		if ($address == ''){
 			$address = $this->_remoteAddress;
-			$this->_setup = false;
+			$this->_setup = FALSE;
 		}
 		if ($context == ''){
 			$this->_context = $context;
-			$this->_setup = false;
+			$this->_setup = FALSE;
 		}
-		if ($login !== false){
+		if ($login !== FALSE){
 			$this->_remoteLogin = $login;
-			$this->_setup = false;	
+			$this->_setup = FALSE;
 		}
 		if ($password !== ''){
 			$this->_remotePassword = $password;
-			$this->_setup = false;	
+			$this->_setup = FALSE;
 		}
 		return($this->getConnection());
 	}
@@ -264,7 +264,7 @@ class Saf_Client_Ldap
 		}
 		
 		if ($this->_connection){
-			$this->_connected = true;
+			$this->_connected = TRUE;
 			$this->_connectedSecurely = ($this->_remoteProtocol == 'ldaps://');
 			$versionSet = ldap_set_option($this->_connection, LDAP_OPT_PROTOCOL_VERSION, $this->_ldapVersion);
 			
@@ -277,7 +277,7 @@ class Saf_Client_Ldap
 				throw new NcsuLib_Exception($this->_error[]);
 			}
 			
-			return true;	
+			return TRUE;
 		}
 				
 		$this->_error[] = "Unable to connect to the LDAP server: " 
@@ -298,7 +298,7 @@ class Saf_Client_Ldap
 	{
 		if (!$this->_connected ){
 			$this->_error[] = "Attempting to bind when not connected";		
-			return false;
+			return FALSE;
 		}		
 		if ($login != '') {
 			$this->_remoteLogin = $login;
@@ -322,7 +322,7 @@ class Saf_Client_Ldap
 		}
 		
 		if ($this->_bound) { //#TODO #2.0.0 it seems as if sometimes AD will return true for bind even when it fails. Not sure how to detect this pre-search
-			return true;
+			return TRUE;
 		}
 		
 		$errorMessage = '';
@@ -331,7 +331,7 @@ class Saf_Client_Ldap
 			. $errorMessage . ", " 
 			. ldap_error($this->_connection);
 		$this->close();
-		return false;
+		return FALSE;
 	}
 	
 	/**
@@ -345,12 +345,12 @@ class Saf_Client_Ldap
 		}
 		if ($searchString == ""){
 			$this->_error[] = "No search criteria." ;
-			return false;
+			return FALSE;
 		}	
 		if (!$this->_bound){
 			$this->bind();
 			if (!$this->_bound){
-				return false;
+				return FALSE;
 			}
 		}
 	
@@ -389,7 +389,7 @@ class Saf_Client_Ldap
 		$this->_error[] = "Could not perform LDAP search: " 
 			. $errorMessage . " " 
 			. ldap_error( $this->_connection);
-		return false;
+		return FALSE;
 	}	
 	
 	/**
@@ -422,12 +422,18 @@ class Saf_Client_Ldap
 	 */
 	public function allowInsecureAuth()
 	{
-		$this->_allowInsecureAuth = true;
+		$this->_allowInsecureAuth = TRUE;
 	}
 
 	public function setContext($context)
 	{
 		$this->_context = $context;
+	}
+
+
+	public function getContext()
+	{
+		return $this->_context;
 	}
 	
 	public function setLimit($limit)
@@ -532,19 +538,19 @@ class Saf_Client_Ldap
 		if (!$this->_bound){
 			$this->bind();
 			if(!$this->_bound){
-				return false;
+				return FALSE;
 			}
 		}
 		$result = ldap_mod_add($this->_connection, $dnString, $attributeArray);
 		if ($result) {
-			return true;
+			return TRUE;
 		} else {
 			$errorMessage = '';
 			ldap_get_option($this->_connection, LDAP_OPT_ERROR_STRING, $errorMessage);		
 			$this->_error[] = "Could not add record to LDAP: " 
 				. $errorMessage . " " 
 				. ldap_error($this->_connection);
-			return false;
+			return FALSE;
 		}
 	}
 	
@@ -563,19 +569,19 @@ class Saf_Client_Ldap
 		if (!$this->_bound){
 			$this->bind();
 			if(!$this->_bound){
-				return false;
+				return FALSE;
 			}
 		}
 		$result = ldap_mod_replace($this->_connection, $dnString, $attributeArray);
 		if ($result) {
-			return true;
+			return TRUE;
 		} else {
 			$errorMessage = '';
 			ldap_get_option($this->_connection, LDAP_OPT_ERROR_STRING, $errorMessage);		
 			$this->_error[] = "Could not add record to LDAP: " 
 				. $errorMessage . " " 
 				. ldap_error( $this->_connection);
-			return false;
+			return FALSE;
 		}
 	}
 	
@@ -597,21 +603,21 @@ class Saf_Client_Ldap
 		if (!$this->_bound){
 			$this->bind();
 			if(!$this->_bound){
-				return false;
+				return FALSE;
 			}
 		}
 		ob_start();
 		$result = ldap_mod_del($this->_connection, $dnString, $attributeArray);
 		ob_clean();
 		if ($result) {
-			return true;
+			return TRUE;
 		} else {
 			$errorMessage = '';
 			ldap_get_option($this->_connection, LDAP_OPT_ERROR_STRING, $errorMessage);		
 			$this->_error[] = "Could not add record to LDAP: " 
 				. $errorMessage . " " 
 				. ldap_error($this->_connection);
-			return false;
+			return FALSE;
 		}
 	}	
 	
@@ -629,19 +635,19 @@ class Saf_Client_Ldap
 		if (!$this->_bound){
 			$this->bind();
 			if(!$this->_bound){
-				return false;
+				return FALSE;
 			}
 		}
 		$result = ldap_add($this->_connection, $dnString, $attributeArray);
 		if ($result) {
-			return true;
+			return TRUE;
 		} else {
 			$errorMessage = '';
 			ldap_get_option($this->_connection, LDAP_OPT_ERROR_STRING, $errorMessage);		
 			$this->_error[] = "Could not add record to LDAP: " 
 				. $errorMessage . " " 
 				. ldap_error( $this->_connection);
-			return false;
+			return FALSE;
 		}
 	}			
 
@@ -658,19 +664,19 @@ class Saf_Client_Ldap
 		if (!$this->_bound){
 			$this->bind();
 			if(!$this->_bound){
-				return false;
+				return FALSE;
 			}
 		}
 		$result = ldap_delete($this->_connection, $dnString);
 		if ($result) {
-			return true;
+			return TRUE;
 		} else {
 			$errorMessage = '';
 			ldap_get_option($this->_connection, LDAP_OPT_ERROR_STRING, $errorMessage);		
 			$this->_error[] = "Could not add record to LDAP: " 
 				. $errorMessage . " " 
 				. ldap_error( $this->_connection);
-			return false;
+			return FALSE;
 		}
 	}	
 	
@@ -689,7 +695,7 @@ class Saf_Client_Ldap
 		if (!$this->_bound){
 			$this->bind();
 			if(!$this->_bound){
-				return false;
+				return FALSE;
 			}
 		}
 		$ldapListResult = ldap_list($this->_connection, $this->_context, $typeToSearch , array($attribute));
@@ -722,7 +728,6 @@ class Saf_Client_Ldap
 		$this->_error[] = "Could not perform LDAP list: " 
 			. $errorMessage . " " 
 			. ldap_error( $this->_connection);
-		return false;
-	
+		return FALSE;
 	}
 }
