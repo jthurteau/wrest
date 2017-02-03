@@ -81,8 +81,9 @@ class Saf_Time {
 		$now = microtime(TRUE);
 		$new = $seconds + ($micro / 1000);
 		$offset = $new - $now;
-		self::$_diff = floor($offset);
+		self::$_diff = ceil($offset);
 		self::$_microDiff = $offset * 1000 % 1000;
+		Saf_Debug::outData(array('setting debug time', $seconds, $micro, 'effective' => array(time() + self::$_diff, date(self::FORMAT_DATETIME_URL . '-s', time() + self::$_diff))));
 	}
 
 	/**
