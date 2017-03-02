@@ -19,6 +19,7 @@ Middleware class for PDO
 class Saf_Pdo_Connection{
 
 	const TYPE_MYSQL = 'mysql';
+	const TYPE_MSSQL= '';
 
 	protected $_connection = NULL;
 	protected $_hostName = '';
@@ -65,7 +66,7 @@ class Saf_Pdo_Connection{
 			? $dsn['password']
 			: ''
 		);
-		return $this->_connectAs($this->_userName,$password,$this->_schemaName);
+		return $this->_connectAs($this->_userName, $password, $this->_schemaName);
 	}
 
 	protected function _connectAs($user, $password, $dbName = '')
@@ -126,6 +127,9 @@ class Saf_Pdo_Connection{
 
 	public function query($query, $args = NULL)
 	{
+		if (!$this->_connection) {
+			throw new Saf_Pdo_Exception('Not Connected');
+		}
 		if ($this->_lastResult) {
 			$this->_lastResult->closeCursor();
 		}
@@ -377,16 +381,29 @@ class Saf_Pdo_Connection{
 
 	public function hasError(){
 		if (!$this->_connection) {
-			return FALSE;
+			return $this->_hasLocalError();
 		}
 		$error =  $this->_connection->errorInfo();
-		return $error[1];
+		return $error && is_array($error) && array_key_exists(1, $error) ? $error[1] : $this->_hasLocalError();
+	}
+
+	protected function _hasLocalError(){
+		return count($this->_errorMessage);
 	}
 
 	public function getErrorMessage($clear = FALSE){
 		$error =
 			$this->_connection
-			? $this->_connection->errorInfo()
+			? (
+				$this->_connection->errorInfo()
+				. (
+					$this->_errorMessage
+					? (
+						($this->_connection->errorInfo() ? "\n " : '')
+						. implode("\n ", $this->_errorMessage)
+					) : ''
+				)
+			)
 			: implode("\n ", $this->_errorMessage);
 		if ($clear) {
 			$this->clearErrors();
@@ -589,6 +606,11 @@ class Saf_Pdo_Connection{
 		$select =  $this->query("SELECT LAST_INSERT_ID() FROM {$table}");
 		$id = $select->fetch(PDO::FETCH_NUM);
 		return $id[0];
+	}
+
+	public function isConnected()
+	{
+		return !is_null($this->_connection);
 	}
 
 }

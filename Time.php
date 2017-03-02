@@ -146,7 +146,17 @@ class Saf_Time {
 		$nextYear = $year + 1;	
 		$prevMin = $min > 0 ? $min - 1 : 59;
 		$prevHour = $hour > 0 ? $hour -1 : 23;
-		$prevDay = $day > 1 ? $day - 1 : (int)date('t', $timestamp - (self::MAX_HOUR_STAMP / 2));
+		$prevDay =
+			$day > 1
+			? $day - 1
+			: (int)date('t',
+				strtotime(
+					$year. '-'
+					.  str_pad($month, 2, '0', STR_PAD_LEFT) . '-'
+					. ( str_pad($day, 2, '0', STR_PAD_LEFT))
+					. 'T00:00'
+				) - 1
+			);
 		$prevMonth =  $month > 1 ? $month - 1 : 12;
 		$prevYear = $year - 1;	
 		$modSec = '00';
@@ -257,6 +267,7 @@ class Saf_Time {
 		$modHour = str_pad($modHour, 2, '0', STR_PAD_LEFT);
 		$modDay = str_pad($modDay, 2, '0', STR_PAD_LEFT);
 		$modMonth = str_pad($modMonth, 2, '0', STR_PAD_LEFT);
+		//print_r(array('mod time', $timestamp, $modifier, $prevDay,"{$modYear}-{$modMonth}-{$modDay}T{$modHour}:{$modMin}:{$modSec}", strtotime("{$modYear}-{$modMonth}-{$modDay}T{$modHour}:{$modMin}:{$modSec}")));
 		return strtotime("{$modYear}-{$modMonth}-{$modDay}T{$modHour}:{$modMin}:{$modSec}");
 	}
 	

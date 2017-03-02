@@ -37,6 +37,7 @@ class Saf_Application_Script extends Saf_Application{
 			? "An error occured attempting to run the script.\n"
 			: "Status: {$statusDescription}\n"
 		) . $fullResult;
+		$response = $return;
 		return $return;
 	}
 	
