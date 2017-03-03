@@ -9,6 +9,7 @@ Utility functions for loading configuration from XML files
 *******************************************************************************/
 
 require_once(LIBRARY_PATH . '/Saf/Config.php');
+require_once(LIBRARY_PATH . '/Saf/Exception/NotConfigured.php');
 
 class Saf_Config_Xml extends Saf_Config{
 	
@@ -155,8 +156,15 @@ class Saf_Config_Xml extends Saf_Config{
 						&& !$child->count() 
 						&& 'name' == $attributeName
 						&& defined($attributeValue)
-					) {
+				) {
 					 $generatedValue = constant($attributeValue);
+				} else if (
+					$childName == 'const'
+					&& !$child->count()
+					&& 'name' == $attributeName
+					&& !defined($attributeValue)
+				) {
+					throw new Saf_Exception_NotConfigured(self::$_missingConstantExceptionMessage . ": {$attributeValue}");
 				}
 			}
 			if($extends){
@@ -185,6 +193,8 @@ class Saf_Config_Xml extends Saf_Config{
 				if (!array_key_exists($childName, $return)) {
 					$return[$childName] = $childValue;
 				} else if (is_array($return[$childName])) {
+					$oldChildren = $return[$childName];
+					$return[$childName] = array($oldChildren);
 					$return[$childName][] = $childValue;
 				} else {
 					$return[$childName] = array($return[$childName],$childValue);

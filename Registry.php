@@ -11,7 +11,7 @@ Utility class for storing and retrieving globally accessible state
 class Saf_Registry {
     
 	protected static $_singleton = NULL;
-    protected $_configuration = NULL;
+    protected static $_configuration = NULL;
 	
 	private static $_unavailableExceptionMessage = 'Requested registry value is not available.';
 	private static $_setExceptionTemplate = 'Unable to edit values in the {{facet}} facet.';
@@ -31,6 +31,15 @@ class Saf_Registry {
 
     protected function __construct()
     {
+		self::$_configuration = array(
+			self::FACET_ROOT => array(),
+			'response' => array(),
+			'get' => $_GET,
+			'post' => $_POST,
+			'request' => $_REQUEST,
+			'session' => &$_SESSION,
+			'auth' => array()
+		);
     }
 
     private function __clone()
@@ -46,17 +55,6 @@ class Saf_Registry {
 		if (is_null(self::$_singleton)) {
             self::$_singleton = new Saf_Registry();
         }
-        if (is_null(self::$_configuration)) {
-			self::$_configuration = array(
-				FACET_ROOT => array(),
-				'response' => array(),
-				'get' => $_GET,
-				'post' => $_POST,
-				'request' => $_REQUEST,
-				'session' => &$_SESSION,
-				'auth' => array()
-			);
-		}
 	}
 	
 	/**
@@ -65,7 +63,7 @@ class Saf_Registry {
 	 * @throws Exception when not available
 	 * @return mixed stored value
 	 */
-	protected static function get($name = NULL)
+	public static function get($name = NULL)
 	{
 		self::_init();
         if (is_null($name)) {
@@ -87,7 +85,8 @@ class Saf_Registry {
 					return self::_get($request, self::$_configuration['root']);
 				}
 			} catch (Exception $e){
-				throw new Exception(self::$_unavailableExceptionMessage . (Saf_Debug::isEnabled() ? "({$name})" : ''));
+				$stringName = implode(':', $request);
+				throw new Exception(self::$_unavailableExceptionMessage . (Saf_Debug::isEnabled() ? "({$stringName})" : ''));
 			}
 		}
 	}
@@ -107,18 +106,18 @@ class Saf_Registry {
 		) {
 			return self::_get($name, $source->$newSourceName);
 		}
-		
-		throw new Exception(self::$_unavailableExceptionMessage . (Rd_Debug::isEnabled() ? "({$name})" : ''));
+		$stringName = implode(':', $name);
+		throw new Exception(self::$_unavailableExceptionMessage . (Rd_Debug::isEnabled() ? "({$stringName})" : ''));
     }
 
     public function __get($name)
     {
-        return self::_get($name, self::$_configuration[FACET_ROOT]);
+        return self::_get($name, self::$_configuration[self::FACET_ROOT]);
     }
 
     public function __set($name, $value)
     {
-        return self::_set($name, self::$_configuration[FACET_ROOT], $value);
+        return self::_set($name, self::$_configuration[self::FACET_ROOT], $value);
     }
 
     /**
@@ -171,19 +170,19 @@ class Saf_Registry {
 
     public function __isset($name)
     {
-        return array_key_exists($name, self::$_configuration[ROOT_FACET]);
+        return array_key_exists($name, self::$_configuration[self::FACET_ROOT]);
     }
 
 
     public function __unset($name)
     {
-        if(array_key_exists($name, self::$_configuration[ROOT_FACET])) {
+        if(array_key_exists($name, self::$_configuration[self::FACET_ROOT])) {
             if (array_key_exists($name, self::$_wipedValues)) {
                 self::$_wipedValues[$name]++;
             } else {
                 self::$_wipedValues[$name] = 1;
             }
-            unset(self::$_configuration[ROOT_FACET]);
+            unset(self::$_configuration[self::FACET_ROOT]);
         }
     }
     

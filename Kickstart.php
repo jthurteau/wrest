@@ -1255,6 +1255,18 @@ class Saf_Kickstart {
 		} else {
 			Saf_Debug::out('Unable to connect LibXML to integrated debugging. libxml_use_internal_errors() not supported.', 'NOTICE');
 		}
+		if (defined('APPLICATION_TZ')) {
+			date_default_timezone_set(APPLICATION_TZ);
+		}
+	}
+
+	/**
+	 * Conveinence setup when not using the kickstart process.
+	 * @param null $mode
+	 */
+	public static function goLight($mode = self::MODE_AUTODETECT)
+	{
+		self::_goPreBoot();
 	}
 
 	/**

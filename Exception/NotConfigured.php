@@ -7,6 +7,7 @@
 Exception class when the app is not configured to do something
 
 *******************************************************************************/
+require_once(LIBRARY_PATH . '/Saf/Exception/Workflow.php');
 
 class Saf_Exception_NotConfigured extends Saf_Exception_Workflow
 {
