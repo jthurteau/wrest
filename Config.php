@@ -27,6 +27,7 @@ class Saf_Config {
 	protected static $_duplicateSectionExceptionMessage = 'More than one section matched the requested load.';
 	protected static $_missingSectionExceptionMessage = 'No section matched the requested load.';
 	protected static $_missingExtentionExceptionMessage = 'No section matched the prerequesite for the requested load.';
+	protected static $_missingConstantExceptionMessage = 'No constant matched the key in a contant meta.';
 	protected static $_circularExtentionExceptionMessage = 'Circular reference detected in prerequesite for the requested load.';
 
 	const LOAD_MERGE = 1;
