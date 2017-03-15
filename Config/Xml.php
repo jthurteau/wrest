@@ -194,7 +194,9 @@ class Saf_Config_Xml extends Saf_Config{
 					$return[$childName] = $childValue;
 				} else if (is_array($return[$childName])) {
 					$oldChildren = $return[$childName];
-					$return[$childName] = array($oldChildren);
+					if (!is_array($oldChildren)) {
+						$return[$childName] = array($oldChildren);
+					}
 					$return[$childName][] = $childValue;
 				} else {
 					$return[$childName] = array($return[$childName],$childValue);
