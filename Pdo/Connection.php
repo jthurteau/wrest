@@ -23,6 +23,7 @@ class Saf_Pdo_Connection{
 
 	protected $_connection = NULL;
 	protected $_hostName = '';
+	protected $_hostPort = '';
 	protected $_userName = '';
 	protected $_schemaName = '';
 	protected $_driverName = '';
@@ -49,7 +50,12 @@ class Saf_Pdo_Connection{
 		$this->_hostName = (
 		array_key_exists('hostspec', $dsn)
 			? $dsn['hostspec']
-			: 'localhost'
+			: ''
+		);
+		$this->_hostPort = (
+		array_key_exists('hostport', $dsn)
+			? $dsn['hostport']
+			: ''
 		);
 		$this->_userName = (
 		array_key_exists('username', $dsn)
@@ -59,7 +65,7 @@ class Saf_Pdo_Connection{
 		$this->_schemaName = (
 		array_key_exists('database', $dsn)
 			? $dsn['database']
-			: 'reservesdirect'
+			: ''
 		);
 		$password = (
 		array_key_exists('password', $dsn)
@@ -75,13 +81,37 @@ class Saf_Pdo_Connection{
 		if ('' != $dbName) {
 			$this->_schemaName = $dbName;
 		}
-		$dsnString = $this->_driverName . ':host=' . $this->_hostName . ';dbname=' . $this->_schemaName;
+		$hostSpec = 'host';
+		$dbSpec = 'dbname';
+		$extra = '';
+		if (strpos($this->_driverName, 'odbc') === 0) {
+			$hostSpec = 'SERVER';
+			$dbSpec = 'DATABASE';
+		}
+		if ($this->_hostPort) {
+				$extra = "PORT={$this->_hostPort};";
+		}
+		$dsnString =
+			(
+				strpos($this->_driverName, ':') !== FALSE
+				? ($this->_driverName . ';')
+				: ($this->_driverName . ':')
+			) . (
+				$this->_hostName
+				? "{$hostSpec}={$this->_hostName};"
+				: ''
+			) . (
+				$this->_schemaName
+				? "{$dbSpec}={$this->_schemaName};"
+				: ''
+			) . $extra;
+//Saf_Debug::outData(array('connecting with dsn', $dsnString));
 		$options = array();
 		try{
 			$this->_connection = new PDO($dsnString, $this->_userName, $password, $options);
 			self::clearErrors();
 		} catch (Exception $e) {
-			$this->addError($e->getMessage());
+			$this->addError($e->getMessage(). " {$dsnString}");
 			return FALSE;
 		}
 		return TRUE;
@@ -305,26 +335,21 @@ class Saf_Pdo_Connection{
 		return ($result ? $result->fetch(PDO::FETCH_ASSOC) : NULL);
 	}
 
-	public function one($result = NULL) //#TODO #NOW this is different than the old ::one, returns a single value,not a row
+	public function one($result = NULL)
 	{//, $mode = PDO::FETCH_BOTH){
 		if (is_null($result)) {
 			$result = $this->_lastResult;
 		}
 		if (!$result || !method_exists($result, 'fetch')) {
 			$this->addError('Unable to fetch, no result to pull from.');
+			return NULL;
 		}
-		//return ($result ? $result->fetch(PDO::FETCH_ASSOC) : NULL);
-		/*
-		$id = $select->fetch(PDO::FETCH_NUM);
-		return $id[0];
-		$result = $this->_connection->query('SHOW TABLES;', PDO::FETCH_NUM);
-		$tables =  $result->fetchAll();
-		foreach($tables as $table) {
-			if($table[0] == $tableName) {
-				return TRUE;
-			}
+		$row = ($result ? $result->fetch(PDO::FETCH_ASSOC) : NULL);
+		if (is_null($row)) {
+			$this->addError('Unable to fetch, no rows in result.');
+			return NULL;
 		}
-		 */
+		return current($row);
 	}
 
 	public function count($result = NULL)
@@ -392,19 +417,19 @@ class Saf_Pdo_Connection{
 	}
 
 	public function getErrorMessage($clear = FALSE){
-		$error =
+		$currentError =
 			$this->_connection
-			? (
-				$this->_connection->errorInfo()
-				. (
-					$this->_errorMessage
-					? (
-						($this->_connection->errorInfo() ? "\n " : '')
-						. implode("\n ", $this->_errorMessage)
-					) : ''
-				)
-			)
-			: implode("\n ", $this->_errorMessage);
+			? $this->_connection->errorInfo()
+			: array('----not connected----');
+		$currentErrorString =
+			$currentError[0] != '00000'
+			? ("--current state--\n"
+				. implode("\n ", $currentError)
+				. "--/current state --\n"
+			) : 'no error';
+		$error =
+			$currentErrorString
+			. implode("\n ", $this->_errorMessage);
 		if ($clear) {
 			$this->clearErrors();
 		}
@@ -425,6 +450,7 @@ class Saf_Pdo_Connection{
 	protected function _pullError()
 	{
 		$errorInfo = $this->_connection->errorInfo();
+Saf_Debug::outData(array('pdo error', $errorInfo));
 		if (is_array($errorInfo)){
 			$this->addError($errorInfo[2]);
 		}
