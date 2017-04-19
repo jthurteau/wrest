@@ -115,7 +115,12 @@ abstract class Saf_Controller_Zend extends Zend_Controller_Action {
 		Saf_Layout::stateCheck($request->getQuery());
 		parent::dispatch($action);
 	}
-	
+
+	public function postDispatch()
+	{
+		session_write_close();
+		return parent::postDispatch();
+	}
 	
 	/**
 	 * Returns a failure message literal instead of null if 
