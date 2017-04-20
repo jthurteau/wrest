@@ -46,6 +46,13 @@ class Saf_Auth_Plugin_Shib extends Saf_Auth_Plugin_Basic{
 			: NULL;
 	}
 
+	public function setUsername($username)
+	{
+		if (array_key_exists('usernameField', $this->_config)) {
+			$_SERVER[$this->_config['usernameField']] = $username;
+		}
+	}
+
 	public function getProvidedPassword()
 	{
 		return '';

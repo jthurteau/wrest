@@ -63,6 +63,11 @@ class Saf_Auth_Plugin_Basic { //#TODO #1.5.0 make a base class extend
 			: NULL;
 	}
 
+	public function setUsername($username)
+	{
+		$_SERVER['PHP_AUTH_USER'] = $username;
+	}
+
 	public function getProvidedPassword()
 	{
 		return '';

@@ -439,6 +439,13 @@ class Saf_Auth{
 		: '';
 	}
 
+	public static function setUsername($username)
+	{
+		if (self::$_activePlugin) {
+			self::$_activePlugin->setUsername($username);
+		}
+	}
+
 	public static function pluginPromptsForInfo($pluginName = NULL)
 	{
 		try {
