@@ -123,7 +123,11 @@ class Saf_Cache {
 				$fileLock = flock($pointer, LOCK_SH | LOCK_NB);
 			}
 			if ($fileLock) {
-				$contents = fread($pointer, filesize($path));
+				$size = filesize($path);
+				$contents =
+					$size
+					? fread($pointer, $size)
+					: '';
 				$value = json_decode($contents, TRUE);
 			} else {
 				Saf_Debug::out("unable to read {$file}");
@@ -147,7 +151,11 @@ class Saf_Cache {
 				$fileLock = flock($pointer, LOCK_SH | LOCK_NB);
 			}
 			if ($fileLock) {
-				$contents = fread($pointer, filesize($path));
+				$size = filesize($path);
+				$contents =
+					$size
+						? fread($pointer, $size)
+						: '';
 				$hash = json_decode($contents, TRUE);
 				if (is_array($hash) && array_key_exists($uname, $hash)) {
 					$value = $hash[$uname];
@@ -337,7 +345,11 @@ class Saf_Cache {
 		if ($fileLock) {
 			$oldTime = 0;
 			if ($mode) {
-				$contents = fread($pointer, filesize($path));
+				$size = filesize($path);
+				$contents =
+					$size
+						? fread($pointer, $size)
+						: '';
 				$oldValue = json_decode($contents, TRUE);
 				if ($oldValue && is_array($oldValue) && array_key_exists('stamp', $oldValue)) {
 					$oldTime = $oldValue['stamp'];
@@ -397,9 +409,14 @@ class Saf_Cache {
 			$fileLock = flock($pointer, LOCK_EX | LOCK_NB);
 		}
 		if ($fileLock) {
+			$size = filesize($path);
+			$contents =
+				$size
+					? fread($pointer, $size)
+					: '';
 			$hashValue = 
 				'r+' == $mode 
-				? json_decode(fread($pointer,filesize($path)), TRUE) 
+				? json_decode($contents, TRUE)
 				: array();
 			if (is_null($hashValue)) {
 				Saf_Debug::out("cache invalid, resetting {$file}");
