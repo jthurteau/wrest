@@ -8,7 +8,7 @@
 
 require_once(LIBRARY_PATH . '/Saf/Client/Http.php');
 
-class Saf_Client_Xml
+class Saf_Client_Xml //#TODO #2.0.0 not currently used needs work
 {
 	const PARSE_PATTERN_NONE = 0;
 	const PARSE_PATTERN_SINGLETON = 1;
@@ -162,6 +162,7 @@ class Saf_Client_Xml
 			}
 			$xmlResult = simplexml_load_string($rawResponseArray['raw'], 'SimpleXMLElement', 0, 'http://www.w3.org/2003/05/soap-envelope', FALSE);
 			if ($xmlResult) {
+				libxml_clear_errors(); //#TODO #2.0 implement memory checks from r-r/model/Ems/Api
 				$envelope = $xmlResult->children('http://www.w3.org/2003/05/soap-envelope');
 				$current = $envelope;
 				for($i=0; $i<$levelsDeep; $i++) {
