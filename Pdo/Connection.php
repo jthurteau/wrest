@@ -22,6 +22,7 @@ class Saf_Pdo_Connection{
 	const TYPE_MSSQL= '';
 
 	protected $_connection = NULL;
+	protected $_connectionFailure = FALSE;
 	protected $_hostName = '';
 	protected $_hostPort = '';
 	protected $_userName = '';
@@ -109,9 +110,13 @@ class Saf_Pdo_Connection{
 		$options = array();
 		try{
 			$this->_connection = new PDO($dsnString, $this->_userName, $password, $options);
+			if ($this->_connection) {
+				$this->_connectionFailure = !is_null($this->_connection->errorCode());
+			}
 			self::clearErrors();
 		} catch (Exception $e) {
 			$this->addError($e->getMessage(). " {$dsnString}");
+			$this->_connectionFailure = TRUE;
 			return FALSE;
 		}
 		return TRUE;
@@ -120,6 +125,7 @@ class Saf_Pdo_Connection{
 	public function disconnect()
 	{
 		$this->_connection = NULL;
+		$this->_connectionFailure = FALSE;
 	}
 
 	public function enableDebug()
@@ -420,12 +426,16 @@ class Saf_Pdo_Connection{
 		$currentError =
 			$this->_connection
 			? $this->_connection->errorInfo()
-			: array('----not connected----');
+			: (
+				$this->_connectionFailure
+				? array('----not connected----')
+				: array('----unknown----')
+			);
 		$currentErrorString =
 			$currentError[0] != '00000'
 			? ("--current state--\n"
 				. implode("\n ", $currentError)
-				. "--/current state --\n"
+				. "\n--/current state --\n"
 			) : 'no error';
 		$error =
 			$currentErrorString
@@ -636,7 +646,7 @@ Saf_Debug::outData(array('pdo error', $errorInfo));
 
 	public function isConnected()
 	{
-		return !is_null($this->_connection);
+		return !is_null($this->_connection) && ! $this->_connectionFailure;
 	}
 
 }
