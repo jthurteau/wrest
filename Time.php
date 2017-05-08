@@ -63,6 +63,7 @@ class Saf_Time {
 	const FORMAT_DATE_URL = 'Y-m-d';
 	const FORMAT_TIME_URL = 'H-i';
 	const FORMAT_DATETIME_URL = 'Y-m-d/H-i';
+	const FORMAT_DATETIME_DB = 'Y-m-d H:i:s';
 	
 	/**
 	 * How many seconds off real time we are testing against

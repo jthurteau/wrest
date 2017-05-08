@@ -36,4 +36,49 @@ class Saf_Audit
 			}
 		}
 	}
+
+	public static function add($classification, $message = NULL, $request = NULL, $user = NULL)
+	{
+		$table = self::$_path;
+		if (is_null($classification) || '' == trim($classification)) {
+			throw new Exception('Invalid Audit Classification');
+		}
+		$cols = '`when`, `classification`';
+		$values =
+			Saf_Pdo_Connection::escapeString(date(Saf_Time::FORMAT_DATETIME_DB)) //#NOTE don't insulate the timestamp
+			. ', ' . Saf_Pdo_Connection::escapeString(trim($classification));
+		if (!is_null($message)) {
+			$cols .= ', `message`';
+			$values .= ', ' . Saf_Pdo_Connection::escapeString(trim($classification));
+		}
+		if (!is_null($request)) {
+			$cols .= ', `request`';
+			$requestString =
+				is_object($request)
+				? ($request->getRequestUri() . ' ' . $request->getMethod())
+				: trim($requestString);
+			if (is_object($request)) {
+				$postJson = json_encode($request->getPost());
+				if ($postJson != '[]') {
+					$requestString .= ' ' . $postJson;
+				}
+			}
+			$values .= ', ' . Saf_Pdo_Connection::escapeString($requestString);
+		}
+		if (!is_null($user)) {
+			$cols .= ', `username`';
+			$values .= ', ' . Saf_Pdo_Connection::escapeString(trim($user));
+		}
+		$query = "INSERT INTO {$table} ({$cols}) VALUES ({$values});";
+		$result = self::$_db->insert($query);
+		if (!$result) {
+			$count = Saf_Cache::get('auditFailCount', NULL);
+			if (is_null($count)) {
+				$count = 0;
+			}
+			Saf_Cache::save('auditFailCount', ++$count);
+			Saf_Debug::outData(array('failed to audit activity', self::$_db->getErrorMessage()));
+		}
+		return $result;
+	}
 }
