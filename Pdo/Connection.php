@@ -106,7 +106,6 @@ class Saf_Pdo_Connection{
 				? "{$dbSpec}={$this->_schemaName};"
 				: ''
 			) . $extra;
-//Saf_Debug::outData(array('connecting with dsn', $dsnString));
 		$options = array();
 		try{
 			$this->_connection = new PDO($dsnString, $this->_userName, $password, $options);
@@ -646,7 +645,7 @@ Saf_Debug::outData(array('pdo error', $errorInfo));
 
 	public function isConnected()
 	{
-		return !is_null($this->_connection) && ! $this->_connectionFailure;
+		return !is_null($this->_connection) && !$this->_connectionFailure;
 	}
 
 }

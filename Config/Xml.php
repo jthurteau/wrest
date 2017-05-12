@@ -135,6 +135,7 @@ class Saf_Config_Xml extends Saf_Config{
 		$extensionMap = array();
 		foreach($xml->children() as $child) {
 			$generatedValue = NULL;
+			$forceGenerated = FALSE;
 			$childName = $child->getName();
 			$extends = '';
 			$attributes = $child->attributes();
@@ -157,7 +158,8 @@ class Saf_Config_Xml extends Saf_Config{
 						&& 'name' == $attributeName
 						&& defined($attributeValue)
 				) {
-					 $generatedValue = constant($attributeValue);
+					$generatedValue = constant($attributeValue);
+					$forceGenerated = TRUE;
 				} else if (
 					$childName == 'const'
 					&& !$child->count()
@@ -172,7 +174,7 @@ class Saf_Config_Xml extends Saf_Config{
 			}
 			$childCurrent = "$current:$childName";
 
-			if ($generatedValue) {
+			if ($generatedValue || $forceGenerated) {
 				$return = 
 					is_null($return)
 					? $generatedValue
