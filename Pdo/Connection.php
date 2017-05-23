@@ -127,6 +127,11 @@ class Saf_Pdo_Connection{
 		$this->_connectionFailure = FALSE;
 	}
 
+	public function getConnection()
+	{
+		return $this->_connection;
+	}
+
 	public function enableDebug()
 	{
 		$this->_debugMode = TRUE;
@@ -350,7 +355,7 @@ class Saf_Pdo_Connection{
 			return NULL;
 		}
 		$row = ($result ? $result->fetch(PDO::FETCH_ASSOC) : NULL);
-		if (is_null($row)) {
+		if (is_null($row) || $row === FALSE) {
 			$this->addError('Unable to fetch, no rows in result.');
 			return NULL;
 		}
@@ -435,7 +440,7 @@ class Saf_Pdo_Connection{
 			? ("--current state--\n"
 				. implode("\n ", $currentError)
 				. "\n--/current state --\n"
-			) : 'no error';
+			) : "--current state--\nno error\n--/current state --\n";
 		$error =
 			$currentErrorString
 			. implode("\n ", $this->_errorMessage);
