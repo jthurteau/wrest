@@ -81,6 +81,29 @@ class Saf_Cache {
 			}
 		}
 	}
+
+	public static function prepFile($file)
+	{
+		if (!self::$_path) {
+			throw new Exception('Cannot prep cache file with no path set.');
+		}
+		$basePath = self::$_path;
+		$fileParts = explode('/', $file);
+		array_pop($fileParts);
+		foreach($fileParts as $filePart) {
+			$basePath .= "/{$filePart}";
+			if (!file_exists($basePath)) {
+				if(!mkdir($basePath)) {
+					throw new Exception("Cannot prep cache file, unable to create path for \"{$basePath}\".");
+				}
+			} else if (!is_dir($basePath)) {
+				throw new Exception("Cannot prep cache file, path {$basePath} exists as a non-directory.");
+			} else if (!is_writable($basePath)) {
+				throw new Exception("Cannot prep cache file, path {$basePath} is not writable.");
+			}
+		}
+		return TRUE;
+	}
 	
 	public static function dir($path, $recursive = self::DIR_MODE_DIRECT_ONLY)
 	{
@@ -426,7 +449,13 @@ class Saf_Cache {
 			rewind($pointer);
 			$time = time();
 			$hashValue[$uname] = array('stamp' => $time, 'payload' => $value);
-			fwrite($pointer, json_encode($hashValue, JSON_FORCE_OBJECT));
+			$jsonOutput = json_encode($hashValue, JSON_FORCE_OBJECT);
+			if ($jsonOutput) {
+				fwrite($pointer, $jsonOutput);
+			} else {
+				Saf_Debug::out("unable to encode {$file} : {$uname}");
+				fwrite($pointer, $contents);
+			}
 //Saf_Debug::out("cached {$file} : {$uname}");
 		} else {
 			Saf_Debug::out("unable to save {$file} : {$uname}");
