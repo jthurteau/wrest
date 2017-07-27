@@ -314,7 +314,7 @@ class Saf_Array
 	 * @param int $allowedBlankTypes bitwise integer of blank types that are allowed
 	 * @return bool key exists and value is not blank
 	 */	
-	public static function keyExistsAndNotBlank($key, $array, $allowedBlankTypes = 0)
+	public static function keyExistsAndNotBlank($key, $array, $allowedBlankTypes = self::TYPE_NONE)
 	{
 		if (!is_array($array)) {
 			Saf_Debug::out('Saf_Array::keyExistsAndNotBlank got a non-array operand.');
@@ -342,7 +342,7 @@ class Saf_Array
 				return FALSE;
 			}
 		}
-		return FALSE;
+		return TRUE;
 	}
 	
 	/**
