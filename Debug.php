@@ -398,7 +398,11 @@ class Saf_Debug
 		if (array_key_exists('password', $sanitizedRequest)) {
 			$sanitizedRequest['password'] = '***redacted***';
 		}
-		print_r($sanitizedRequest);
+		print('<ul class="debugList">');
+		foreach($sanitizedRequest as $key=>$item) {
+			print('<li class="noBullet">[' . htmlentities($key) . '] : ' . '<span class="literal">' . htmlentities($item) . '</span></li>');
+		}
+		print('</ul>');
 		$output = ob_get_contents();
 		ob_end_clean();
 		return $output;
@@ -407,9 +411,9 @@ class Saf_Debug
 	public static function outputRequest()
 	{
 		ob_start();
-		print("\n<pre class=\"debugStatus\">Request:<br/>\n");
+		print("\n<div class=\"debugStatus\">Request:\n");
 		print_r(self::getRequestString());
-		print("\n</pre>\n");
+		print("\n</div>\n");
 		$output = ob_get_contents();
 		ob_end_clean();
 		self::_out($output, FALSE);
@@ -509,9 +513,6 @@ class Saf_Debug
 			}
 			self::printDebugShutdown();
 			self::printDebugExit();
-			if (Saf_Layout::formatIsHtml()) { //#TODO #2.0.0 use formatIncludesJavascript
-				print('<script type="text/javascript">if(saf && saf.hasOwnProperty(\'debugAlign\')) { saf.debugAlign();} </script>');
-			}
 		} else if (self::isVerbose()) {
 			self::printDebugEntry();
 		}
@@ -733,7 +734,7 @@ class Saf_Debug
 				}
 				$err .= "</errorentry>\n\n";
 
-				if(Rd_Debug::isEnabled()) {
+				if(Saf_Debug::isEnabled()) {
 					print('<pre>' . htmlentities($err) . '</pre>');
 				}
 				if ($errno <> E_NOTICE && $errno <> E_STRICT && $errno <> E_WARNING) {

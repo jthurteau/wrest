@@ -107,7 +107,7 @@ class Saf_Registry {
 			return self::_get($name, $source->$newSourceName);
 		}
 		$stringName = implode(':', $name);
-		throw new Exception(self::$_unavailableExceptionMessage . (Rd_Debug::isEnabled() ? "({$stringName})" : ''));
+		throw new Exception(self::$_unavailableExceptionMessage . (Saf_Debug::isEnabled() ? "({$stringName})" : ''));
     }
 
     public function __get($name)

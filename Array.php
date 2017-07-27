@@ -8,8 +8,16 @@ Utility class for array manipulation
 
 *******************************************************************************/
 
-class Saf_Array {
+require_once(LIBRARY_PATH . '/Saf/Exception/NotAnArray.php');
+require_once(LIBRARY_PATH . '/Saf/Exception/NoDefault.php');
 
+/**
+ * Utility functions for Arrays
+ */
+class Saf_Array
+{
+
+	const TYPE_NONE = 0;
 	const TYPE_NULL = 1;
 	const TYPE_STRING = 2;
 	const TYPE_ARRAY = 4;
@@ -35,10 +43,10 @@ class Saf_Array {
 	public static function extract($key, $array, $default = NULL)
 	{
 		if(!is_array($array) && (!is_object($array) && !method_exists($array,'__toArray'))){
-			throw new Exception('Not An Array');
+			throw new Saf_Exception_NotAnArray();
 		}
 		if(NULL === $default && !array_key_exists($key, $array)){
-			throw new Exception('No Default');
+			throw new Saf_Exception_NoDefault();
 		}
 		return(
 			array_key_exists($key, $array) 
@@ -58,16 +66,34 @@ class Saf_Array {
 	 * @param int $allowedBlankTypes bitwise integer of blank types that are allowed
 	 * @param default $default value if key is not in array
 	 */
-	public static function extractIfNotBlank($key, $array, $allowedBlankTypes = 0, $default = NULL)
+	public static function extractIfNotBlank($key, $array, $allowedBlankTypes = self::TYPE_NONE, $default = NULL)
 	{
 		if (self::keyExistsAndNotBlank($key, $array, $allowedBlankTypes)) {
 			return is_null($default)
 				? self::extract($key, $array)
 				: self::extract($key, $array, $default);
 		} else if (is_null($default)) {
-			throw new Exception('No Default');
+			throw new Saf_Exception_NoDefault();
 		} else {
 			return $default;
+		}
+	}
+
+	/**
+	 * searches the passed array for the specified key. If
+	 * it does not exist or is blank, return NULL.
+	 *
+	 * @param mixed $key key in the array to check
+	 * @param array $array array to search
+	 * @param int $allowedBlankTypes bitwise integer of blank types that are allowed
+	 * @param default $default value if key is not in array
+	 */
+	public static function extractOptionalIfNotBlank($key, $array, $allowedBlankTypes = self::TYPE_NONE)
+	{
+		if (self::keyExistsAndNotBlank($key, $array, $allowedBlankTypes)) {
+			return self::extractOptional($key, $array);
+		} else {
+			return NULL;
 		}
 	}
 
@@ -82,7 +108,7 @@ class Saf_Array {
 	{
 		try {
 			return self::extract($key,$array);
-		} catch (Exception $e) { //#TODO #2.0.0 limit to specific exception
+		} catch (Saf_Exception_NoDefault $e) { //#TODO #2.0.0 limit to specific exception
 			return NULL;
 		}
 	}
@@ -191,8 +217,13 @@ class Saf_Array {
 	}
 
 	/**
-     *
-     */
+	 * takes string or array of strings and array, returning an array where
+	 * no string in the first parameter appears as a key in the new array.
+	 *
+	 * @param mixed $exclude string or array of strings to exclude
+	 * @param array $array from which some keys may be excluded
+	 * @return array subset of $array
+	 */
 	public static function excludeKeys($exclude, $array)
         {
                 if (!is_array($exclude)){
@@ -210,6 +241,12 @@ class Saf_Array {
                 return(array_sum($array) / count($array));
         }
 
+	/**
+	 * Serializes an array into a string using the formatting of print_r()
+	 *
+	 * @param array $array to serialize
+	 * @return string representation of $array
+	 */
 	public static function toString($array)
 	{
 		ob_start();
@@ -281,7 +318,7 @@ class Saf_Array {
 	{
 		if (!is_array($array)) {
 			Saf_Debug::out('Saf_Array::keyExistsAndNotBlank got a non-array operand.');
-			return false;
+			return FALSE;
 		}
 		if (!is_array($key)) {
 			$key = array($key);
@@ -302,10 +339,10 @@ class Saf_Array {
 					|| is_resource($array[$arrayKey])
 				)
 			) {
-				return false;
+				return FALSE;
 			}
 		}
-		return true;
+		return FALSE;
 	}
 	
 	/**
@@ -330,12 +367,12 @@ class Saf_Array {
 		}
 		foreach ($key as $arrayKey) {
 			if(!array_key_exists($arrayKey, $array)) {
-				return false;
+				return FALSE;
 			} else {
 				switch ($matchType) {
 					case Saf_Array::MATCH_EXACT:
 						if ($value !== $array[$arrayKey]) {
-							return false;
+							return FALSE;
 						}
 						break;
 					case Saf_Array::MATCH_LOOSE:
@@ -347,12 +384,12 @@ class Saf_Array {
 					case  Saf_Array::MATCH_EQUAL:
 					default:
 						if ($value != $array[$arrayKey]) {
-							return false;
+							return FALSE;
 						}
 				}
 			}
 		}
-		return true;
+		return TRUE;
 	}
 	
 	public static function keyExistsAndIsArray($key, $array) //#TODO #2.0.0 handle array like values by match type?
@@ -362,18 +399,18 @@ class Saf_Array {
 		}
 		foreach ($key as $arrayKey) {
 			if(!array_key_exists($arrayKey, $array) || !is_array($array[$arrayKey])) {
-				return false;
+				return FALSE;
 			}
 		}
-		return true;
+		return TRUE;
 	}
 	
 	/**
 	 * Searches for string $key in array $array and returns true only if
-	 * it the key exists and is a value in $list. The optional fourth 
+	 * the key exists and is a value in $list. The optional fourth
 	 * parameter determines how the match is determined, defaults to == :
-	 * == : Saf_Array::MATCH_EQUAL, 
-	 * === : Saf_Array::MATCH_EXACT, 
+	 * == : Saf_Array::MATCH_EQUAL,
+	 * === : Saf_Array::MATCH_EXACT,
 	 * string, case insensitive, trimmed : Saf_Array::MATCH_LOOSE
 	 * 
 	 * $key may be an array, this method will return true if all are present.
@@ -390,7 +427,7 @@ class Saf_Array {
 		}
 		foreach ($key as $arrayKey) {
 			if( !array_key_exists($arrayKey, $array)) {
-				return false;
+				return FALSE;
 			} else if (in_array($array[$arrayKey], $list, $matchType == Saf_Array::MATCH_EXACT)) {
 
 				continue;
@@ -400,12 +437,12 @@ class Saf_Array {
 						continue 2;
 					}
 				}
-				return false;
+				return FALSE;
 			} else {
-				return false;
+				return FALSE;
 			}
 		}
-		return true;
+		return TRUE;
 	}
 	
 	public static function isNumericArray($array)
@@ -426,5 +463,76 @@ class Saf_Array {
 			}
 		}
 		return TRUE;
+	}
+
+	/**
+	 * Searches for string $key in array $array and returns true only if
+	 * it the key exists and the value matches $value. The optional fourth
+	 * parameter determines how the match is determined, defaults to == :
+	 * == : Saf_Array::MATCH_EQUAL,
+	 * === : Saf_Array::MATCH_EXACT,
+	 * string, case insensitive, trimmed : Saf_Array::MATCH_LOOSE
+	 *
+	 * $key may be an array, this method will return true if all are present.
+	 *
+	 * @param string $key string array key to search for
+	 * @param array $array to be searched
+	 * @param int $matchType bitwise integer of match type to be performed
+	 * @return bool key exists and value is not blank
+	 */
+	public static function inArray($value, $array, $matchType = Saf_Array::MATCH_LOOSE)
+	{
+		if (!is_array($array)) {
+			return FALSE;
+		}
+		foreach ($array as $arrayKey=>$arrayValue) {
+			switch ($matchType) {
+				case Saf_Array::MATCH_EXACT:
+					if ($value === $arrayValue) {
+						return TRUE;
+					}
+					break;
+				case Saf_Array::MATCH_LOOSE:
+					if(is_string($value)) {
+						$value = strtolower(trim($value));
+						$arrayValue = strtolower(trim($arrayValue));
+					}
+				//#NOTE no break intentional
+				case  Saf_Array::MATCH_EQUAL:
+				default:
+					if ($value == $arrayValue) {
+						return TRUE;
+					}
+			}
+		}
+		return FALSE;
+	}
+
+	/**
+	 * Searches for string $key in array $array and returns true if
+	 * 1) $key is not in the array AND $default is TRUE (default behavior)
+	 *    i.e. the key for the checkbox(es) are not in the array
+	 * 2) $key is in the array, and is is an array, and
+	 *    at least one value in the array matches $value
+	 * 3) $key is in the array, and is not an array, and the value matches
+	 *    $value
+	 * $caseSensitive (default false) is considered in the string comparison
+	 * of $value (casting $value to a string) and any matching result
+	 * (also cast to string).
+	 * @param string $key string array key to search for
+	 * @param mixed $value to look for (always mapped to a string)
+	 * @param array $array to be searched
+	 * @param bool $default indicates the default behavior of the checkbox
+	 * @return bool $caseSentitive set to true for a case-senstive comparison
+	 */
+	public static function checkboxHelper($key, $value, $array, $default = TRUE, $caseSensitive = FALSE)
+	{
+		return (
+			!array_key_exists($key, $array) && $default
+		) || (
+			is_array($array[$key]) && self::inArray($value, $array[$key], self::MATCH_LOOSE)
+		) || (
+			!is_array($array[$key]) && strtolower($array[$key]) == (string)$value
+		);
 	}
 }
