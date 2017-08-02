@@ -448,7 +448,7 @@ class Saf_Debug
 
 	public static function printDebugShutdown()
 	{
-		if (!self::$_alreadyPrintedDebugShutdown) {
+		if (!self::$_alreadyPrintedDebugShutdown && Saf_Layout::formatIsHtml()) {
 			$loadTime = microtime(TRUE) - APPLICATION_START_TIME;
 			if (self::isVerbose()) {
 				if (self::$_muted) {
