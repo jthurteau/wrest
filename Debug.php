@@ -400,6 +400,9 @@ class Saf_Debug
 		}
 		print('<ul class="debugList">');
 		foreach($sanitizedRequest as $key=>$item) {
+			if (is_array($item)) {
+				$item = Saf_Array::toString($item);
+			}
 			print('<li class="noBullet">[' . htmlentities($key) . '] : ' . '<span class="literal">' . htmlentities($item) . '</span></li>');
 		}
 		print('</ul>');
