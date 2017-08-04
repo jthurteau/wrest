@@ -76,7 +76,6 @@ class Saf_Audit
 			if (array_key_exists('REQUEST_URI', $_SERVER)) {
 				$remote['uri'] = $_SERVER['REQUEST_URI'];
 			}
-			$remote['uri'] = $request->getRequestUri();
 			if (array_key_exists('REQUEST_METHOD', $_SERVER)) {
 				$remote['method'] = $_SERVER['REQUEST_METHOD'];
 			}
