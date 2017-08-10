@@ -102,4 +102,26 @@ class Saf_Audit
 		}
 		return $result;
 	}
+
+	public static function exceptionMessage($exception, $withTrace = TRUE)
+	{
+		if ($exception) {
+			if (!is_object($exception)) {
+				return 'Non-Object ' .gettype($exception);
+			} else if (!is_a($exception,'Exception')) {
+				return 'Non-Exception ' . get_class($exception);
+			} else {
+				$additional = '';
+				if ($exception->getPrevious()) {
+					$additional = ' (' . self::exceptionMessage($exception->getPrevious(), FALSE) . ')';
+				}
+				if ($withTrace) {
+					$additional .= "\n" . $exception->getTraceAsString();
+				}
+				return get_class($exception) . ' ' . $exception->getMessage() . $additional;
+			}
+		} else {
+			return 'none';
+		}
+	}
 }
