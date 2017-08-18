@@ -247,10 +247,10 @@ class Saf_Auth{
 		foreach(self::$_loadedPlugins as $pluginName){
 			$plugin = self::_getPlugin($pluginName);
 			if($plugin->isLoggedIn()){
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	public static function isInternallyLoggedIn()
