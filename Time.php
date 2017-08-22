@@ -64,6 +64,9 @@ class Saf_Time {
 	const FORMAT_TIME_URL = 'H-i';
 	const FORMAT_DATETIME_URL = 'Y-m-d/H-i';
 	const FORMAT_DATETIME_DB = 'Y-m-d H:i:s';
+	const FORMAT_MONTH_SHORT = 'F';
+	const FORMAT_MONTH_FULL = 'M';
+
 	
 	/**
 	 * How many seconds off real time we are testing against
@@ -348,6 +351,12 @@ class Saf_Time {
 	public static function getMicroOffset()
 	{
 		return self::$_microDiff;
+	}
+
+	public static function lookupMonth($number, $format = self::FORMAT_MONTH_FULL)
+	{
+		$date = '2000-' . str_pad($number, 2, '0', STR_PAD_LEFT) . '-15';
+		return date($format,strtotime($date));
 	}
 
 }
