@@ -14,6 +14,7 @@ class Saf_Audit
 	protected static $_path = NULL;
 	protected static $_db = NULL;
 	protected static $_statusModel = NULL;
+	protected static $_critical = FALSE;
 
 	public static function init($config)
 	{
@@ -39,68 +40,77 @@ class Saf_Audit
 
 	public static function add($classification, $message = NULL, $request = NULL, $user = NULL)
 	{
-		if (!self::$_db) {
-			throw new Exception('Audit not initialized');
-		}
-		$table = self::$_path;
-		if (is_null($classification) || '' == trim($classification)) {
-			throw new Exception('Invalid Audit Classification');
-		}
-		$cols = '`when`, `classification`';
-		$values =
-			Saf_Pdo_Connection::escapeString(date(Saf_Time::FORMAT_DATETIME_DB)) //#NOTE don't insulate the timestamp
-			. ', ' . Saf_Pdo_Connection::escapeString(trim($classification));
-		if (!is_null($message)) {
-			$cols .= ', `message`';
-			$values .= ', ' . Saf_Pdo_Connection::escapeString(trim($message));
-		}
-		$remote = array();
-		if (array_key_exists('HTTP_USER_AGENT', $_SERVER)) {
-			$remote['agent'] = $_SERVER['HTTP_USER_AGENT'];
-		}
-		if (array_key_exists('REMOTE_ADDR', $_SERVER)) {
-			$remote['addr'] = $_SERVER['REMOTE_ADDR'];
-		}
-		if (array_key_exists('HTTP_REFERER', $_SERVER)) {
-			$remote['ref'] = $_SERVER['HTTP_REFERER'];
-		}
-		if (!is_null($request)) {
-			if (is_object($request)) {
-				$remote['uri'] = $request->getRequestUri();
-				$remote['method'] = $request->getMethod();
-				$remote['post'] = $request->getPost();
+		try {
+			if (!self::$_db) {
+				throw new Exception('Audit not initialized');
+			}
+			$table = self::$_path;
+			if (is_null($classification) || '' == trim($classification)) {
+				throw new Exception('Invalid Audit Classification');
+			}
+			$cols = '`when`, `classification`';
+			$values =
+				Saf_Pdo_Connection::escapeString(date(Saf_Time::FORMAT_DATETIME_DB)) //#NOTE don't insulate the timestamp
+				. ', ' . Saf_Pdo_Connection::escapeString(trim($classification));
+			if (!is_null($message)) {
+				$cols .= ', `message`';
+				$values .= ', ' . Saf_Pdo_Connection::escapeString(trim($message));
+			}
+			$remote = array();
+			if (array_key_exists('HTTP_USER_AGENT', $_SERVER)) {
+				$remote['agent'] = $_SERVER['HTTP_USER_AGENT'];
+			}
+			if (array_key_exists('REMOTE_ADDR', $_SERVER)) {
+				$remote['addr'] = $_SERVER['REMOTE_ADDR'];
+			}
+			if (array_key_exists('HTTP_REFERER', $_SERVER)) {
+				$remote['ref'] = $_SERVER['HTTP_REFERER'];
+			}
+			if (!is_null($request)) {
+				if (is_object($request)) {
+					$remote['uri'] = $request->getRequestUri();
+					$remote['method'] = $request->getMethod();
+					$remote['post'] = $request->getPost();
+				} else {
+					$remote['raw'] = trim($request);
+				}
 			} else {
-				$remote['raw'] = trim($request);
+				if (array_key_exists('REQUEST_URI', $_SERVER)) {
+					$remote['uri'] = $_SERVER['REQUEST_URI'];
+				}
+				if (array_key_exists('REQUEST_METHOD', $_SERVER)) {
+					$remote['method'] = $_SERVER['REQUEST_METHOD'];
+				}
+				if (is_array($_POST)) {
+					$remote['post'] = $_POST;
+				}
 			}
-		} else {
-			if (array_key_exists('REQUEST_URI', $_SERVER)) {
-				$remote['uri'] = $_SERVER['REQUEST_URI'];
+			$cols .= ', `request`';
+			$requestString = json_encode($remote);
+			$values .= ', ' . Saf_Pdo_Connection::escapeString($requestString);
+			if (!is_null($user)) {
+				$cols .= ', `username`';
+				$values .= ', ' . Saf_Pdo_Connection::escapeString(trim($user));
 			}
-			if (array_key_exists('REQUEST_METHOD', $_SERVER)) {
-				$remote['method'] = $_SERVER['REQUEST_METHOD'];
+			$query = "INSERT INTO {$table} ({$cols}) VALUES ({$values});";
+			$result = self::$_db->insert($query);
+			if (!$result) {
+				$count = Saf_Cache::get('auditFailCount', NULL);
+				if (is_null($count)) {
+					$count = 0;
+				}
+				Saf_Cache::save('auditFailCount', ++$count);
+				Saf_Debug::outData(array('failed to audit activity', self::$_db->getErrorMessage(),self::$_db));
 			}
-			if (is_array($_POST)) {
-				$remote['post'] = $_POST;
+			return $result;
+		} catch (Exception $e){
+			if (self::$_critical) {
+				throw($e);
+			} else {
+				Saf_Debug::outData(array('failed to audit activity', self::$_db->getErrorMessage(),self::$_db));
 			}
 		}
-		$cols .= ', `request`';
-		$requestString = json_encode($remote);
-		$values .= ', ' . Saf_Pdo_Connection::escapeString($requestString);
-		if (!is_null($user)) {
-			$cols .= ', `username`';
-			$values .= ', ' . Saf_Pdo_Connection::escapeString(trim($user));
-		}
-		$query = "INSERT INTO {$table} ({$cols}) VALUES ({$values});";
-		$result = self::$_db->insert($query);
-		if (!$result) {
-			$count = Saf_Cache::get('auditFailCount', NULL);
-			if (is_null($count)) {
-				$count = 0;
-			}
-			Saf_Cache::save('auditFailCount', ++$count);
-			Saf_Debug::outData(array('failed to audit activity', self::$_db->getErrorMessage(),self::$_db));
-		}
-		return $result;
+		return NULL;
 	}
 
 	public static function exceptionMessage($exception, $withTrace = TRUE)
