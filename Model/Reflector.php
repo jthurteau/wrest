@@ -406,8 +406,6 @@ class Saf_Model_Reflector
 			} else {
 				if ($reflector->hasMethod($term)) {
 					$nextObject = $reflector->getMethod($term)->invoke($object);
-					if ($objectString == 'Ems' && $term =='getRoomList') {
-					}
 				} else if ($reflector->hasProperty($term)) {
 					$nextObject = $reflector->getProperty($term);
 				} else {

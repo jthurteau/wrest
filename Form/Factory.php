@@ -92,7 +92,8 @@ class Saf_Form_Factory
 		}
 		$rawXml = file_get_contents(APPLICATION_PATH . "/configs/form/{$formName}.xml");
 		$dereferencedXml = Saf_Model_Reflector::dereference($rawXml, $templateConfig);
-		return new Zend_Config_Xml($dereferencedXml);
+		$returnObject = new Zend_Config_Xml($dereferencedXml);
+		return $returnObject;
 	}
 }
 
