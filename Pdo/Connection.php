@@ -224,7 +224,6 @@ class Saf_Pdo_Connection{
 			throw new Saf_Pdo_Exception('Attempting to call ::update on a non-UPDATE statement.');
 		}
 		$statement = $this->_prepStatement($query, $args);
-//print_r(array('update',$query,$statement,$this->count(),$statement->rowCount(),$this->getError()));
 		return
 			$statement
 			? $this->count()

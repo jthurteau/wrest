@@ -258,7 +258,7 @@ class Saf_Debug
 		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon('search') . '</span>') : '';
 		ob_start();
 		print("\n<div class=\"debug{$level}\"><pre>Data:{$icon}<br/>\n");
-		print(htmlentities($trace));
+		print($trace);
 		print_r($message);
 		print("\n</pre></div>\n");
 		$output = ob_get_contents();

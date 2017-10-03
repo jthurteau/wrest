@@ -142,7 +142,7 @@ class Saf_Cache {
 			$pointer = fopen($path, 'r');
 			$fileLock = flock($pointer, LOCK_SH);
 			if (!$fileLock) {
-				Saf_Debug::out("read blocking {$file}");
+Saf_Debug::out("read blocking {$file}");
 				$fileLock = flock($pointer, LOCK_SH | LOCK_NB);
 			}
 			if ($fileLock) {
@@ -153,7 +153,7 @@ class Saf_Cache {
 					: '';
 				$value = json_decode($contents, TRUE);
 			} else {
-				Saf_Debug::out("unable to read {$file}");
+Saf_Debug::out("unable to read {$file}");
 			}
 			flock($pointer, LOCK_UN);
 			fclose($pointer);
@@ -170,7 +170,7 @@ class Saf_Cache {
 			$pointer = fopen($path, 'r');
 			$fileLock = flock($pointer, LOCK_SH);
 			if (!$fileLock) {
-				Saf_Debug::out("read blocking {$file}");
+Saf_Debug::out("read blocking {$file}");
 				$fileLock = flock($pointer, LOCK_SH | LOCK_NB);
 			}
 			if ($fileLock) {
@@ -183,10 +183,10 @@ class Saf_Cache {
 				if (is_array($hash) && array_key_exists($uname, $hash)) {
 					$value = $hash[$uname];
 				} else {
-					Saf_Debug::out("hash {$file} does not have {$uname}", 'notice');
+Saf_Debug::out("hash {$file} does not have {$uname}", 'notice');
 				}
 			} else {
-				Saf_Debug::out("unable to read {$file}");
+Saf_Debug::out("unable to read {$file}");
 			}
 			flock($pointer, LOCK_UN);
 			fclose($pointer);
@@ -248,6 +248,7 @@ class Saf_Cache {
 		}
 		$payload = NULL;
 		$contents = self::getRawHash($file, $uname);
+//Saf_Debug::outData(array('from file', $file, $uname, $contents));
 		if ( //#TODO consolidate this block with get
 				$contents
 				&& is_array($contents)
@@ -355,14 +356,14 @@ class Saf_Cache {
 	public static function save($file, $value, $mode = self::STAMP_MODE_REPLACE)
 	{
 		if (is_null($value)) {
-			Saf_Debug::outData(array("saving null value to cache, {$file}"));
+Saf_Debug::outData(array("saving null value to cache, {$file}"));
 		}
 		self::$_memory[$file] = $value;
 		$path = self::$_path . '/' . $file;
 		$pointer = fopen($path, 'c+');
 		$fileLock = flock($pointer, LOCK_EX);
 		if (!$fileLock) {
-			Saf_Debug::out("write blocking {$file}");
+Saf_Debug::out("write blocking {$file}");
 			$fileLock = flock($pointer, LOCK_EX | LOCK_NB);
 		}
 		if ($fileLock) {
@@ -394,7 +395,7 @@ class Saf_Cache {
 			));
 //	Saf_Debug::out("cached {$file}");
 		} else {
-			Saf_Debug::out("unable to save {$file}");
+Saf_Debug::out("unable to save {$file}");
 		}
 		flock($pointer, LOCK_UN);
 		fclose($pointer);
@@ -409,7 +410,7 @@ class Saf_Cache {
 	public static function saveHash($file, $uname, $value)
 	{
 		if (is_null($value)) {
-			Saf_Debug::outData(array("saving null value to hash, {$file}:{$uname}"));
+Saf_Debug::outData(array("saving null value to hash, {$file}:{$uname}"));
 		}
 		if (!array_key_exists($file, self::$_hashMemory)) {
 			self::$_hashMemory[$file] = array();
@@ -428,7 +429,7 @@ class Saf_Cache {
 		$pointer = fopen($path, $mode);
 		$fileLock = flock($pointer, LOCK_EX);
 		if (!$fileLock) {
-			Saf_Debug::out("write blocking {$file}");
+Saf_Debug::out("write blocking {$file}");
 			$fileLock = flock($pointer, LOCK_EX | LOCK_NB);
 		}
 		if ($fileLock) {
@@ -442,7 +443,7 @@ class Saf_Cache {
 				? json_decode($contents, TRUE)
 				: array();
 			if (is_null($hashValue)) {
-				Saf_Debug::out("cache invalid, resetting {$file}");
+Saf_Debug::out("cache invalid, resetting {$file}");
 				$hashValue = array();
 			}
 			ftruncate($pointer, 0);
@@ -453,12 +454,12 @@ class Saf_Cache {
 			if ($jsonOutput) {
 				fwrite($pointer, $jsonOutput);
 			} else {
-				Saf_Debug::out("unable to encode {$file} : {$uname}");
+Saf_Debug::out("unable to encode {$file} : {$uname}");
 				fwrite($pointer, $contents);
 			}
-//Saf_Debug::out("cached {$file} : {$uname}");
+//Saf_Debug::outData(array("cached {$file} : {$uname}", $value));
 		} else {
-			Saf_Debug::out("unable to save {$file} : {$uname}");
+Saf_Debug::out("unable to save {$file} : {$uname}");
 		}
 		flock($pointer, LOCK_UN);
 		fclose($pointer);		
@@ -479,10 +480,16 @@ class Saf_Cache {
 			return TRUE;
 		} else {
 			if (file_exists(self::$_path . '/' . $file)) {
+//Saf_Debug::outData(array('clearing hash file', $file));
 				unlink(self::$_path . '/' . $file);
 			}
 			if (array_key_exists($file, self::$_memory)) {
 				unset(self::$_memory[$file]);
+			}
+			if (array_key_exists($file, self::$_hashMemory)) {
+//Saf_Debug::outData(array('clearing hash memory', $file));
+				unset(self::$_hashMemory[$file]);
+//Saf_Debug::outData(array('hash memory', self::$_hashMemory));
 			}
 			clearstatcache(FALSE, self::$_path . '/' . $file);
 			return !file_exists(self::$_path . '/' . $file);
