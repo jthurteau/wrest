@@ -359,4 +359,12 @@ class Saf_Time {
 		return date($format,strtotime($date));
 	}
 
+	public static function hourStampToString($hourStamp, $dateStamp = NULL, $format = 'g:i A')
+	{
+		if (is_null($dateStamp)) {
+			$dateStamp = self::modify(Saf_Time::MODIFIER_START_TODAY);
+		}
+		return date($format, $hourStamp + $dateStamp);
+	}
+
 }
