@@ -213,7 +213,21 @@ class Saf_Client_Http{
 		}
 		$this->_connection = NULL;
 	}
-	
+
+	public function resource($url, $get = array(), $post = array(), $postContentType = '')
+	{
+		$currentURL = $this->_actionUrl;
+		try {
+			$this->_actionUrl .= $url;
+			$result = $this->go($get, $post, $postContentType);
+			$this->_actionUrl = $currentURL;
+			return $result;
+		} catch (Exception $e) {
+			$this->_actionUrl = $currentURL;
+			throw $e;
+		}
+	}
+
 	public function go($get = array(), $post=array(), $postContentType = '')
 	{
 		if ('' == trim($this->_url)) {

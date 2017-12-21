@@ -8,6 +8,8 @@ Auth Plugin Class for Shibboleth integration
 
 *******************************************************************************/
 class Saf_Auth_Plugin_Shib extends Saf_Auth_Plugin_Basic{
+	
+	protected $_pluginName = 'Shibboleth Auth';
 
 	public function auth(){
 		$username = $this->getProvidedUsername();

@@ -23,6 +23,7 @@ class Saf_Auth{
 	protected static $_loadedConfig = NULL;
 	protected static $_supportsInternal = FALSE;
 	protected static $_serviceKeys = array();
+	protected static $_postLoginHooks = array();
 
 	const PLUGIN_INFO_USERNAME = 'username';
 	const PLUGIN_INFO_REALM = 'realm';
@@ -96,6 +97,15 @@ class Saf_Auth{
 				}
 			}
 			$firstPass = FALSE;
+		}
+		$hooks = array_key_exists('postProcess', $config)
+			? (
+				Saf_Array::isNumericArray($config['postProcess'])
+				? $config['postProcess']
+				: array($config['postProcess'])
+			) : array();
+		foreach($hooks as $hook) {
+			self::$_postLoginHooks[$hook] = 'Hook_' . $hook;
 		}
 		self::$_initialized = TRUE;
 	}
@@ -225,8 +235,15 @@ class Saf_Auth{
 			self::$_activePlugin->postLogin();
 		}
 		//#TODO #1.5.0 log if requested
-		//#TODO #1.1.0
-		//#NOTE anything else we want to do at login time. i.e. auto create groups?
+		if (!self::isInternallyLoggedIn()) {
+			foreach(self::$_postLoginHooks as $hookName) {
+				try {
+					$hookName::trigger(array('username' => $username));
+				} catch (Exception $e) {
+					Saf_Audit::add('problem', $e->getMessage());
+				}
+			}
+		}
 		return TRUE;
 	}
 

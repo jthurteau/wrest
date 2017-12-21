@@ -10,6 +10,8 @@ authentication spoofing
 *******************************************************************************/
 class Saf_Auth_Plugin_Local { //#TODO #1.5.0 make a base class extend
 
+	protected $_pluginName = 'Application Local Auth';
+
 	public static function auth(){
 		$username = self::getProvidedUsername();
 		if ($username) {

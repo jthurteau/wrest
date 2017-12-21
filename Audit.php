@@ -71,6 +71,8 @@ class Saf_Audit
 					$remote['uri'] = $request->getRequestUri();
 					$remote['method'] = $request->getMethod();
 					$remote['post'] = $request->getPost();
+				} else if (is_array($request)){
+					$remote['raw'] = Saf_Array::toString($request);
 				} else {
 					$remote['raw'] = trim($request);
 				}

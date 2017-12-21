@@ -19,7 +19,7 @@ class Saf_Exception_AccountDisorder extends Saf_Exception_Workflow
 	{//#TODO #1.5.0 pull from dict
 		return '<p>We load university accounts into the scheduling system on '
 			. 'a nightly basis. On occasion new staff, students that are not registered '
-			. 'for the next semester, and other accounts may encounter access issues.</p>'
+			. 'for the current semester, and other accounts may encounter access issues.</p>'
 			. parent::getAdditionalInfo();
 	}
 }
