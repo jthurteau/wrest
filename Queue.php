@@ -56,66 +56,51 @@ class Saf_Queue {
 		}
 		$cols = '`when`, `classification`, `recall`, `payload`, `username`';
 		$values =
-			Saf_Pdo_Connection::escapeString(date(Saf_Time::FORMAT_DATETIME_DB)) //#NOTE don't insulate the timestamp
-			. ', ' . Saf_Pdo_Connection::escapeString(trim($classification));
-		if (!is_null($message)) {
-			$cols .= ', `message`';
-			$values .= ', ' . Saf_Pdo_Connection::escapeString(trim($message));
-		}
-		$remote = array();
-		if (array_key_exists('HTTP_USER_AGENT', $_SERVER)) {
-			$remote['agent'] = $_SERVER['HTTP_USER_AGENT'];
-		}
-		if (array_key_exists('REMOTE_ADDR', $_SERVER)) {
-			$remote['addr'] = $_SERVER['REMOTE_ADDR'];
-		}
-		if (array_key_exists('HTTP_REFERER', $_SERVER)) {
-			$remote['ref'] = $_SERVER['HTTP_REFERER'];
-		}
-		if (!is_null($request)) {
-			if (is_object($request)) {
-				$remote['uri'] = $request->getRequestUri();
-				$remote['method'] = $request->getMethod();
-				$remote['post'] = $request->getPost();
-			} else if (is_array($request)){
-				$remote['raw'] = Saf_Array::toString($request);
-			} else {
-				$remote['raw'] = trim($request);
-			}
-		} else {
-			if (array_key_exists('REQUEST_URI', $_SERVER)) {
-				$remote['uri'] = $_SERVER['REQUEST_URI'];
-			}
-			if (array_key_exists('REQUEST_METHOD', $_SERVER)) {
-				$remote['method'] = $_SERVER['REQUEST_METHOD'];
-			}
-			if (is_array($_POST)) {
-				$remote['post'] = $_POST;
-			}
-		}
-		$cols .= ', `request`';
-		$requestString = json_encode($remote);
-		$values .= ', ' . Saf_Pdo_Connection::escapeString($requestString);
-		if (!is_null($user)) {
-			$cols .= ', `username`';
-			$values .= ', ' . Saf_Pdo_Connection::escapeString(trim($user));
-		}
+			Saf_Pdo_Connection::escapeString($when) //#NOTE don't insulate the timestamp
+			. ', ' . Saf_Pdo_Connection::escapeString(trim($classification))
+			. ', ' . Saf_Pdo_Connection::escapeString(trim($recall))
+			. ', ' . Saf_Pdo_Connection::escapeString(serialize($payload))
+			. ', ' . Saf_Pdo_Connection::escapeString(trim($user));
 		$query = "INSERT INTO {$table} ({$cols}) VALUES ({$values});";
 		$result = self::$_db->insert($query);
 		if (!$result) {
-			$count = Saf_Cache::get('auditFailCount', NULL);
+			$count = Saf_Cache::get('queueFailCount', NULL);
 			if (is_null($count)) {
 				$count = 0;
 			}
-			Saf_Cache::save('auditFailCount', ++$count);
-			Saf_Debug::outData(array('failed to audit activity', self::$_db->getErrorMessage(),self::$_db));
+			Saf_Cache::save('queueFailCount', ++$count);
+			Saf_Debug::outData(array('failed to queue email', self::$_db->getErrorMessage(),self::$_db));
 		}
 		return $result;
+	}
+
+	public static function updateEmail($recall, $when, $payload)
+	{
+		$updates = array();
+		$updates[] = 'when = ' . Saf_Pdo_Connection::escapeString($when);
+		$updates[] = 'payload = ' . Saf_Pdo_Connection::escapeString($when);
+		$updates = implode(',', $updates);
+		$query = "UPDATE {$table} SET {$updates} WHERE recall = {$escapedRecall} AND NOT sent;";
+
+		if (TRUE) {
+			Saf_Audit::add('notice', 'email not updated, already sent', json_encode($payload), $recall);
+		}
+	}
+
+	public static function cancelEmail($recall)
+	{
+		$query = "DELETE FROM {$table} WHERE recall = {$escapedRecall};";
 	}
 	
 	public static function pop($count = 1)
 	{
-		
+		if (!array_key_exists('email', self::$_path)) {
+			throw new Exception('Email Queue Not Configured');
+		}
+		$table = self::$_path['email'];
+		$query = "SELECT * FROM {$table} WHERE {$where}";
+		$result = self::$_db->query($query);
+		print_r($result); die;
 	}
 	
 }
