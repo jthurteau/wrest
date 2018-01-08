@@ -38,10 +38,24 @@ class Saf_Audit
 		}
 	}
 
+	protected static function _auditFail($additional = '')
+	{
+		if (trim($additional) != '') {
+			$additional = ' ' . $additional;
+		}
+		$count = Saf_Cache::get('auditFailCount', NULL);
+		if (is_null($count)) {
+			$count = 0;
+		}
+		Saf_Cache::save('auditFailCount', ++$count);
+		Saf_Debug::outData(array('failed to audit activity.' . $additional, self::$_db->getErrorMessage(),self::$_db));
+	}
+
 	public static function add($classification, $message = NULL, $request = NULL, $user = NULL)
 	{
 		try {
 			if (!self::$_db) {
+				self::_auditFail('not initialized.');
 				throw new Exception('Audit not initialized');
 			}
 			$table = self::$_path;
@@ -72,7 +86,7 @@ class Saf_Audit
 					$remote['method'] = $request->getMethod();
 					$remote['post'] = $request->getPost();
 				} else if (is_array($request)){
-					$remote['raw'] = Saf_Array::toString($request);
+					$remote['raw'] = json_encode($request,JSON_FORCE_OBJECT); //Saf_Array::toString($request);
 				} else {
 					$remote['raw'] = trim($request);
 				}
@@ -97,19 +111,14 @@ class Saf_Audit
 			$query = "INSERT INTO {$table} ({$cols}) VALUES ({$values});";
 			$result = self::$_db->insert($query);
 			if (!$result) {
-				$count = Saf_Cache::get('auditFailCount', NULL);
-				if (is_null($count)) {
-					$count = 0;
-				}
-				Saf_Cache::save('auditFailCount', ++$count);
-				Saf_Debug::outData(array('failed to audit activity', self::$_db->getErrorMessage(),self::$_db));
+				self::_auditFail('query fail.');
 			}
 			return $result;
 		} catch (Exception $e){
 			if (self::$_critical) {
 				throw($e);
 			} else {
-				Saf_Debug::outData(array('failed to audit activity', self::$_db->getErrorMessage(),self::$_db));
+				self::_auditFail($e->getMessage());
 			}
 		}
 		return NULL;
