@@ -130,7 +130,7 @@ class Saf_Acl{
 			$stack = array();
 		}
 		$request = array_merge(array($module,$controller,$action), $stack);
-		foreach($request as $partIndex=>$part) {
+		foreach($request as $partIndex => $part) {
 			if (array_key_exists($partIndex, $acl)){
 				if (is_array($acl[$partIndex]) && !in_array($part, $acl[$partIndex])) {
 					return FALSE;

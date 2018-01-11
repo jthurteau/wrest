@@ -80,7 +80,6 @@ class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abst
 	protected function _aclRules($module, $controller, $action, $stack, $get = array())
 	{
 		$applicationAcl = Saf_Acl::getInstance();
-
 		$url = (
 			'default' != $module
 			? "{$module}/"

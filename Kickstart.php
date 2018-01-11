@@ -409,13 +409,15 @@ class Saf_Kickstart {
 		foreach ($oldPaths as $path) {
 			$currentRealPath = realpath($path);
 			$currentMatchesNew = (
-				($currentRealPath && $currentRealPath == $realNewPath)
+				($currentRealPath && ($currentRealPath == $realNewPath))
 				|| $path == $filepath
 			);
 			$currentMatchesPlace = (
-				($currentRealPath && $currentRealPath == $realPlace)
+				($currentRealPath && ($currentRealPath == $realPlace))
 				|| $path == $place
 			);
+			print_r(array($filepath,$path,$currentMatchesNew,$currentMatchesPlace));
+			print("\n");
 			if (self::POSITION_BEFORE == $preposition && !$placed) {
 				if ('*' == $place || $currentMatchesPlace) {
 					$newPaths[] = $realNewPath;
@@ -425,7 +427,7 @@ class Saf_Kickstart {
 					$placed = TRUE;
 				}
 			} else if (!$placed) {
-				if ('*' != $place && $currentMatchesPlace) {
+				if ('*' == $place || $currentMatchesPlace) {
 					if (!$currentMatchesNew) {
 						$newPaths[] = $path;
 					}
@@ -435,16 +437,16 @@ class Saf_Kickstart {
 			} else if (!$currentMatchesNew) {
 				$newPaths[] = $path;
 			}
-			if (!$placed) {
-				$newPaths[] = $realNewPath;
-			}
 
-			if(strpos($filepath, PATH_SEPARATOR) !== 0
+/*			if(strpos($filepath, PATH_SEPARATOR) !== 0
 				? file_exists(realpath($path . $filepath))
 				: file_exists(realpath($path . PATH_SEPARATOR . $filepath))
 			){
 				return TRUE;
-			}
+			}*/
+		}
+		if (!$placed) {
+			$newPaths[] = $realNewPath;
 		}
 		ini_set('include_path', implode(PATH_SEPARATOR, $newPaths));
 		return TRUE;

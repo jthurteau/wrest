@@ -45,7 +45,7 @@ class Saf_Queue {
 		}
 	}
 	
-	public static function pushEmail($when, $payload, $user, $classification, $recall)
+	public static function pushEmail($recall, $when, $payload, $user, $classification)
 	{
 		if (!array_key_exists('email', self::$_path)) {
 			throw new Exception('Email Queue Not Configured');
@@ -76,17 +76,21 @@ class Saf_Queue {
 
 	public static function updateEmail($recall, $when, $payload)
 	{
+		if (!array_key_exists('email', self::$_path)) {
+			throw new Exception('Email Queue Not Configured');
+		}
+		$table = self::$_path['email'];
 		$updates = array();
 		if (Saf_Time::isTimeStamp($when)) {
 			$when = date(Saf_Time::FORMAT_DATETIME_DB, $when);
 		}
-		$updates[] = 'when = ' . Saf_Pdo_Connection::escapeString($when);
-		$updates[] = 'payload = ' . Saf_Pdo_Connection::escapeString($when);
+		$updates[] = '`when` = ' . Saf_Pdo_Connection::escapeString($when);
+		$updates[] = '`payload` = ' . Saf_Pdo_Connection::escapeString(serialize($payload));
+		$escapedRecall = Saf_Pdo_Connection::escapeString(trim($recall));
 		$updates = implode(',', $updates);
-		$query = "UPDATE {$table} SET {$updates} WHERE recall = {$escapedRecall} AND NOT sent;";
+		$query = "UPDATE {$table} SET {$updates} WHERE `recall` = {$escapedRecall} AND NOT `sent`;";
 		$result = self::$_db->update($query);
-		print_r(array($query,$result)); die;
-		if (TRUE) {
+		if (!$result) {
 			Saf_Audit::add('notice', 'email not updated, missing or already sent', json_encode($payload), $recall);
 		}
 	}
@@ -100,7 +104,6 @@ class Saf_Queue {
 		$escapedRecall = Saf_Pdo_Connection::escapeString($recall);
 		$query = "DELETE FROM {$table} WHERE recall = {$escapedRecall};";
 		$result = self::$_db->delete($query);
-		print_r(array($query,$result)); die;
 	}
 	
 	public static function pop($count = 1)
