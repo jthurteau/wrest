@@ -416,8 +416,6 @@ class Saf_Kickstart {
 				($currentRealPath && ($currentRealPath == $realPlace))
 				|| $path == $place
 			);
-			print_r(array($filepath,$path,$currentMatchesNew,$currentMatchesPlace));
-			print("\n");
 			if (self::POSITION_BEFORE == $preposition && !$placed) {
 				if ('*' == $place || $currentMatchesPlace) {
 					$newPaths[] = $realNewPath;
