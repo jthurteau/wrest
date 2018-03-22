@@ -88,11 +88,20 @@ class Saf_Layout {
 	 */
 	public static function printLink($url)
 	{
+		print(self::getLink($url));
+	}
+
+	/**
+	 * ensure relative URLs work regardless of where the application is served from
+	 * @param string $url
+	 */
+	public static function getLink($url)
+	{
 		$baseUrl = Zend_Registry::get('baseUrl');
 		if (strpos($url, '/') === 0) {
 			$url = substr($url, 1);
 		}
-		print($baseUrl . $url);
+		return ($baseUrl . $url);
 	}
 
 	/**
