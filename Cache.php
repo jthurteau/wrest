@@ -136,6 +136,11 @@ class Saf_Cache {
 	}
 	
 	public static function getRaw($file){
+		if (!self::$_path) {
+			return NULL;
+			Saf_Debug::out('Cannot get raw from disk with no path set for cache.','ERROR');
+			//throw new Exception('Cannot get from disk with no path set for cache.');
+		}
 		$path = self::$_path . '/' . $file;
 		$value = NULL;
 		if (file_exists($path)) {
@@ -164,6 +169,11 @@ Saf_Debug::out("unable to read {$file}");
 	}
 	
 	public static function getRawHash($file, $uname){
+		if (!self::$_path) {
+			return NULL;
+			Saf_Debug::out('Cannot get raw hash from disk with no path set for cache.','ERROR');
+			//throw new Exception('Cannot get from disk with no path set for cache.');
+		}
 		$path = self::$_path . '/' . $file;
 		$value = NULL;
 		if (file_exists($path)) {
@@ -200,6 +210,11 @@ Saf_Debug::out("unable to read {$file}");
 	{
 		if (array_key_exists($file, self::$_memory)) {
 			return self::$_memory[$file];
+		}
+		if (!self::$_path) {
+			return NULL;
+			Saf_Debug::out('Cannot get from disk with no path set for cache.','ERROR');
+			//throw new Exception('Cannot get from disk with no path set for cache.');
 		}
 		$payload = NULL;
 		$contents = self::getRaw($file);
@@ -245,6 +260,11 @@ Saf_Debug::out("unable to read {$file}");
 			&& array_key_exists($uname, self::$_hashMemory[$file])
 		) {
 			return self::$_hashMemory[$file][$uname];
+		}
+		if (!self::$_path) {
+			return NULL;
+			Saf_Debug::out('Cannot get hash from disk with no path set for cache.','ERROR');
+			//throw new Exception('Cannot get from disk with no path set for cache.');
 		}
 		$payload = NULL;
 		$contents = self::getRawHash($file, $uname);
@@ -302,6 +322,11 @@ Saf_Debug::out("unable to read {$file}");
 	
 	public static function analyze($file)
 	{
+		if (!self::$_path) {
+			return NULL;
+			Saf_Debug::out('Cannot analyze from disk with no path set for cache.','ERROR');
+			//throw new Exception('Cannot get from disk with no path set for cache.');
+		}
 		if (file_exists(self::$_path . '/' . $file)) {
 			$data = stat(self::$_path . '/' . $file);
 			if ($data) {
@@ -355,6 +380,12 @@ Saf_Debug::out("unable to read {$file}");
 	
 	public static function save($file, $value, $mode = self::STAMP_MODE_REPLACE)
 	{
+		if (!self::$_path) {
+			return NULL;
+			Saf_Debug::out('Cannot save to disk with no path set for cache.','ERROR');
+			//#TODO #2.0 allow memory write?
+			//throw new Exception('Cannot get from disk with no path set for cache.');
+		}
 		if (is_null($value)) {
 Saf_Debug::outData(array("saving null value to cache, {$file}"));
 		}
@@ -409,6 +440,12 @@ Saf_Debug::out("unable to save {$file}");
 	
 	public static function saveHash($file, $uname, $value)
 	{
+		if (!self::$_path) {
+			return NULL;
+			Saf_Debug::out('Cannot save hash to disk with no path set for cache.','ERROR');
+			//#TODO #2.0 allow memory write?
+			//throw new Exception('Cannot get from disk with no path set for cache.');
+		}
 		if (is_null($value)) {
 Saf_Debug::outData(array("saving null value to hash, {$file}:{$uname}"));
 		}
@@ -467,6 +504,12 @@ Saf_Debug::out("unable to save {$file} : {$uname}");
 
 	public static function clear($file)
 	{
+		if (!self::$_path) {
+			return NULL;
+			Saf_Debug::out('Cannot clear file on disk with no path set for cache.','ERROR');
+			//#TODO #2.0.0 allow clear memory
+			//throw new Exception('Cannot get from disk with no path set for cache.');
+		}
 		if (strpos($file, '/*') == strlen($file) - 2) {
 			$path = substr($file, 0, strlen($file) - 2);
 			$clearableFiles = self::dir($path);
