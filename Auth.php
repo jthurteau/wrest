@@ -105,6 +105,7 @@ class Saf_Auth{
 				: array($config['postProcess'])
 			) : array();
 		foreach($hooks as $hook) {
+			Saf_Debug::out("Adding Post Auth Hook: {$hook}");
 			self::$_postLoginHooks[$hook] = 'Hook_' . $hook;
 		}
 		self::$_initialized = TRUE;
@@ -218,6 +219,7 @@ class Saf_Auth{
 	}
 */
 	protected static function _login($username = self::USER_AUTODETECT, $logInDb = FALSE){
+		$wasLoggedIn = self::isInternallyLoggedIn();
 		if (
 			$username !== self::USER_AUTODETECT
 			&& '' != trim($username)
@@ -235,9 +237,10 @@ class Saf_Auth{
 			self::$_activePlugin->postLogin();
 		}
 		//#TODO #1.5.0 log if requested
-		if (!self::isInternallyLoggedIn()) {
+		if (!$wasLoggedIn && self::isInternallyLoggedIn()) {
 			foreach(self::$_postLoginHooks as $hookName) {
 				try {
+					Saf_Debug::out("Triggering Post Auth Hook: {$hookName}");
 					$hookName::trigger(array('username' => $username));
 				} catch (Exception $e) {
 					Saf_Audit::add('problem', $e->getMessage());
