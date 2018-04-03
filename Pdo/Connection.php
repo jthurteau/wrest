@@ -31,6 +31,7 @@ class Saf_Pdo_Connection{
 	protected $_errorMessage = array();
 	protected $_lastResult = NULL;
 	protected $_debugMode = FALSE;
+	protected $_additionalDsn = '';
 
 	public function __construct($options = array())
 	{
@@ -44,12 +45,12 @@ class Saf_Pdo_Connection{
 			$this->disconnect();
 		}
 		$this->_driverName = (
-		array_key_exists('pdodriver', $dsn)
+			array_key_exists('pdodriver', $dsn)
 			? $dsn['pdodriver']
 			: self::TYPE_MYSQL
 		);
 		$this->_hostName = (
-		array_key_exists('hostspec', $dsn)
+			array_key_exists('hostspec', $dsn)
 			? $dsn['hostspec']
 			: ''
 		);
@@ -59,18 +60,23 @@ class Saf_Pdo_Connection{
 			: ''
 		);
 		$this->_userName = (
-		array_key_exists('username', $dsn)
+			array_key_exists('username', $dsn)
 			? $dsn['username']
 			: ''
 		);
 		$this->_schemaName = (
-		array_key_exists('database', $dsn)
+			array_key_exists('database', $dsn)
 			? $dsn['database']
 			: ''
 		);
 		$password = (
-		array_key_exists('password', $dsn)
+			array_key_exists('password', $dsn)
 			? $dsn['password']
+			: ''
+		);
+		$this->_additionalDsn = (
+			array_key_exists('additional', $dsn)
+			? $dsn['additional']
 			: ''
 		);
 		return $this->_connectAs($this->_userName, $password, $this->_schemaName);
@@ -90,7 +96,10 @@ class Saf_Pdo_Connection{
 			$dbSpec = 'DATABASE';
 		}
 		if ($this->_hostPort) {
-				$extra = "PORT={$this->_hostPort};";
+			$extra .= "PORT={$this->_hostPort};";
+		}
+		if ($this->_additionalDsn) {
+			$extra .= $this->_additionalDsn;
 		}
 		$dsnString =
 			(
@@ -107,6 +116,7 @@ class Saf_Pdo_Connection{
 				: ''
 			) . $extra;
 		$options = array();
+		//print_r($dsnString); die;
 		try{
 			$this->_connection = new PDO($dsnString, $this->_userName, $password, $options);
 			if ($this->_connection) {

@@ -105,7 +105,6 @@ class Saf_Auth{
 				: array($config['postProcess'])
 			) : array();
 		foreach($hooks as $hook) {
-			Saf_Debug::out("Adding Post Auth Hook: {$hook}");
 			self::$_postLoginHooks[$hook] = 'Hook_' . $hook;
 		}
 		self::$_initialized = TRUE;
@@ -240,7 +239,6 @@ class Saf_Auth{
 		if (!$wasLoggedIn && self::isInternallyLoggedIn()) {
 			foreach(self::$_postLoginHooks as $hookName) {
 				try {
-					Saf_Debug::out("Triggering Post Auth Hook: {$hookName}");
 					$hookName::trigger(array('username' => $username));
 				} catch (Exception $e) {
 					Saf_Audit::add('problem', $e->getMessage());
