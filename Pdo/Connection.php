@@ -116,7 +116,6 @@ class Saf_Pdo_Connection{
 				: ''
 			) . $extra;
 		$options = array();
-		//print_r($dsnString); die;
 		try{
 			$this->_connection = new PDO($dsnString, $this->_userName, $password, $options);
 			if ($this->_connection) {
