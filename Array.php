@@ -225,21 +225,42 @@ class Saf_Array
 	 * @return array subset of $array
 	 */
 	public static function excludeKeys($exclude, $array)
-        {
-                if (!is_array($exclude)){
-                        $exclude = array($exclude);
-                }
-                foreach ($exclude as $key){
-                      if(array_key_exists($key, $array)) {
-                                unset($array[$key]);
-                        }
-                }
-                return $array;
-        }
+	{
+		if (!is_array($exclude)){
+				$exclude = array($exclude);
+		}
+		foreach ($exclude as $key){
+			  if(array_key_exists($key, $array)) {
+						unset($array[$key]);
+				}
+		}
+		return $array;
+	}
+
+	/**
+	 * takes a value and an array, returning an array where
+	 * no value matching the first parameter appears in the new array.
+	 *
+	 * @param mixed $exclude string or array of strings to exclude
+	 * @param array $array from which some keys may be excluded
+	 * @param bool $strict indicates if type coersion is (not) allowed
+	 * @return array subset of $array
+	 */
+	public static function exclude($exclude, $array, $strict = TRUE)
+	{
+		foreach ($array as $key => $value){
+			if ($strict && $value === $exclude) {
+				unset($array[$key]);
+			} else if (!$strict && $value == $exclude) {
+				unset($array[$key]);
+			}
+		}
+		return $array;
+	}
 
 	public static function average($array){
-                return(array_sum($array) / count($array));
-        }
+			return(array_sum($array) / count($array));
+	}
 
 	/**
 	 * Serializes an array into a string using the formatting of print_r()

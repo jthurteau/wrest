@@ -251,6 +251,7 @@ class Saf_Client_Http{
 		$options = array();
 		$options[CURLOPT_URL] = $fullUrl;
 		$debugPost = '';
+		$resultInfo = NULL;
 		if(is_array($post) && count($post) > 0){
 			$debugPost = json_encode($debugPost, JSON_FORCE_OBJECT);
 			$options[CURLOPT_POSTFIELDS] = $post; 
@@ -357,6 +358,9 @@ class Saf_Client_Http{
 			$this->_lastStatus = $return['status'];
 			return $return;
 		}
+		if (is_null($resultInfo) && !is_null($this->_connection)) {
+			$resultInfo = curl_getinfo($this->_connection);
+		}
 		if (!$persist) {
 			$this->putdown();
 		}
@@ -397,7 +401,7 @@ class Saf_Client_Http{
 			);
 		}
 		if ($status < 200 || $status >= 300) {
-			$return['failedConnectionInfo'] = curl_getinfo($this->_connection);
+			$return['failedConnectionInfo'] = $resultInfo;
 			if ($post && Saf_Debug::isEnabled()) {
 				if (is_array($post) && count($post) > 0) {
 					ob_start();
