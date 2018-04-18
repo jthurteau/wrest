@@ -250,4 +250,143 @@ class Saf_Audit
 			return 'none';
 		}
 	}
+
+	public static function search($params, $limit = 1000, $page = 0)
+	{
+		if (!self::$_db) {
+			throw new Exception('Audit not initialized');
+		}
+		$table = self::$_path;
+		$defaultStart = Saf_Time::modify(Saf_Time::time(), Saf_Time::MODIFIER_SUB_WEEK);
+		$defaultEnd = Saf_Time::modify(Saf_Time::time(), Saf_Time::MODIFIER_END_DAY) - 1;
+		$start =
+			array_key_exists('when', $params)
+			? (
+				is_array($params['when'])
+				? (
+					array_key_exists(0, $params['when'])
+					? $params['when'][0]
+					: $defaultStart
+				)
+				: is_array($params['when'])
+			)
+			: $defaultStart;
+		$end = array_key_exists('when', $params)
+			? (
+				is_array($params['when'])
+				? (
+					array_key_exists(1, $params['when'])
+					? $params['when'][1]
+					: $defaultEnd
+				)
+				: is_array($params['when'])
+			)
+			: $defaultEnd;
+		$startDate = date(Saf_Time::FORMAT_DATETIME_DB, $start);
+		$endDate = date(Saf_Time::FORMAT_DATETIME_DB, $end);
+		$classification = array_key_exists('classification', $params) ? $params['classification'] : NULL;
+		$message = array_key_exists('message', $params) ? $params['message'] : NULL;
+		$agent = array_key_exists('agent', $params) ? $params['agent'] : NULL;
+		$uri = array_key_exists('uri', $params) ? $params['uri'] : NULL;
+		$ip = array_key_exists('ip', $params) ? $params['ip'] : NULL;
+		$payload = array_key_exists('payload', $params) ? $params['payload'] : NULL;
+		$sort = array_key_exists('sort', $params) ? $params['sort'] : 'asc';
+		$where = "`when` >= '{$startDate}' AND `when` <= '{$endDate}'";
+		if (!is_null($classification)) {
+			if (is_array($classification)) {
+				$classWhere = ' AND `classification` IN (';
+				$classCount = 0;
+				foreach($classification as $class) {
+					if ($class == '*') {
+						$classCount = 0;
+						break;
+					} else if ($class != '') {
+						$classWhere .= ($first ? '' : ',') . Saf_Pdo_Connection::escapeString($class);
+						$classCount++;
+					}
+				}
+				$classWhere .= ')';
+				if ($classCount) {
+					$where .= $classWhere;
+				}
+			} else if ($classification != '*' && $classification != '') {
+				$where .= ' AND `classification` = ' . Saf_Pdo_Connection::escapeString(trim($classification));
+			}
+		}
+		if (!is_null($message) && trim($message) != '') {
+			if (strpos($message, '%') === FALSE) {
+				$message = "%{$message}%";
+			}
+			$where .= ' AND `message` LIKE ' . Saf_Pdo_Connection::escapeString(trim($message));
+		}
+		if (!is_null($agent) && trim($agent) != '') {
+			$agent = substr(json_encode($agent), 1, -1);
+			$agent = "%\"agent\":\"{$agent}%";
+			$where .= ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeString(trim($agent));
+		}
+		if (!is_null($uri) && trim($uri) != '') {
+			$uri = substr(json_encode($uri), 1, -1);
+			$uri = "%\"uri\":\"{$uri}%";
+			$where .= ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeString(trim($uri));
+		}
+		if (!is_null($ip) && trim($ip) != '') {
+			$ip = substr(json_encode($ip), 1, -1);
+			$ip = "%\"addr\":\"{$ip}%";
+			$where .= ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeString(trim($ip));
+		}
+		if (!is_null($payload) && trim($payload) != '') {
+			if (strpos($payload, '%') !== FALSE) {
+				$payload = str_replace('%', '\%', $payload);
+			}
+			$payload = '%' . substr(json_encode($payload), 1, -1) . '%';
+			$where .= ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeString(trim($ip));
+		}
+		switch ($sort) {
+			case 'asc':
+				$sortString = '`when` ASC';
+				break;
+			case 'desc':
+				$sortString = '`when` DESC';
+				break;
+			case 'user':
+				$sortString = '`username` ASC';
+				break;
+			default:
+				$sortString = '`id`';
+		}
+		$limit = Saf_Pdo_Connection::escapeInt($limit);
+		$page = Saf_Pdo_Connection::escapeInt($page);
+		$limitString = "LIMIT {$limit} OFFSET {$page}";
+		$query = "SELECT * FROM {$table} WHERE {$where}";
+		$countQuery = "SELECT COUNT(`id`) FROM {$table} WHERE {$where} {$limitString}";
+		$query .= " ORDER BY {$sortString} {$limitString}";
+		Saf_Debug::outData(array('query', $query));
+		$result = self::$_db->all(self::$_db->query($query));
+		if (is_null($result)) {
+			return array('success' => FALSE);
+		}
+		$countResult = self::$_db->one(self::$_db->query($countQuery));
+		return array('success' => TRUE, 'recordCount' => count($result), 'totalCount' => $countResult, 'records' => $result);
+	}
+
+	public static function getCurrentClassifications()
+	{
+		if (!self::$_db) {
+			throw new Exception('Audit not initialized');
+		}
+		$values = array();
+		$table = self::$_path;
+		$query = "SELECT DISTINCT classification FROM {$table};";
+		$result = self::$_db->all(self::$_db->query($query));
+		if (!$result) {
+			Saf_Debug::outData(array('failed to get audit classifications', self::$_db->getErrorMessage(),self::$_db));
+		}
+		foreach($result as $record) {
+			if ($record && array_key_exists('classification',$record)) {
+				$values[] = $record['classification'];
+			}
+		}
+		return $values;
+	}
+
 }
