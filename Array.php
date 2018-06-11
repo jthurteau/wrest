@@ -286,10 +286,32 @@ class Saf_Array
 		}
 		return false;
 	}
-	public static function urlencode($paramName, $array){
+	public static function urlencode($paramName, $array = NULL){
+		//#TODO #2.0 swap the order eventually
+		//#TODO #2.0 handle nested arrays
+		if (is_null($array)) {
+			$array = $paramName;
+			$paramName = NULL;
+		}
 		$return = array();
-		foreach($array as $value) {
-			$return[] = urlencode($paramName . '[]') . '=' . urlencode($value);
+		foreach($array as $key => $value) {
+			if (is_array($value)) {
+				foreach($value as $innerValue) {
+					$return[] =
+						urlencode(
+							$paramName
+								? ($paramName . '[]')
+								: $key
+						) . '=' . urlencode($innerValue);
+				}
+			} else {
+				$return[] =
+				urlencode(
+					$paramName
+					? ($paramName . '[]')
+					: $key
+				) . '=' . urlencode($value);
+			}
 		}
 		return implode('&', $return);
 	}
