@@ -40,6 +40,7 @@ class Saf_Debug
 	protected static $_oldExceptionHandler = NULL;
 	protected static $_shutdownRegistered = FALSE;
 	protected static $_shuttingDown = FALSE;
+	protected static $_terminateOnShutdown = TRUE;
 
 	const DEBUG_MODE_OFF = 'off';
 	const DEBUG_MODE_SILENT = 'silent';
@@ -519,7 +520,17 @@ class Saf_Debug
 		} else if (self::isVerbose()) {
 			self::printDebugEntry();
 		}
-		die($message);
+		if (self::$_terminateOnShutdown) {
+			die($message);
+		} else if ($message) {
+			print($message);
+		}
+	}
+
+	public static function registerDieSafe()
+	{
+		self::$_terminateOnShutdown = FALSE;
+		register_shutdown_function('Saf_Debug::dieSafe');
 	}
 
 	public static function outDebugBlockStart($level = 'ERROR')

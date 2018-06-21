@@ -46,9 +46,8 @@ class Saf_Kickstart {
 	const MODE_SAF = 'saf';
 	const MODE_ZFMVC = 'zendmvc';
 	const MODE_ZFNONE = 'zendbare';
-	const MODE_LF = 'laravel'; //#TODO #2.0.0 support Laravel
-	const MODE_NF = 'nette'; //#TODO #2.0.0 support Nette
-	const MODE_S2F = 'symphony2'; //#TODO #2.0.0 support Sympony2
+	const MODE_LF5 = 'laravel5'; //#TODO #2.0.0 support Laravel
+	const MODE_ZF3 = 'zend3'; //#TODO #2.0.0 support Zend 3
 
 	const REGEX_VAR =
 		'/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$/';
@@ -382,6 +381,24 @@ class Saf_Kickstart {
 	{
 		$sourceFilename = self::_filterDotFileName($constantName);
 		return is_readable($sourceFilename);
+	}
+
+	public static function envRead($filepath)
+	{
+		$return = array();
+		if (file_exists($filepath) && is_readable($filepath)) {
+			$lines = explode(PHP_EOL,file_get_contents($filepath));
+			foreach($lines as $line) {
+				$line = trim($line);
+				$split = strpos($line,'=');
+				if ($split) {
+					$var = substr($line,0,$split);
+					$val = substr($line,$split + 1);
+					$return[$var] = $val;
+				}
+			}
+		}
+		return $return;
 	}
 
 	/**
@@ -1091,12 +1108,14 @@ class Saf_Kickstart {
 			Saf_Kickstart::defineLoad('PUBLIC_PATH', realpath('.'));
 		 	Saf_Kickstart::defineLoad('INSTALL_PATH', realpath('..'));
 		 	Saf_Kickstart::defineLoad('LIBRARY_PATH', realpath(__DIR__));
-		 	Saf_Kickstart::defineLoad('APPLICATION_PATH', realpath(INSTALL_PATH . '/application'));
-		 	Saf_Kickstart::defineLoad('APPLICATION_ENV', 'production');
-			Saf_Kickstart::defineLoad('APPLICATION_ID', '');
+			$detectedAppPath =
+				realpath(INSTALL_PATH . '/application')
+				? realpath(INSTALL_PATH . '/application')
+				: realpath(INSTALL_PATH . '/app');
+		 	Saf_Kickstart::defineLoad('APPLICATION_PATH', $detectedAppPath);
 		 	if (
 		 		'' == APPLICATION_PATH 
-		 		|| '' == realpath(APPLICATION_PATH . '/configs')
+		 		|| (realpath(INSTALL_PATH . '/application') && '' == realpath(APPLICATION_PATH . '/configs'))
 		 		|| !is_readable(APPLICATION_PATH)
 		 	) {
 	 			header('HTTP/1.0 500 Internal Server Error');
@@ -1105,6 +1124,9 @@ class Saf_Kickstart {
 		 	if ($mode == self::MODE_AUTODETECT) {
 				$mode = self::_goAutoMode();
 		 	}
+		 	if ($mode == self::MODE_SAF) {
+				self::_goIdent();
+			}
 			switch($mode) {
 		 		case self::MODE_ZFMVC:
 		 			$configFile = 'zend_application';
@@ -1123,25 +1145,43 @@ class Saf_Kickstart {
 		 			$configFile = 'application';
 		 			break;
 		 	}
-			Saf_Kickstart::defineLoad('APPLICATION_CONFIG', APPLICATION_PATH . "/configs/{$configFile}.xml");
-			Saf_Kickstart::defineLoad('APPLICATION_STATUS', 'online');
-			Saf_Kickstart::defineLoad('APPLICATION_BASE_ERROR_MESSAGE', 'Please inform your technical support staff.');
-			Saf_Kickstart::defineLoad('APPLICATION_DEBUG_NOTIFICATION', 'Debug information available.');
-		 	self::_goPreRoute();
-		 	Saf_Kickstart::defineLoad('APPLICATION_FORCE_DEBUG', FALSE, Saf_Kickstart::CAST_BOOL);
-		 	if (APPLICATION_FORCE_DEBUG) {
-		 		Saf_Debug::init(Saf_Debug::DEBUG_MODE_FORCE, NULL , FALSE);
-		 	}	
-			if ($mode == self::MODE_ZFMVC || $mode == self::MODE_ZFNONE) {
-				self::_goZend();
-			}
-			if ($mode == self::MODE_SAF) {
-				self::_goSaf();
+				Saf_Kickstart::defineLoad('APPLICATION_STATUS', 'online');
+				Saf_Kickstart::defineLoad('APPLICATION_BASE_ERROR_MESSAGE', 'Please inform your technical support staff.');
+				Saf_Kickstart::defineLoad('APPLICATION_DEBUG_NOTIFICATION', 'Debug information available.');
+		 	if ($mode == self::MODE_LF5) {
+				self::_goLaravel();
+				if (APPLICATION_FORCE_DEBUG) {
+					Saf_Debug::init(Saf_Debug::DEBUG_MODE_FORCE, NULL , FALSE);
+				}
+				self::_goPreRoute();
+				self::_goIdent();
+			} else {
+				Saf_Kickstart::defineLoad('APPLICATION_CONFIG', APPLICATION_PATH . "/configs/{$configFile}.xml");
+				Saf_Kickstart::defineLoad('APPLICATION_FORCE_DEBUG', FALSE, Saf_Kickstart::CAST_BOOL);
+				if (APPLICATION_FORCE_DEBUG) {
+					Saf_Debug::init(Saf_Debug::DEBUG_MODE_FORCE, NULL , FALSE);
+				}
+				self::_goPreRoute();
+				if ($mode != self::MODE_SAF) {
+					self::_goIdent();
+				}
+				if ($mode == self::MODE_ZFMVC || $mode == self::MODE_ZFNONE) {
+					self::_goZend();
+				}
+				if ($mode == self::MODE_SAF) {
+					self::_goSaf();
+				}
 			}
 			self::_goPreBoot();
 			self::$_kicked = $mode;
 		}
  		return self::$_kicked;
+	}
+
+	protected static function _goIdent()
+	{
+		Saf_Kickstart::defineLoad('APPLICATION_ENV', 'production');
+		Saf_Kickstart::defineLoad('APPLICATION_ID', '');
 	}
 
 	protected static function _goAutoMode()
@@ -1150,7 +1190,10 @@ class Saf_Kickstart {
 			APPLICATION_PATH . '/' . APPLICATION_ID . '.php';
 		$bootstrapClassFile =
 			APPLICATION_PATH . '/Bootstrap.php';
-		if (file_exists($applicationClassFile)) {
+		$laravelFiles = file_exists(INSTALL_PATH . '/bootstrap/app.php') && file_exists(INSTALL_PATH . '/config/app.php');
+		if ($laravelFiles) {
+			return self::MODE_LF5;
+		} else if (file_exists($applicationClassFile)) {
 			if (!is_readable($applicationClassFile)) {
 				header('HTTP/1.0 500 Internal Server Error');
 				die('Unable to autodetect application class.');
@@ -1311,6 +1354,24 @@ class Saf_Kickstart {
 		}
 		require_once('Zend/Application.php');
 		self::$_controllerPath = 'controllers';
+	}
+
+	/**
+	 * steps to take when preparing for Laravel Applications
+	 */
+	protected static function _goLaravel()
+	{
+		$env = self::envRead(INSTALL_PATH . '/.env');
+		defined('APPLICATION_ENV')
+			|| define(
+				'APPLICATION_ENV',
+				array_key_exists('APP_ENV', $env) ? $env['APP_ENV'] : 'production'
+			);
+		Saf_Kickstart::defineLoad(
+			'APPLICATION_FORCE_DEBUG',
+			array_key_exists('APP_DEBUG', $env) ? $env['APP_DEBUG'] : FALSE,
+			Saf_Kickstart::CAST_BOOL
+		);
 	}
 	
 	/**
