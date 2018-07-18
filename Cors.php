@@ -18,12 +18,20 @@ class Saf_Cors{
 	const HEADER_MAXAGE = 'maxage';
 	const HEADER_CRED = 'credentials';
 
-	protected static $_origin = '';
-	protected static $_methods = '';
-	protected static $_headers = '';
-	protected static $_xheaders = '';
-	protected static $_maxage = '';
-	protected static $_credentials = '';
+	protected static $_origin = NULL;
+	protected static $_methods = NULL;
+	protected static $_headers = NULL;
+	protected static $_xheaders = NULL;
+	protected static $_maxage = NULL;
+	protected static $_credentials = NULL;
+	protected static $_all = array(
+		self::HEADER_ORIGIN,
+		self::HEADER_HEADER,
+		self::HEADER_XHEADER,
+		self::HEADER_METHOD,
+		self::HEADER_MAXAGE,
+		self::HEADER_CRED
+	);
 
 
 	public static function setOrigin($string)
@@ -70,7 +78,7 @@ class Saf_Cors{
 			if ('commandline' == APPLICATION_PROTOCOL) {
 				print("Cors: {$string}\r\n");
 			} else {
-				header("{$field} {$header}");
+				header("{$field}: {$header}");
 			}
 		}
 	}
@@ -82,39 +90,39 @@ class Saf_Cors{
 	protected static function _headers($string = NULL)
 	{
 		$return = array();
-		if(!is_null($string)) {
+		if(is_null($string)) {
 			$headers = self::$_all;
 		} else {
 			$headers = array($string);
 		}
 		foreach($headers as $header) {
 			switch($header){
-				case HEADER_ORIGIN:
+				case self::HEADER_ORIGIN:
 					if (!is_null(self::$_origin)) {
 						$return['Access-Control-Allow-Origin'] = self::$_origin;
 					}
 					break;
-				case HEADER_HEADER:
+				case self::HEADER_HEADER:
 					if (!is_null(self::$_headers)) {
 						$return['Access-Control-Allow-Headers'] = self::$_headers;
 					}
 					break;
-				case HEADER_XHEADER:
+				case self::HEADER_XHEADER:
 					if (!is_null(self::$_xheaders)) {
 						$return['Access-Control-Expose-Headers'] = self::$_xheaders;
 					}
 					break;
-				case HEADER_METHOD:
+				case self::HEADER_METHOD:
 					if (!is_null(self::$_methods)) {
 						$return['Access-Control-Allow-Methods'] = self::$_methods;
 					}
 					break;
-				case HEADER_MAXAGE:
+				case self::HEADER_MAXAGE:
 					if (!is_null(self::$_maxage)) {
 						$return['Access-Control-Max-Age'] = self::$_maxage;
 					}
 					break;
-				case HEADER_CRED:
+				case self::HEADER_CRED:
 					if (self::$_credentials === 'true') {
 						$return['Access-Control-Allow-Credentials'] = self::$_credentials;
 					}
