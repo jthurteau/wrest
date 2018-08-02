@@ -26,6 +26,7 @@ class Saf_Client_Http{
 	protected $_lastResult = NULL;
 	protected $_debugEnabled = FALSE;
 	protected $_connection = NULL;
+	protected $_manualCookies = NULL;
 	protected $_curlConfig = array(
 		CURLOPT_HEADER => TRUE,
 		CURLINFO_HEADER_OUT => TRUE,
@@ -267,9 +268,13 @@ class Saf_Client_Http{
 				$headers[] = 'Content-type: ' . $postContentType;
 			}
 		} else { #TODO #2.0.0 make sure switching back to GET mode when persisting works properly
-			if (array_key_exists(CURLOPT_POST, $options)) {
+			if (!array_key_exists(CURLOPT_POST, $options)) {
+Saf_Debug::out('switching back');
 				$options[CURLOPT_POST] = FALSE; //or unset?
+			} else {
+Saf_Debug::out('not switching');
 			}
+
 		}
 		if ($this->_authenticate){
 			$username = $this->_user;
@@ -281,6 +286,9 @@ class Saf_Client_Http{
 			$options[CURLOPT_HTTPHEADER] = array('Expect:');
 		}
 		curl_setopt_array($this->_connection, $options);
+		if (!is_null($this->_manualCookies)) {
+			curl_setopt($this->_connection, CURLOPT_COOKIE, $this->_manualCookies);
+		}
 		try {
 			$result = curl_exec($this->_connection);
 			$resultHead = '';
@@ -486,5 +494,15 @@ class Saf_Client_Http{
 	{
 		$this->_antiqueServerMode = FALSE;
 		return $this;
+	}
+
+	public function getConnection()
+	{
+		return $this->_connection;
+	}
+
+	public function setManualCookies($array)
+	{
+		$this->_manualCookies = $array;
 	}
 }
