@@ -186,7 +186,6 @@ class Saf_Pdo_Connection{
 			return $this->prepareExecute($query, $args);
 		}
 		$statement = $this->_connection->query($query, PDO::FETCH_ASSOC);
-print_r(array('query', $statement, $statement->rowCount()));
 		if (!$statement) {
 			$this->addError('Query Failed');
 			$this->_pullError();
