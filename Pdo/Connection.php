@@ -186,7 +186,7 @@ class Saf_Pdo_Connection{
 			return $this->prepareExecute($query, $args);
 		}
 		$statement = $this->_connection->query($query, PDO::FETCH_ASSOC);
-//print_r(array('query', $statement, $statement->rowCount()));
+print_r(array('query', $statement, $statement->rowCount()));
 		if (!$statement) {
 			$this->addError('Query Failed');
 			$this->_pullError();
@@ -561,6 +561,11 @@ Saf_Debug::outData(array('pdo error', $errorInfo));
 			? "'" . addslashes((string)$string) . "'"
 			: addslashes((string)$string)
 		);
+	}
+
+	public static function escapeSpecialString($string)
+	{
+		return "'" . addcslashes(stripslashes((string)$string), "\0'") . "'";
 	}
 
 	public static function unquoteString($string)

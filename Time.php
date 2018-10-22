@@ -260,6 +260,12 @@ class Saf_Time {
 				$modMin = 0;
 				$modHour = 0;
 				break;
+			case Saf_Time::MODIFIER_END_DAY:
+			case Saf_Time::MODIFIER_END_TODAY:
+				$modSec = 59;
+				$modMin = 59;
+				$modHour = 23;
+				break;
 			case Saf_Time::MODIFIER_ADD_YEAR :
 				$modYear = $nextYear;
 				break;

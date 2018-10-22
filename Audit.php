@@ -339,7 +339,7 @@ class Saf_Audit
 				$payload = str_replace('%', '\%', $payload);
 			}
 			$payload = '%' . substr(json_encode($payload), 1, -1) . '%';
-			$where .= ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeString(trim($ip));
+			$where .= ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeSpecialString(trim($payload));
 		}
 		switch ($sort) {
 			case 'asc':
