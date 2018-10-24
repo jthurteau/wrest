@@ -296,12 +296,14 @@ class Saf_Audit
 			if (is_array($classification)) {
 				$classWhere = ' AND `classification` IN (';
 				$classCount = 0;
+				$first = TRUE;
 				foreach($classification as $class) {
 					if ($class == '*') {
 						$classCount = 0;
 						break;
 					} else if ($class != '') {
 						$classWhere .= ($first ? '' : ',') . Saf_Pdo_Connection::escapeString($class);
+						$first = FALSE;
 						$classCount++;
 					}
 				}
@@ -363,7 +365,11 @@ class Saf_Audit
 		Saf_Debug::outData(array('query', $query));
 		$result = self::$_db->all(self::$_db->query($query));
 		if (is_null($result)) {
-			return array('success' => FALSE);
+			$return = array('success' => FALSE);
+			if (Saf_Debug::isEnabled()) {
+				$return['query'] = $query;
+			}
+			return $return;
 		}
 		$countResult = self::$_db->one(self::$_db->query($countQuery));
 		return array('success' => TRUE, 'recordCount' => count($result), 'totalCount' => $countResult, 'records' => $result);

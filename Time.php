@@ -266,6 +266,20 @@ class Saf_Time {
 				$modMin = 59;
 				$modHour = 23;
 				break;
+			case Saf_Time::MODIFIER_ADD_WEEK:
+				$return = $timestamp;
+				for ($i = 0; $i < 7; $i++) {
+					$return = self::modify($return, self::MODIFIER_ADD_DAY);
+				}
+				return $return;
+				break;
+			case Saf_Time::MODIFIER_SUB_WEEK:
+				$return = $timestamp;
+				for ($i = 0; $i < 7; $i++) {
+					$return = self::modify($return, self::MODIFIER_SUB_DAY);
+				}
+				return $return;
+				break;
 			case Saf_Time::MODIFIER_ADD_YEAR :
 				$modYear = $nextYear;
 				break;
