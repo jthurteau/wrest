@@ -1071,7 +1071,7 @@ class Saf_Kickstart {
 				return
 					is_array($resource)
 					? $resource
-					: $resource->toArray();
+					: (method_exists($resource,'toArray') ? $resource->toArray() : array());
 			}
 		}
 		return NULL;
