@@ -316,25 +316,29 @@ class Saf_Array
 		return implode('&', $return);
 	}
 	
-	public static function toHtml($array, $ordered = FALSE, $nested = TRUE)
+	public static function toHtml($array, $ordered = FALSE, $nested = TRUE, $typed = FALSE, $boolean = FALSE)
 	{
 		if (!is_array($array)) {
-			return '<ul><li>' . gettype($array) . ' ' . Saf_Debug::introspectData($value) . '</li></ul>';
+			return '<ul><li>' . gettype($array) . ' ' . Saf_Debug::introspectData($array) . '</li></ul>';
 		}
 		$return = '';
 		$return .= ($ordered ? '<ol>' : '<ul>');
 		if (count($array) == 0) {
 			$return .= '<li>None</li>';
 		} else {
-			foreach($array as $key=>$value){
+			foreach($array as $key => $value){
+				$type = ($typed ? (' (' . gettype($value) . ')') : '');
+				if ($boolean && !is_array($value) && !$value) {
+					continue;
+				}
 				$return .= '<li>';
 				if (is_object($value)) {
 					$value = Saf_Debug::introspectData($value); //#TODO #2.0.0 make a more user friendly version of this output
 				}
 				if ($nested && is_array($value)) {
-					$value = self::toHtml($value, $ordered);
+					$value = self::toHtml($value, $ordered, $nested, $typed, $boolean);
 				}
-				$return .= "{$key}: {$value}";
+				$return .= "{$key}{$type}:  {$value}";
 				$return .= '</li>';
 			}
 		}
