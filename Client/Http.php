@@ -410,18 +410,17 @@ Saf_Debug::out('not switching');
 		}
 		if ($status < 200 || $status >= 300) {
 			$return['failedConnectionInfo'] = $resultInfo;
-			if ($post && Saf_Debug::isEnabled()) {
-				if (is_array($post) && count($post) > 0) {
-					ob_start();
-					print_r($post);
-					$rawRequest = ob_get_contents();
-					ob_end_clean();
-					$return['request'] = $rawRequest;
-				} else {
-					$return['request'] = $post;
-				}
+		}
+		if ($post && Saf_Debug::isEnabled()) { //#TODO #2.0.0 make this more configurable
+			if (is_array($post) && count($post) > 0) {
+				ob_start();
+				print_r($post);
+				$rawRequest = ob_get_contents();
+				ob_end_clean();
+				$return['request'] = $rawRequest;
+			} else {
+				$return['request'] = $post;
 			}
-			
 		}
 		return $return;
 	}

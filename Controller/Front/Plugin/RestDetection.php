@@ -16,7 +16,9 @@ class Saf_Controller_Front_Plugin_RestDetection extends Zend_Controller_Plugin_A
 		0 => array(
 			0 => 'text/html+javascript+css',
 			'text/html' => 'text/html+javascript+css',
-			'text/javascript' => 'json'
+			'text/javascript' => 'json',
+			'application/json' => 'json',
+			'application/xml' => 'xml'
 		)	
 	);
 	
@@ -35,7 +37,7 @@ class Saf_Controller_Front_Plugin_RestDetection extends Zend_Controller_Plugin_A
 			return $default;
 		}
 		$array = explode(',', $string);
-		foreach($array as $option){
+		foreach ($array as $option) {
 			$format = 
 				strpos($option, ';') !== FALSE
 				? substr($option, 0, strpos($option, ';'))
