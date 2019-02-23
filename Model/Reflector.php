@@ -66,25 +66,32 @@ class Saf_Model_Reflector
         //for ($i=0; $i < self::MAX_DEREF_DEPTH; $i++){
         $startCut = strpos($newString, '[[');
         while($startCut !== FALSE) {
+            $skipLength = 2;
             $endCut = strpos($newString, ']]', $startCut);
             if ($endCut !== FALSE) {
                 $term = substr($newString, $startCut + 2, $endCut - ($startCut + 2));
-                try {
-                    $translatedTerm = self::translate($term, $config, $depth + 1);
-                } catch (Exception $e) {
-                    Saf_Debug::unmute($myMute);
-                    throw $e;
+                if (strpos($term, '#') !== 0) {
+                    try {
+                        $translatedTerm = self::translate($term, $config, $depth + 1);
+                    } catch (Exception $e) {
+                        Saf_Debug::unmute($myMute);
+                        throw $e;
+                    }
+                    $unique = strpos($term, '*') === 0;
+                    $newString =
+                        $unique
+                        ? str_replace("[[{$term}]]", $translatedTerm, $newString, $unique)
+                        : str_replace("[[{$term}]]", $translatedTerm, $newString);
+                    $skipLength = strlen($translatedTerm);
+                } else {
+                    $skipLength = ($endCut - $startCut) + 2;
                 }
-                $unique = strpos($term, '*') === 0;
-                $newString =
-                    $unique
-                    ? str_replace("[[{$term}]]", $translatedTerm, $newString, $unique)
-                    : str_replace("[[{$term}]]", $translatedTerm, $newString);
             } else {
                 Saf_Debug::unmute($myMute);
-                throw new Exception("Model Reflection Error: Unterminated term {$supplemental}");
+//print_r(array($string,$newString)); die;
+                throw new Exception("Model Reflection Error: Unterminated term {$supplement}");
             }
-            $startCut = strpos($newString, '[[', $startCut + 2); //#TODO #2.0.0 make sure we skip anything just transplanted in
+            $startCut = strpos($newString, '[[', $startCut + $skipLength);
         }
         Saf_Debug::unmute($myMute);
         $zendAutoloader->suppressNotFoundWarnings($currentZendAutoloaderSetting);
