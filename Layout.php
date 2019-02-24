@@ -382,4 +382,35 @@ $(document).ready(function() {
 		}
 		return array_key_exists('forceDesktopView', $_SESSION);
 	}
+
+	public static function jQueryCdn($version, $uiVersion = NULL) //#TODO move these to Layout_Cdn
+	{
+		print("<script src=\"//ajax.googleapis.com/ajax/libs/jquery/{$version}/jquery.min.js\"></script>");
+		if ($uiVersion) {
+			print("<script src=\"https://ajax.googleapis.com/ajax/libs/jqueryui/{$uiVersion}/jquery-ui.min.js\"></script>");
+		}
+	}
+
+	public static function foundationIncludes($version, $addons = array())
+	{
+		$docRoot = '';
+		print("<script src=\"{$docRoot}foundation/js/foundation.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+		print("<link href=\"{$docRoot}foundation/css/foundation.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
+		foreach($addons as $name) {
+			print("<script src=\"{$docRoot}foundation/js/{$name}.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+			print("<link href=\"{$docRoot}foundation/css/{$name}.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
+			
+		}
+	}
+
+	public static function fontAwesomeCdn($version)
+	{
+		print("<link rel=\"stylesheet\" href=\"//maxcdn.bootstrapcdn.com/font-awesome/{$version}/css/font-awesome.min.css\"/>");
+	}
+
+	
+	public static function bootStrapCdn($version)
+	{
+		print("");
+	}
 }
