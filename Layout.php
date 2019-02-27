@@ -394,8 +394,10 @@ $(document).ready(function() {
 	public static function foundationIncludes($version, $addons = array())
 	{
 		$docRoot = '';
-		print("<script src=\"{$docRoot}foundation/js/foundation.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
-		print("<link href=\"{$docRoot}foundation/css/foundation.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
+		if ($version) {
+			print("<script src=\"{$docRoot}foundation/js/foundation.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+			print("<link href=\"{$docRoot}foundation/css/foundation.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
+		}
 		foreach($addons as $name) {
 			print("<script src=\"{$docRoot}foundation/js/{$name}.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 			print("<link href=\"{$docRoot}foundation/css/{$name}.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
