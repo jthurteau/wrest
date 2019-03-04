@@ -383,26 +383,63 @@ $(document).ready(function() {
 		return array_key_exists('forceDesktopView', $_SESSION);
 	}
 
-	public static function jQueryCdn($version, $uiVersion = NULL) //#TODO move these to Layout_Cdn
+	public static function jQueryCdn($version = NULL, $uiVersion = NULL) //#TODO move these to Layout_Cdn
 	{
-		print("<script src=\"//ajax.googleapis.com/ajax/libs/jquery/{$version}/jquery.min.js\"></script>");
+		if ($version) {
+			print("<script src=\"//ajax.googleapis.com/ajax/libs/jquery/{$version}/jquery.min.js\"></script>");
+		}
 		if ($uiVersion) {
 			print("<script src=\"https://ajax.googleapis.com/ajax/libs/jqueryui/{$uiVersion}/jquery-ui.min.js\"></script>");
 		}
 	}
 
+	public static function externalJs($name)
+	{
+		$baseUrl = Zend_Registry::get('baseUrl');
+		print("<script src=\"{$baseUrl}javascript/external/{$name}.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+	}
+
 	public static function foundationIncludes($version, $addons = array())
 	{
-		$docRoot = '';
+		$min = FALSE;
+		$internal = array('magellan','dropdown'); //#TODO #1.11.0 we only need to do this when not using the min version?
+		$baseUrl = Zend_Registry::get('baseUrl');
 		if ($version) {
-			print("<script src=\"{$docRoot}foundation/js/foundation.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
-			print("<link href=\"{$docRoot}foundation/css/foundation.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
+			if ($min) {
+				print("<script src=\"{$baseUrl}foundation/js/foundation.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+			} else {
+				print("<script src=\"{$baseUrl}foundation/js/foundation/foundation.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+			}
+			print("<link href=\"{$baseUrl}foundation/css/foundation.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
 		}
 		foreach($addons as $name) {
-			print("<script src=\"{$docRoot}foundation/js/{$name}.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
-			print("<link href=\"{$docRoot}foundation/css/{$name}.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
-			
+			if (in_array($name,$internal)) {
+				print("<script src=\"{$baseUrl}foundation/js/foundation/foundation.{$name}.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+				//print("<link href=\"{$baseUrl}foundation/css/{$name}.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
+			} else {
+				print("<script src=\"{$baseUrl}foundation/js/{$name}.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+				print("<link href=\"{$baseUrl}foundation/css/{$name}.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
+			}
 		}
+	}
+
+	public static function foundationPrerequisites($optional = array())
+	{
+		if (!is_array($optional)) {
+			$optional = array($optional);
+		}
+		$baseUrl = Zend_Registry::get('baseUrl');
+		print("<script src=\"{$baseUrl}foundation/js/vendor/modernizr.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+		if (in_array('jquery', $optional)) {
+			print("<script src=\"{$baseUrl}foundation/js/vendor/jquery.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+		}
+	}
+
+	public static function foundationLateIncludes()
+	{
+		$baseUrl = Zend_Registry::get('baseUrl');
+		print("<script src=\"{$baseUrl}foundation/js/vendor/fastclick.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+		print("<script type=\"text/javascript\">saf.endBody();</script>");
 	}
 
 	public static function fontAwesomeCdn($version)
