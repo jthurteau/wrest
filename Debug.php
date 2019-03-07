@@ -47,6 +47,8 @@ class Saf_Debug
 	const DEBUG_MODE_ON = 'on';
 	const DEBUG_MODE_AUTO = 'auto';
 	const DEBUG_MODE_FORCE = 'force';
+	const LAYOUT_MORE_INFO_ICON = 'expand';
+	const LAYOUT_PROFILE_INFO_ICON = 'tachometer-alt';
 
 	const ERROR_MODE_INTERNAL = 'internal';
 	const ERROR_MODE_DEFAULT = 'default';
@@ -238,7 +240,7 @@ class Saf_Debug
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
-		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon('search') . '</span>') : '';
+		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
 		$output = "<div class=\"debug{$level}\"><p>{$message}{$icon}</p>{$trace}</div>\n";
 		self::_out($output, $level != 'Status' && $level != 'Other');
 	}
@@ -247,7 +249,7 @@ class Saf_Debug
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
-		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon('search') . '</span>') : '';
+		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
 		$output = "<div class=\"debug{$level}\">{$message}{$icon}{$trace}</div>\n";
 		self::_out($output);
 	}
@@ -256,7 +258,7 @@ class Saf_Debug
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
-		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon('search') . '</span>') : '';
+		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
 		ob_start();
 		print("\n<div class=\"debug{$level}\"><pre>Data:{$icon}<br/>\n");
 		print($trace);
@@ -457,7 +459,7 @@ class Saf_Debug
 			if (self::isVerbose()) {
 				if (self::$_muted) {
 					foreach (self::$_muted as $trace) {
-						$icon = ' <span class="debugExpand"> ' . Saf_Layout::getIcon('search') . '</span>';
+						$icon = ' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>';
 						print("\n<div class=\"debugStatus\"><pre>Data:{$icon}<br/>\n");
 						print(htmlentities($trace));
 						print('Unclosed Mute');
@@ -498,7 +500,7 @@ class Saf_Debug
 	public static function printProfileReveal()
 	{
 		if (Saf_Layout::isReady()) {
-			$icon = Saf_Layout::getIcon('dashboard');
+			$icon = Saf_Layout::getIcon(self::LAYOUT_PROFILE_INFO_ICON);
 			$accessible = ' class="accessibleHidden"';
 		} else {
 			$icon = '';
@@ -693,7 +695,7 @@ class Saf_Debug
 						? $simplifyTable[$description]
 						: 'error';
 				$level = htmlentities(ucfirst(strtolower($level)));
-				$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon('search') . '</span>') : '';
+				$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
 				$output = "{$message}{$icon}{$trace}\n";
 				self::_out(
 					"<div class=\"debug{$level}\">"

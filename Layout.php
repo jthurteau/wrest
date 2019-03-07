@@ -399,7 +399,20 @@ $(document).ready(function() {
 		print("<script src=\"{$baseUrl}javascript/external/{$name}.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 	}
 
-	public static function foundationIncludes($version, $addons = array())
+	public static function foundationCss($version, $addons = array())
+	{
+		$internal = array('magellan','dropdown'); //#TODO #1.11.0 we only need to do this when not using the min version?
+		$baseUrl = Zend_Registry::get('baseUrl');
+		if ($version) {
+			print("<link href=\"{$baseUrl}foundation/css/foundation.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
+		}
+		foreach($addons as $name) {
+			if (!in_array($name, $internal)) {
+				print("<link href=\"{$baseUrl}foundation/css/{$name}.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
+			}
+		}
+	}
+	public static function foundationJs($version, $addons = array())
 	{
 		$min = FALSE;
 		$internal = array('magellan','dropdown'); //#TODO #1.11.0 we only need to do this when not using the min version?
@@ -410,7 +423,6 @@ $(document).ready(function() {
 			} else {
 				print("<script src=\"{$baseUrl}foundation/js/foundation/foundation.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 			}
-			print("<link href=\"{$baseUrl}foundation/css/foundation.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
 		}
 		foreach($addons as $name) {
 			if (in_array($name,$internal)) {
@@ -418,7 +430,6 @@ $(document).ready(function() {
 				//print("<link href=\"{$baseUrl}foundation/css/{$name}.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
 			} else {
 				print("<script src=\"{$baseUrl}foundation/js/{$name}.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
-				print("<link href=\"{$baseUrl}foundation/css/{$name}.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
 			}
 		}
 	}
@@ -444,7 +455,11 @@ $(document).ready(function() {
 
 	public static function fontAwesomeCdn($version)
 	{
-		print("<link rel=\"stylesheet\" href=\"//maxcdn.bootstrapcdn.com/font-awesome/{$version}/css/font-awesome.min.css\"/>");
+		if (version_compare($version,'5.0.0', '>=')) {
+			print("<link rel=\"stylesheet\" href=\"//use.fontawesome.com/releases/v5.7.2/css/all.css\" integrity=\"sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr\" crossorigin=\"anonymous\"/>");
+		} else {
+			print("<link rel=\"stylesheet\" href=\"//maxcdn.bootstrapcdn.com/font-awesome/{$version}/css/font-awesome.min.css\"/>");
+		}
 	}
 
 	
