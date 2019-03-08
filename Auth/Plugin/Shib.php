@@ -76,29 +76,6 @@ class Saf_Auth_Plugin_Shib extends Saf_Auth_Plugin_Basic{
 					return NULL;
 			}
 		}
-		/*
-		 * 	public static function getUserInfo() //#TODO try using preffered
-	{
-		return array(
-			'username' => self::getProvidedUsername(),
-			'firstName' => (
-				array_key_exists(self::$_conf['firstnameField'], $_SERVER)
-				? $_SERVER[self::$_conf['firstnameField']]
-				: ''
-			),
-			'lastName' => (
-				array_key_exists(self::$_conf['lastnameField'], $_SERVER)
-				? $_SERVER[self::$_conf['lastnameField']]
-				: ''
-			),
-			'email' => (
-				array_key_exists(self::$_conf['emailField'], $_SERVER)
-				? $_SERVER[self::$_conf['emailField']]
-				: ''
-			)
-		);
-	}
-		 */
 	}
 
 	public function fail()
@@ -113,28 +90,6 @@ class Saf_Auth_Plugin_Shib extends Saf_Auth_Plugin_Basic{
 		//#TODO implement an Saf_Identity class;
 		Saf_Auth::setStatus(TRUE, NULL, '');
 		return TRUE;
-// 		$user = new user();
-//
-// 		if ('' == trim($username)) {
-// 			Rd_Auth::failPlugin();
-// 			return false;
-// 		}
-// 		if (!$user->getUserByUserName($username)) {
-// 			if (Rd_Auth::willAutocreateUsers()){
-// 				$userInfo = Rd_Auth::getPluginUserInfo();
-// 				if (Rd_Auth::createUser($user,$userInfo)) {
-// 					Rd_Auth::setStatus(true, $user);
-// 					return true;
-// 				}
-// 				Rd_Auth::setStatus(false, $user, '011');
-// 				return false;
-// 			} else {
-// 				Rd_Auth::setStatus(false, NULL, '009');
-// 			}
-// 		} else {
-// 			Rd_Auth::setStatus(true, $user);
-// 			return true;
-// 		}
 	}
 
 	public function setPluginStatus($success, $errorCode)
@@ -208,34 +163,4 @@ class Saf_Auth_Plugin_Shib extends Saf_Auth_Plugin_Basic{
 			: ''
 		);
 	}
-
-/*
- *        $idp = $_SERVER['Shib-Identity-Provider'];
-        if ($idp === $config->shib->idp->unity){
-        	//unity IdP
-        	$data = explode("@",$_SERVER['SHIB_CPID']);
-        	Saf_Registry::set('uid',(string) $data[0]);
-        	//Saf_Registry::set('uid','enter user id here to test');
-        	Saf_Registry::set('get',false);
-        	Saf_Registry::set('uname',(string)$_SERVER['SHIB_DISPLAYNAME']);
-        	Saf_Registry::set('idp', "unity");
-        	Saf_Registry::set('logoutUrl', $config->shib->logout->unity);
-        	
-        }elseif ($idp === $config->shib->idp->fol){
-        	//library IdP
-        	Saf_Registry::set('uid',(string) $_SERVER['patronid']);
-        	Saf_Registry::set('get',false);
-        	Saf_Registry::set('uname',(string)$_SERVER['pname']);
-        	Saf_Registry::set('idp', "fol");
-        	Saf_Registry::set('logoutUrl', $config->shib->logout->fol);
-        	
-        }else{
-        	//shib optional guest
-        	Saf_Registry::set('uid','');
-        	Saf_Registry::set('get',false);
-        	Saf_Registry::set('uname','');
-        	Saf_Registry::set('idp', '');
-        	Saf_Registry::set('logoutUrl', '');
-        }
-*/
 }
