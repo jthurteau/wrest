@@ -446,10 +446,12 @@ $(document).ready(function() {
 		}
 	}
 
-	public static function foundationLateIncludes()
+	public static function foundationLateIncludes($include = array())
 	{
 		$baseUrl = Saf_Registry::get('baseUrl');
-		print("<script src=\"{$baseUrl}foundation/js/vendor/fastclick.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+		if (array_key_exists('fastclick', $include)) {
+			print("<script src=\"{$baseUrl}foundation/js/vendor/fastclick.js\" type=\"text/javascript\" charset=\"utf\"></script>");
+		}
 		print("<script type=\"text/javascript\">saf.endBody();</script>");
 	}
 
