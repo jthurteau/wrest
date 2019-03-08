@@ -18,6 +18,7 @@ class Saf_Layout {
 	protected static $_format = DEFAULT_RESPONSE_FORMAT;
 	protected static $_css = array();
 	protected static $_js = array();
+	protected static $_min = FALSE;
 
 	protected static $_formatMap = array(
 		'text/html' => self::LAYOUT_DEFAULT_HTML_FORMAT,
@@ -362,8 +363,13 @@ $(document).ready(function() {
 	 */
 	public static function getIcon($symbol, $altText='')
 	{
+		$variant = '';
+		if(strpos($symbol,':')){
+			$variant = substr($symbol, 0, strpos($symbol,':'));
+			$symbol = substr($symbol, strpos($symbol,':') + 1);
+		}
 		$title = $altText ? ' title="' . htmlentities($altText) . '"' : '';
-		return "<span{$title} class=\"fa fa-{$symbol}\"></span>";
+		return "<span{$title} class=\"fa{$variant} fa-{$symbol}\"></span>";
 	}
 
 	public static function isReady()
@@ -414,11 +420,27 @@ $(document).ready(function() {
 	}
 	public static function foundationJs($version, $addons = array())
 	{
-		$min = FALSE;
-		$internal = array('magellan','dropdown'); //#TODO #1.11.0 we only need to do this when not using the min version?
+		$internal = array(
+			'abide',
+			'accordion',
+			'alert',
+			'clearing',
+			'dropdown',
+			'equalizer',
+			'interchange',
+			'joyride',
+			'magellan',
+			'offcanvas',
+			'orbit',
+			'reveal',
+			'slider',
+			'tab',
+			'tooltip',
+			'topbar'
+		); //#TODO #1.11.0 we only need to do this when not using the min version?
 		$baseUrl = Saf_Registry::get('baseUrl');
 		if ($version) {
-			if ($min) {
+			if (self::$_min) {
 				print("<script src=\"{$baseUrl}foundation/js/foundation.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 			} else {
 				print("<script src=\"{$baseUrl}foundation/js/foundation/foundation.js\" type=\"text/javascript\" charset=\"utf\"></script>");
@@ -427,11 +449,15 @@ $(document).ready(function() {
 		foreach($addons as $name) {
 			if (in_array($name,$internal)) {
 				print("<script src=\"{$baseUrl}foundation/js/foundation/foundation.{$name}.js\" type=\"text/javascript\" charset=\"utf\"></script>");
-				//print("<link href=\"{$baseUrl}foundation/css/{$name}.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
 			} else {
 				print("<script src=\"{$baseUrl}foundation/js/{$name}.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 			}
 		}
+	}
+
+	public static function useMin()
+	{
+		self::$_min = TRUE;
 	}
 
 	public static function foundationPrerequisites($optional = array())
@@ -449,7 +475,7 @@ $(document).ready(function() {
 	public static function foundationLateIncludes($include = array())
 	{
 		$baseUrl = Saf_Registry::get('baseUrl');
-		if (array_key_exists('fastclick', $include)) {
+		if (array_key_exists('fastclick', $include) || in_array('fastclick',$include)) {
 			print("<script src=\"{$baseUrl}foundation/js/vendor/fastclick.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 		}
 		print("<script type=\"text/javascript\">saf.endBody();</script>");
