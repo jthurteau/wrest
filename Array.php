@@ -334,8 +334,7 @@ class Saf_Array
 				$return .= '<li>';
 				if (is_object($value)) {
 					$value = Saf_Debug::introspectData($value); //#TODO #2.0.0 make a more user friendly version of this output
-				}
-				if ($nested && is_array($value)) {
+				} else if ($nested && is_array($value)) {
 					$value = self::toHtml($value, $ordered, $nested, $typed, $boolean);
 				}
 				$return .= "{$key}{$type}:  {$value}";
