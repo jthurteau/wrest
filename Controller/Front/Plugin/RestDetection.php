@@ -24,9 +24,9 @@ class Saf_Controller_Front_Plugin_RestDetection extends Zend_Controller_Plugin_A
 	
 	public function preDispatch(Zend_Controller_Request_Abstract $request)
 	{
-		Zend_Registry::set('requestIsAjax', $request->isXmlHttpRequest());
+		Saf_Registry::set('requestIsAjax', $request->isXmlHttpRequest());
 		$format = $this->parseAccept($request->getHeader('accept'));
-		Zend_Registry::set('responseFormat', $format);
+		Saf_Registry::set('responseFormat', $format);
 	}
 	
 	public function parseAccept($string, $table = self::ACCEPT_FORMAT)

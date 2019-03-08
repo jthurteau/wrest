@@ -30,7 +30,7 @@ class Saf_Layout_Location{
 	
 	public static function setCrumbsFromConfig($config = array())
 	{
-		$baseUrl = Zend_Registry::get('baseUrl');
+		$baseUrl = Saf_Registry::get('baseUrl');
 		if (is_null($config)) {
 			$config = array();
 		} else if (is_object($config) && method_exists($config, 'toArray')) {

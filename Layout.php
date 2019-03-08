@@ -97,7 +97,7 @@ class Saf_Layout {
 	 */
 	public static function getLink($url)
 	{
-		$baseUrl = Zend_Registry::get('baseUrl');
+		$baseUrl = Saf_Registry::get('baseUrl');
 		if (strpos($url, '/') === 0) {
 			$url = substr($url, 1);
 		}
@@ -115,7 +115,7 @@ class Saf_Layout {
 
 	public static function printCss($css, $media = 'screen')
 	{
-		$baseCssUrl = Zend_Registry::get('baseUrl') . 'css/';
+		$baseCssUrl = Saf_Registry::get('baseUrl') . 'css/';
 		$css =
 			strpos($css, '/') === 0
 			? $css
@@ -168,7 +168,7 @@ class Saf_Layout {
 			'saf',
 			'main'
 		);
-		$baseCssUrl = Zend_Registry::get('baseUrl') . 'css/';
+		$baseCssUrl = Saf_Registry::get('baseUrl') . 'css/';
 		$media = 'screen'; //#TODO 2.0.0
 		foreach($coreCss as $css) {
 			$css =
@@ -190,7 +190,7 @@ class Saf_Layout {
 
 	public static function printJs($js)
 	{
-		$baseJsUrl = Zend_Registry::get('baseUrl') . 'javascript/';
+		$baseJsUrl = Saf_Registry::get('baseUrl') . 'javascript/';
 		$js =
 			strpos($js, '/') === 0
 			? $js
@@ -202,7 +202,7 @@ class Saf_Layout {
 
 	public static function printCoreJs()
 	{
-		$baseUrl = Zend_Registry::get('baseUrl') . 'javascript/';
+		$baseUrl = Saf_Registry::get('baseUrl') . 'javascript/';
 		$coreJs = array(
 			'jquery/2/jquery-2.1.4',
 			'jquery/ui/jquery-ui',
@@ -289,7 +289,7 @@ $(document).ready(function() {
 				}
 
 				if ('' != $url) {
-					$baseUrl = Zend_Registry::get('baseUrl');
+					$baseUrl = Saf_Registry::get('baseUrl');
 						$url = str_replace('[[baseUrl]]', $baseUrl, $url);
 ?>
 		<li<?php print($class);?>><?php print($prefix); ?><a href="<?php print($url); ?>"><?php print($label);?></a></li>
@@ -395,14 +395,14 @@ $(document).ready(function() {
 
 	public static function externalJs($name)
 	{
-		$baseUrl = Zend_Registry::get('baseUrl');
+		$baseUrl = Saf_Registry::get('baseUrl');
 		print("<script src=\"{$baseUrl}javascript/external/{$name}.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 	}
 
 	public static function foundationCss($version, $addons = array())
 	{
 		$internal = array('magellan','dropdown'); //#TODO #1.11.0 we only need to do this when not using the min version?
-		$baseUrl = Zend_Registry::get('baseUrl');
+		$baseUrl = Saf_Registry::get('baseUrl');
 		if ($version) {
 			print("<link href=\"{$baseUrl}foundation/css/foundation.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
 		}
@@ -416,7 +416,7 @@ $(document).ready(function() {
 	{
 		$min = FALSE;
 		$internal = array('magellan','dropdown'); //#TODO #1.11.0 we only need to do this when not using the min version?
-		$baseUrl = Zend_Registry::get('baseUrl');
+		$baseUrl = Saf_Registry::get('baseUrl');
 		if ($version) {
 			if ($min) {
 				print("<script src=\"{$baseUrl}foundation/js/foundation.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
@@ -439,7 +439,7 @@ $(document).ready(function() {
 		if (!is_array($optional)) {
 			$optional = array($optional);
 		}
-		$baseUrl = Zend_Registry::get('baseUrl');
+		$baseUrl = Saf_Registry::get('baseUrl');
 		print("<script src=\"{$baseUrl}foundation/js/vendor/modernizr.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 		if (in_array('jquery', $optional)) {
 			print("<script src=\"{$baseUrl}foundation/js/vendor/jquery.js\" type=\"text/javascript\" charset=\"utf\"></script>");
@@ -448,7 +448,7 @@ $(document).ready(function() {
 
 	public static function foundationLateIncludes()
 	{
-		$baseUrl = Zend_Registry::get('baseUrl');
+		$baseUrl = Saf_Registry::get('baseUrl');
 		print("<script src=\"{$baseUrl}foundation/js/vendor/fastclick.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 		print("<script type=\"text/javascript\">saf.endBody();</script>");
 	}

@@ -108,7 +108,7 @@ abstract class Saf_Controller_Zend extends Zend_Controller_Action {
 	
 	public function dispatch($action)
 	{
-		if (Zend_Registry::get('requestIsAjax')) {
+		if (Saf_Registry::get('requestIsAjax')) {
 			$this->_helper->layout->disableLayout();
 		}
 		$request = $this->getRequest();

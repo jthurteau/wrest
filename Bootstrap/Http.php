@@ -66,8 +66,8 @@ class Saf_Bootstrap_Http extends Saf_Bootstrap
 				: ':' . $_SERVER['SERVER_PORT']
 		);
 		$url = APPLICATION_PROTOCOL . '://' . $_SERVER['SERVER_NAME'] . $port . APPLICATION_BASE_URL;
-		Zend_Registry::set('siteUrl', $url);
-		Zend_Registry::set('baseUrl', APPLICATION_BASE_URL);
+		Saf_Registry::set('siteUrl', $url);
+		Saf_Registry::set('baseUrl', APPLICATION_BASE_URL);
 	}
 
 	

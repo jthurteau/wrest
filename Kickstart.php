@@ -1062,9 +1062,10 @@ class Saf_Kickstart {
 	/**
 	 * loads resource configuration data
 	 */
-	public static function getConfigResource($resource)
-	{//#TODO #2.0.0 this is muddled could be a Zend_Config or Saf_Config... also seems out of place now
-		$resources = Zend_Registry::get('config')->get('resources', APPLICATION_ENV);
+	public static function getConfigResource($resource, $compatMode = FALSE)
+	{//#TODO #2.0.0 compatMode supports Zend_config objects (i.e. original Room Res implementation), but it's a pretty cryptic solution...
+		$resources = $compatMode ? Saf_Registry::get('config')->get('resources', APPLICATION_ENV) : Saf_Registry::get('config');
+		//
 		if ($resources) {
 			$resource = $resources->$resource;
 			if ($resource || is_array($resource)) {
@@ -1082,7 +1083,7 @@ class Saf_Kickstart {
 	 */
 	public static function getConfigItem($item)
 	{
-		$item = Zend_Registry::get('config')->get($item, APPLICATION_ENV);
+		$item = Saf_Registry::get('config')->get($item, APPLICATION_ENV);
 		if ($item) {
 			return
 				is_array($item)

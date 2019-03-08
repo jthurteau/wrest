@@ -75,13 +75,13 @@ class Saf_Registry {
 			: explode(':', $name);
 		$facet = array_shift($request);
 		if ('config' == $facet) {
-			return self::_get('root:config', self::$_configuration); //#TODO #1.0.0 Saf_Config is not currently setup as a singleton...
+			return self::_get(array('root','config'), self::$_configuration); //#TODO #1.0.0 Saf_Config is not currently setup as a singleton...
 		} else {
 			try{
 				if(array_key_exists($facet, self::$_configuration)){
 					return self::_get($request, self::$_configuration[$facet]);
 				} else {
-					array_unshift($request,$facet);
+					array_unshift($request, $facet);
 					return self::_get($request, self::$_configuration['root']);
 				}
 			} catch (Exception $e){
@@ -209,6 +209,11 @@ class Saf_Registry {
 		foreach($keeperValues as $keeperName=>$keeperValue){
 			$_SESSION[$keeperName] = $keeperValue;
 		}
+	}
+
+	public static function isRegistered($name)
+	{
+		return self::$_singleton ? self::$_singleton->__isset($name) : FALSE;
 	}
     
 }

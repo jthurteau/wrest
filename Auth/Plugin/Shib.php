@@ -214,28 +214,28 @@ class Saf_Auth_Plugin_Shib extends Saf_Auth_Plugin_Basic{
         if ($idp === $config->shib->idp->unity){
         	//unity IdP
         	$data = explode("@",$_SERVER['SHIB_CPID']);
-        	Zend_Registry::set('uid',(string) $data[0]);
-        	//Zend_Registry::set('uid','enter user id here to test');
-        	Zend_Registry::set('get',false);
-        	Zend_Registry::set('uname',(string)$_SERVER['SHIB_DISPLAYNAME']);
-        	Zend_Registry::set('idp', "unity");
-        	Zend_Registry::set('logoutUrl', $config->shib->logout->unity);
+        	Saf_Registry::set('uid',(string) $data[0]);
+        	//Saf_Registry::set('uid','enter user id here to test');
+        	Saf_Registry::set('get',false);
+        	Saf_Registry::set('uname',(string)$_SERVER['SHIB_DISPLAYNAME']);
+        	Saf_Registry::set('idp', "unity");
+        	Saf_Registry::set('logoutUrl', $config->shib->logout->unity);
         	
         }elseif ($idp === $config->shib->idp->fol){
         	//library IdP
-        	Zend_Registry::set('uid',(string) $_SERVER['patronid']);
-        	Zend_Registry::set('get',false);
-        	Zend_Registry::set('uname',(string)$_SERVER['pname']);
-        	Zend_Registry::set('idp', "fol");
-        	Zend_Registry::set('logoutUrl', $config->shib->logout->fol);
+        	Saf_Registry::set('uid',(string) $_SERVER['patronid']);
+        	Saf_Registry::set('get',false);
+        	Saf_Registry::set('uname',(string)$_SERVER['pname']);
+        	Saf_Registry::set('idp', "fol");
+        	Saf_Registry::set('logoutUrl', $config->shib->logout->fol);
         	
         }else{
         	//shib optional guest
-        	Zend_Registry::set('uid','');
-        	Zend_Registry::set('get',false);
-        	Zend_Registry::set('uname','');
-        	Zend_Registry::set('idp', '');
-        	Zend_Registry::set('logoutUrl', '');	
+        	Saf_Registry::set('uid','');
+        	Saf_Registry::set('get',false);
+        	Saf_Registry::set('uname','');
+        	Saf_Registry::set('idp', '');
+        	Saf_Registry::set('logoutUrl', '');
         }
 */
 }
