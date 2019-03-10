@@ -1,10 +1,19 @@
+#OS ignores
 DS_Store
 Thumbs.db
 .idea/
+.htaccess
+#SAF ignores
+.vagrant
+local-dev.*
+vendor
+public/vendor
+puppet/.facts
+#ignores to be deprecated
 *.orig
 localize.php
+public/localize.php
 .application*
 ..password
 .zend*
-.htaccess
 *.local.*

@@ -1,0 +1,3 @@
+puppet_files: /vagrant/puppet
+app: local #default value
+developer: nobody #default value
