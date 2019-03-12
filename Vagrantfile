@@ -6,7 +6,7 @@ app = 'saf'
 org_domain = 'lib.ncsu.edu'
 developer = 'jthurtea'
 realm_name = 'ncsu-delta'
-app_stack = 'apache_php_multiviews-rh_php72-sample_docroot'
+app_stack = 'apache_php_multiviews_starterapp-rh_php72-sample_docroot-starter_app'
 ##
 # vagrant/puppet specific preferences
 vagrant_guest_path = '/vagrant'
@@ -45,10 +45,10 @@ Vagrant.configure('2') do |config|
   ##
   # forwarded ports
   config.vm.network 'forwarded_port', guest: 80, host: 8080, host_ip: '127.0.0.1'
-  config.vm.network 'forwarded_port', guest: 8001, host: 8081, host_ip: '127.0.0.1'
   ##
   # shared folders
   config.vm.synced_folder '.', vagrant_guest_path, owner: 'vagrant', group: 'vagrant', type: 'virtualbox'
+  config.vm.synced_folder '../saf-shell', '/app', owner: 'vagrant', group: 'vagrant', type: 'virtualbox'
   ##
   # providers
   config.vm.provider 'virtualbox' do |vb|

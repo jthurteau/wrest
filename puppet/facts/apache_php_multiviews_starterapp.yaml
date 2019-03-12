@@ -1,0 +1,5 @@
+web_root: /var/www
+doc_root: /var/www/html
+httpd_group: apache
+app_path: /var/www/application
+app_vendor_path: /var/www/application/vendor
