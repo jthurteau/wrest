@@ -395,6 +395,7 @@ $(document).ready(function() {
 			print("<script src=\"//ajax.googleapis.com/ajax/libs/jquery/{$version}/jquery.min.js\"></script>");
 		}
 		if ($uiVersion) {
+			print("<link rel=\"stylesheet\" href=\"https://ajax.googleapis.com/ajax/libs/jqueryui/{$uiVersion}/themes/smoothness/jquery-ui.css\">");
 			print("<script src=\"https://ajax.googleapis.com/ajax/libs/jqueryui/{$uiVersion}/jquery-ui.min.js\"></script>");
 		}
 	}
