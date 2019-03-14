@@ -8,6 +8,7 @@ Base class for application loading
 
 *******************************************************************************/
 require_once(LIBRARY_PATH . '/Saf/Kickstart.php');
+use Saf\Kickstart as Kickstart;
 require_once(LIBRARY_PATH . '/Saf/Config.php');
 require_once(LIBRARY_PATH . '/Saf/Debug.php');
 require_once(LIBRARY_PATH . '/Saf/Status.php');
@@ -30,7 +31,7 @@ abstract class Saf_Application
 
     public static function load($applicationName = 'Application', $configEnvironment = NULL, $configFilePath = NULL, $autoStart = FALSE)
     {
-    	Saf_Kickstart::go();
+    	Kickstart::go();
     	if (is_null($applicationName)) {
     		$applicationName = 'Application';
     	}
@@ -40,7 +41,7 @@ abstract class Saf_Application
     		strpos($applicationName, '/') === 0
     		? "{$applicationName}{$ext}"
     		: APPLICATION_PATH . "/{$applicationName}{$ext}";
-    	if (!Saf_Kickstart::fileExistsInPath($applicationFile)) {
+    	if (!Kickstart::fileExistsInPath($applicationFile)) {
     		throw new Exception('Unable to find application.');
     	}
     	require_once($applicationFile);
@@ -53,7 +54,7 @@ abstract class Saf_Application
     
     public function __construct($configEnvironment = NULL, $configFilePath = NULL, $autoStart = FALSE)
     {
-    	Saf_Kickstart::go();
+    	Kickstart::go();
     	try {
         	$this->_config = Saf_Config::load(
         		!is_null($configFilePath) ? $configFilePath : APPLICATION_CONF,
@@ -67,7 +68,7 @@ abstract class Saf_Application
         $this->_debugMode = $this->_config->getOptional('debug:mode', Saf_Debug::DEBUG_MODE_OFF);
         $this->_errorMode = $this->_config->getOptional('error:mode', Saf_Debug::ERROR_MODE_INTERNAL);
         Saf_Debug::init($this->_debugMode, $this->_errorMode, FALSE);
-        Saf_Kickstart::initializeAutoloader($this->_autoLoad);
+        Kickstart::initializeAutoloader($this->_autoLoad);
         //#TODO #2.0.0 bootstrap config
     //#TODO #2.0.0 init plugins
     // loggingf
@@ -91,13 +92,13 @@ abstract class Saf_Application
          ) {
         $e = new Exception('This application is Install Mode and currently unavailable.');
         Saf_Status::set(Saf_Status::STATUS_503_UNAVAILABLE);
-        Saf_Kickstart::exceptionDisplay($e);
+        Kickstart::exceptionDisplay($e);
         }
         
         if('down' == APPLICATION_STATUS) {
         $e = new Exception('This application is in Maintenance Mode and currently unavailable.');
         Saf_Status::set(Saf_Status::STATUS_503_UNAVAILABLE);
-        Saf_Kickstart::exceptionDisplay($e);
+        Kickstart::exceptionDisplay($e);
         }
         */
         if ($autoStart) {
@@ -131,7 +132,7 @@ abstract class Saf_Application
     	try {
             $bootstrapClass = "Saf_Bootstrap_{$type}";
             if (!$this->_autoLoad && !class_exists($bootstrapClass)) {
-                Saf_Kickstart::autoload($bootstrapClass);
+                Kickstart::autoload($bootstrapClass);
             }
             $this->_bootstrap = new $bootstrapClass($this, $this->_bootstrapConfig);
         } catch (Exception $e) {

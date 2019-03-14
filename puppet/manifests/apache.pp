@@ -1,11 +1,11 @@
 # --installed by module
-# service { "httpd":
-#   ensure  => "running",
-#   require => Package["httpd"],
+# service { 'httpd' :
+#   ensure  => 'running',
+#   require => Package['httpd'],
 # }
 
 # -- created by module
-# group { 'apache':
+# group { 'apache' :
 #   ensure => 'present',
 #   gid    => 1001,
 # }

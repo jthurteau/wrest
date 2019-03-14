@@ -7,6 +7,8 @@
 Utility class for debugging
 
 *******************************************************************************/
+require_once(LIBRARY_PATH . '/Saf/Kickstart.php');
+use Saf\Kickstart as Kickstart;
 require_once(LIBRARY_PATH . '/Saf/Status.php');
 require_once(LIBRARY_PATH . '/Saf/Layout.php');
 
@@ -682,7 +684,7 @@ class Saf_Debug
 			$caughtBy = self::$_shuttingDown ? 'SHUTDOWN' : 'DEBUG';
 			Saf_Status::set(Saf_Status::STATUS_500_ERROR);
 			$e = new Exception("{$description} {$in}");
-			Saf_Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
+			Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
 		} else {
 			$show = self::$_enabledErrorLevel === -1 || $errorNo & self::$_enabledErrorLevel;
 			if ($show && !self::$_muted) {

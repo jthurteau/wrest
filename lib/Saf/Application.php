@@ -8,6 +8,7 @@ Base class for application loading
 
 *******************************************************************************/
 require_once(LIBRARY_PATH . '/Saf/Kickstart.php');
+use Saf\Kickstart as Kickstart;
 require_once(LIBRARY_PATH . '/Saf/Config.php');
 require_once(LIBRARY_PATH . '/Saf/Debug.php');
 require_once(LIBRARY_PATH . '/Saf/Status.php');
@@ -35,10 +36,10 @@ abstract class Saf_Application
 	 */
 	public static function load($applicationName = 'Application', $configEnvironment = NULL, $autoStart = FALSE)
 	{
-		if (!Saf_Kickstart::isValidNameToken($applicationName)) {
+		if (!Kickstart::isValidNameToken($applicationName)) {
 			throw new Exception('Invalid application name specified.');
 		}
-		Saf_Kickstart::go();
+		Kickstart::go();
 		if (is_null($applicationName)) {
 			$applicationName = 'Application';
 		}
@@ -59,7 +60,7 @@ abstract class Saf_Application
 	
 	public function __construct($configEnvironment = NULL, $configFilePath = NULL, $autoStart = FALSE)
 	{
-		Saf_Kickstart::go();
+		Kickstart::go();
 		try {
 			$this->_config = Saf_Config::load(
 				!is_null($configFilePath) ? $configFilePath : APPLICATION_CONFIG,
@@ -77,17 +78,17 @@ abstract class Saf_Application
 			//#TODO how to access install
 			$e = new Exception('This application is Install Mode and currently unavailable.');
 			Saf_Status::set(Saf_Status::STATUS_503_UNAVAILABLE);
-			Saf_Kickstart::exceptionDisplay($e);
+			Kickstart::exceptionDisplay($e);
 		}
 		if('down' == APPLICATION_STATUS) {
 			$e = new Exception('This application is in Maintenance Mode and currently unavailable.');
 			Saf_Status::set(Saf_Status::STATUS_503_UNAVAILABLE);
-			Saf_Kickstart::exceptionDisplay($e);
+			Kickstart::exceptionDisplay($e);
 		}
 		if ('online' != APPLICATION_STATUS) {
 			$e = new Exception('This application is an unrecognized mode: ' . APPLICATION_STATUS . ' and currently unavailable.');
 			Saf_Status::set(Saf_Status::STATUS_503_UNAVAILABLE);
-			Saf_Kickstart::exceptionDisplay($e);			
+			Kickstart::exceptionDisplay($e);			
 		}
 		if ($autoStart) {
 			$this->start();
@@ -105,14 +106,14 @@ abstract class Saf_Application
 			$autoLoadTakeover =
 			array_key_exists('takeover', $autoLoad)
 			&& Saf_Filter_Truthy::filter($autoLoad['takeover']);
-			Saf_Kickstart::initializeAutoloader($autoLoad);
+			Kickstart::initializeAutoloader($autoLoad);
 			if (array_key_exists('loader', $autoLoad)) {
 				$loaders = Saf_Config::autoGroup($autoLoad['loader']);
 				foreach($loaders as $loader) {
 					$loaderParts = explode(':', Saf_Filter_ConfigString($loader),2);
 					!array_key_exists(1, $loaderParts)
-					? Saf_Kickstart::addAutoloader($loaderParts[0])
-					: Saf_Kickstart::addAutoloader($loaderParts[0],$loaderParts[1]);
+					? Kickstart::addAutoloader($loaderParts[0])
+					: Kickstart::addAutoloader($loaderParts[0],$loaderParts[1]);
 				}
 			}
 			if (array_key_exists('library', $autoLoad)) {
@@ -120,8 +121,8 @@ abstract class Saf_Application
 				foreach($libraries as $library) {
 					$libParts = explode(':', Saf_Filter_ConfigString($library),2);
 					!array_key_exists(1, $libParts)
-					? Saf_Kickstart::addLibrary($libParts[0])
-					: Saf_Kickstart::addLibrary(array($libParts[0], $libParts[1]));
+					? Kickstart::addLibrary($libParts[0])
+					: Kickstart::addLibrary(array($libParts[0], $libParts[1]));
 				}
 			}
 			if (array_key_exists('special', $autoLoad)) {
@@ -129,8 +130,8 @@ abstract class Saf_Application
 				foreach($specialLoaders as $special) {
 					$specialParts = explode(':', Saf_Filter_ConfigString($special),2);
 					!array_key_exists(1, $specialParts)
-					? Saf_Kickstart::addLibrary(array($specialParts[0]))
-					: Saf_Kickstart::addLibrary(array($specialParts[0], $specialParts[1]));
+					? Kickstart::addLibrary(array($specialParts[0]))
+					: Kickstart::addLibrary(array($specialParts[0], $specialParts[1]));
 				}
 			}
 		}
@@ -151,7 +152,7 @@ abstract class Saf_Application
 	
 	public function bootstrap($type = NULL)
 	{
-		if (!is_null($type) && !Saf_Kickstart::isValidNameToken($type)) {
+		if (!is_null($type) && !Kickstart::isValidNameToken($type)) {
 			throw new Exception('Invalid bootstrap specified.');
 		}
 		if (is_null($type) && !is_null($this->_bootstrap)) {
@@ -176,10 +177,10 @@ abstract class Saf_Application
 		try {
 			$bootstrapClass = "Saf_Bootstrap_{$type}";
 			if (
-				!Saf_Kickstart::isAutoloading() 
+				!Kickstart::isAutoloading() 
 				&& !class_exists($bootstrapClass)
 			) {
-				Saf_Kickstart::autoload($bootstrapClass);
+				Kickstart::autoload($bootstrapClass);
 			}
 			$this->_bootstrap = new $bootstrapClass($this, $this->_bootstrapConfig);
 		} catch (Exception $e) {
@@ -187,7 +188,7 @@ abstract class Saf_Application
 			//!in_array($bootstrapClass, get_declared_classes())) { //also seems to fail
 			//#TODO #RAINYDAY for some reason if spl_autoload throws an exception for a class, 
 			//PHPseems to refuse try again, or even load the class manually...
-				if (Saf_Kickstart::isAutoloading()) {
+				if (Kickstart::isAutoloading()) {
 					throw new Exception('Unable to load the requested Bootstrap'
 						. (Saf_Debug::isEnabled() ? " ({$bootstrapClass}) " : '') 
 						. '. Autoloading is enabled, but unable to find the bootstrap.', 0, $e);

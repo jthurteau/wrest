@@ -7,6 +7,9 @@
 Utility class for authentication
 
 *******************************************************************************/
+require_once(LIBRARY_PATH . '/Saf/Kickstart.php');
+use Saf\Kickstart as Kickstart;
+
 class Saf_Auth{
 
 	protected static $_loadedPlugins = array();
@@ -86,9 +89,9 @@ class Saf_Auth{
 					. str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
 				if (!file_exists($classPath)) {
 					$className = $pluginName;
-					Saf_Kickstart::autoload($className);
+					Kickstart::autoload($className);
 				} else {
-					Saf_Kickstart::autoload($className);
+					Kickstart::autoload($className);
 				}
 				if ($pluginConfig) {
 					self::$_classMap[$pluginName] = array($className => $pluginConfig);
@@ -123,7 +126,7 @@ class Saf_Auth{
 				: '';
 			if ($simulatedLockOn) {
 				$mode = self::MODE_SIMULATED;
-				Saf_Kickstart::defineLoad(
+				Kickstart::defineLoad(
 					'AUTH_SIMULATED_USER',
 					$currentSimulatedUser
 				);

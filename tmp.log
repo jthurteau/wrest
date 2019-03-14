@@ -1,0 +1,12 @@
+[Wed Mar 13 12:07:22.060778 2019] 
+[php7:error] [pid 7987] [client 10.0.2.2:57154] 
+PHP Fatal error:  Uncaught Error: Class 'Saf\\ReflectionMethod' not found in /vagrant/lib/Saf/Kickstart.php:1057\n
+Stack trace:\n
+#0 /vagrant/lib/Saf/Kickstart.php(671): Saf\\Kickstart::_instantiateCallable(Array)\n
+#1 /vagrant/lib/Saf/Kickstart.php(728): Saf\\Kickstart::initializeAutoloader(false)\n
+#2 /vagrant/lib/Saf/Application.php(183): Saf\\Kickstart::autoload('Saf_Bootstrap_H...')\n
+#3 /vagrant/lib/Saf/Application.php(149): Saf_Application->bootstrap('Http')\n
+#4 /vagrant/lib/Saf/Application.php(94): Saf_Application->start()\n
+#5 /vagrant/lib/Saf/Application.php(54): Saf_Application->__construct('production', '/app/applicatio...', true)\n
+#6 /app/public/index.php(60): Saf_Application::load('Sample', 'production', true)\n
+#7 {main}\n  thrown in /vagrant/lib/Saf/Kickstart.php on line 1057
