@@ -77,3 +77,10 @@ file { '/etc/httpd/conf.modules.d/librh-php72-php7.conf' :
   source => "${puppet_files}/php.conf",
   require => Package['rh-php72-php'],
 }
+
+file { '/usr/bin/php':
+  ensure  => link,
+  mode => '0755',
+  source => '/opt/rh/rh-php72/root/bin/php',
+  require => Package['rh-php72-php'],
+}

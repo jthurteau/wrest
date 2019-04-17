@@ -9,7 +9,7 @@ Filter for strings that come out of config files
 *******************************************************************************/
 require_once(LIBRARY_PATH . '/Saf/Filter.php');
 
-class Saf_Filter_ConfigString extends Saf_Filter
+class Saf_Filter_ConfigString extends Saf\Filter
 {
 	
 	protected static $_commentDelimiters = array(

@@ -9,6 +9,13 @@ Utility class for starting up an application and preparing the framework.
 Also provides autoloading.
 
 *******************************************************************************/
+// require_once(LIBRARY_PATH . '/Saf/Environment/Autoloader.php');
+// use Saf\Environment\Autoloader as Autoloader; 
+require_once(LIBRARY_PATH . '/Saf/Environment/Path.php');
+use Saf\Environment\Path as Path;
+require_once(LIBRARY_PATH . '/Saf/Environment/Define.php');
+use Saf\Environment\Define as Define;
+require_once(LIBRARY_PATH . '/Saf/Cast.php');
 
 require_once(LIBRARY_PATH . '/Saf/Filter/Truthy.php');
 require_once(LIBRARY_PATH . '/Saf/Status.php');
@@ -18,30 +25,6 @@ require_once(LIBRARY_PATH . '/Saf/Layout.php');
 //#TODO #1.0.0 update function header docs
 class Kickstart {
 
-	/**
-	 * instructs an inserter to add the new item to the start of the list
-	 * @var bool
-	 */
-	const POSITION_BEFORE = TRUE;
-
-	/**
-	 * instructs an inserter to add the new item to the end of the list
-	 * @var unknown_type
-	 */
-	const POSITION_AFTER = FALSE;
-
-	const CAST_STRING = 0;
-	const CAST_BOOL = 1;
-	const CAST_INT = 2;
-	const CAST_FLOAT = 3;
-	const CAST_COMMA_ARRAY = 4;
-	const CAST_SPACE_ARRAY = 5;
-	const CAST_NEWLINE_ARRAY = 6;
-	const CAST_CSV = 7;
-	const CAST_TSV = 8;
-	const CAST_JSON = 9;
-	const CAST_XML_MAP = 10;
-	
 	const MODE_AUTODETECT = NULL;
 	const MODE_NONE = 'none';
 	const MODE_SAF = 'saf';
@@ -57,6 +40,12 @@ class Kickstart {
 	const REGEX_PARENT_CLASS =
 		'/class\s+[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\s+extends\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)+[\s{]/';
 
+
+	/**
+	 * indicates that the bare minimum for autoload has been initialized
+	 */
+	protected static $_laced = FALSE;
+
 	/**
 	 * indicates the mode that the environment as been initialized in
 	 * @var string
@@ -64,7 +53,7 @@ class Kickstart {
 	protected static $_kicked = NULL;
 
 	/**
-	 * indicates that the internal lists have been normalized
+	 * indicates that the autoloader internal lists have been normalized
 	 */
 	protected static $_initialized = FALSE;
 
@@ -73,10 +62,6 @@ class Kickstart {
 	 * @var bool
 	 */
 	protected static $_autoloadingInstalled = FALSE;
-
-	protected static $_controllerPath = 'Controller';
-
-	protected static $_modelPath = 'Model';
 
 	/**
 	 * list of class prefixes and paths for autoloading
@@ -94,7 +79,7 @@ class Kickstart {
 	 */
 	protected static $_specialAutoloaders = array(
 		'controller' => array(
-			'Saf\Kickstart::resolveControllerPath' => 'Saf\Kickstart::resolveControllerPath'
+			'Saf\Environment\Path::resolveControllerPath' => 'Saf\Environment\Path::resolveControllerPath'
 		)
 	);
 
@@ -104,7 +89,7 @@ class Kickstart {
 	 */
 	protected static $_libraries = array(
 		'Saf' => array(
-			'Saf\Kickstart::resolveClassPath' => 'Saf\Kickstart::resolveClassPath'
+			'Saf\Environment\Path::resolveClassPath' => 'Saf\Environment\Path::resolveClassPath'
 		)
 	);
 
@@ -117,436 +102,328 @@ class Kickstart {
 	 */
 	protected static $_exceptionView = NULL;
 
+	protected static function _lace()
+	{
+		defined('APPLICATION_START_TIME') || define('APPLICATION_START_TIME', microtime(TRUE));
+		Define::load('PUBLIC_PATH', realpath('.'));
+		Define::load('INSTALL_PATH', realpath('..'));
+		Define::load('LIBRARY_PATH', realpath(__DIR__));
+		$detectedAppPath =
+			realpath(\INSTALL_PATH . '/application')
+			? realpath(\INSTALL_PATH . '/application')
+			: realpath(\INSTALL_PATH . '/app');
+		Define::load('APPLICATION_PATH', $detectedAppPath);
+		if (
+			'' == \APPLICATION_PATH 
+			|| (realpath(\INSTALL_PATH . '/application') && '' == realpath(\APPLICATION_PATH . '/configs'))
+			|| !is_readable(\APPLICATION_PATH)
+		) {
+			header('HTTP/1.0 500 Internal Server Error');
+			die('Unable to find the application core.');	 		
+		}
+		self::$_laced = TRUE;
+	}
+
 	/**
-	 * Accepts a constant name and optional default value. Will attempt to
-	 * see if the constant is already defined. If not it will see if there
-	 * is a local dot file in the pwd or path that specifies this value.
-	 * If neither of these are true it will use the provided default or
-	 * die with a failure message in the event there is no value source.
-	 * @param string $constantName constant to look for and set
-	 * @param mixed $constantDefault default value to use if none are available
-	 * @param int $cast class constant to coerce any loaded values into, provided defaults not coerced, defaults to string
-	 * @return true or execution is halted
+	 * Starts the kickstart process, preparing the environment for a framework matching $mode
+	 * @param string $mode Any of the class's MODE_ constants
+	 * @return string the mode chosen (useful in the case of default MODE_AUTODETECT)
 	 */
-	public static function defineLoad($constantName, $constantDefault = NULL, $cast = self::CAST_STRING)
+	public static function go($mode = self::MODE_AUTODETECT, $options = array())
 	{
-		if (is_array($constantName)){
-			foreach($constantName as $currentConstantIndex => $currentConstantValue) {
-				$currentConstantName =
-					is_array($currentConstantValue)
-					? $currentConstantIndex
-					: $currentConstantValue;
-				$currentDefault =
-					is_array($currentConstantValue) && array_key_exists(0, $currentConstantValue)
-						? $currentConstantValue[0]
-						: $constantDefault;
-				$currentCast =
-					is_array($currentConstantValue) && array_key_exists(1, $currentConstantValue)
-						? $currentConstantValue[1]
-						: $cast;
-				self::defineLoad($currentConstantName, $currentDefault, $currentCast);
+		if (!self::$_kicked) {
+			if (!self::$_laced) {
+				self::_lace();
+			}			
+		 	if ($mode == self::MODE_AUTODETECT) {
+				$mode = self::_goAutoMode();
+		 	}
+		 	if ($mode == self::MODE_SAF) {
+				self::_goIdent();
 			}
-			return TRUE;
-		}
-		$constantName = self::filterConstantName($constantName);
-		$sourceFileMatch = self::dotFileMatch($constantName);
-		$sourceFilename =
-			is_array($sourceFileMatch)
-			? $sourceFileMatch[0]
-			: $sourceFileMatch;
-		$lowerConstantName = strtolower($constantName);
-		$failureMessage = 'This application is not fully configured. '
-			. "Please set a value for {$constantName}. "
-			. (
-				$sourceFilename
-				? "There is a {$sourceFilename} file that may specify this configuration option, but it is not readable."
-				: "This value can be specified locally in a .{$lowerConstantName} file."
-			);
-		if (!defined($constantName)) {
-			if ($sourceFileMatch) {
-				$sourceValue = self::load($sourceFileMatch);
-				define($constantName, self::cast($sourceValue, $cast));
-			} else if (!is_null($constantDefault)) {
-				define($constantName, $constantDefault);
-			} else {
-				die($failureMessage);
-			}
-		}
-		return TRUE;
-	}
-
-	public static function valueLoad($valueName, $valueDefault = NULL, $cast = self::CAST_STRING)
-	{
-		if (is_array($valueName)){
-			$return = array();
-			foreach($valueName as $currentValueIndex => $currentValue) {
-				$currentValueName =
-					is_array($currentValue)
-						? $currentValueIndex
-						: $currentValue;
-				$currentDefault =
-					is_array($currentValue) && array_key_exists(0, $currentValue)
-						? $currentValue[0]
-						: $valueDefault;
-				$currentCast =
-					is_array($currentValue) && array_key_exists(1, $currentValue)
-						? $currentValue[1]
-						: $cast;
-				$return[$valueName] = self::valueLoad($currentValueName, $currentDefault, $currentCast);
-			}
-			return $return;
-		}
-		$valueName = self::filterConstantName($valueName);
-		$sourceFileMatch = self::dotFileMatch($valueName);
-		$sourceFilename =
-			is_array($sourceFileMatch)
-				? $sourceFileMatch[0]
-				: $sourceFileMatch;
-		$lowerValueName = strtolower($valueName);
-		$failureMessage = 'This application is not fully configured. '
-			. "Please set a value for {$valueName}. "
-			. (
-				$sourceFilename
-				? "There is a {$sourceFilename} file that may specify this configuration option, but it is not readable."
-				: "This value can be specified locally in a .{$lowerValueName} file."
-			);
-		if ($sourceFileMatch) {
-			$sourceValue = self::load($sourceFileMatch);
-			return self::cast($sourceValue, $cast);
-		} else if (!is_null($valueDefault)) {
-			return $valueDefault;
-		} else {
-			die($failureMessage);
-		}
-	}
-
-	public static function mapLoad($valueName, $memberCast = self::CAST_STRING)
-	{
-		$valueName = self::filterConstantName($valueName);
-		$sourceFileMatch = self::dotFileMatch($valueName, TRUE);
-		$sourceFilename =
-			is_array($sourceFileMatch)
-				? $sourceFileMatch[0]
-				: $sourceFileMatch;
-		$lowerValueName = strtolower($valueName);
-		$failureMessage = 'This application is not fully configured. '
-			. "Please set a map of values for {$valueName}. "
-			. (
-				$sourceFilename
-				? "There is a {$sourceFilename} file that may specify this configuration option, but it is not readable."
-				: "This value can be specified locally in a .{$lowerValueName} file."
-			);
-		if ($sourceFileMatch) {
-			$sourceValues = self::load($sourceFileMatch);
-			$castValues = array();
-			foreach($sourceValues as $index=>$value) {
-				$castValues[$index] = self::cast($value, $memberCast);
-			}
-			return $castValues;
-		} else if (!is_null($valueDefault)) {
-			return $valueDefault;
-		} else {
-			die($failureMessage);
-		}
-	}
-	
-	public static function filterConstantName($name)
-	{
-		$filteredName = preg_replace('/[^A-Za-z0-9_\x7f-\xff]/', '', $name);
-		return strtoupper($filteredName);
-	}
-
-	protected static function load($sourceConfig, $lineBreak = \PHP_EOL, $delim = ':')
-	{
-		if (is_array($sourceConfig)) {
-			$lines = explode($lineBreak, trim(file_get_contents($sourceConfig[0])));
-			if ('' != trim($sourceConfig[1])) {
-				$matchLine = NULL;
-				foreach($lines as $line) {
-					$upperMatch = strtoupper(trim($sourceConfig[1]) . $delim);
-					$upperLine = strtoupper($line);
-					if (strpos($upperLine,$upperMatch) === 0) {
-						$matchLine = substr($line, strlen($upperMatch));
-						break;
+			switch($mode) {
+		 		case self::MODE_ZFMVC:
+		 			$configFile = 'zend_application';
+		 			break;
+		 		case self::MODE_SAF:
+					if (defined('APPLICATION_ID') && \APPLICATION_ID){
+						$applicationFilePart = strtolower(\APPLICATION_ID); //#TODO #1.0.0 filter file names safely
+						$configFile = "saf_application.{$applicationFilePart}";
+						if (file_exists(\APPLICATION_PATH . "/configs/{$configFile}.xml")) {
+							break;
+						}
 					}
+					$configFile = 'saf_application';
+		 			break;
+		 		default:
+		 			$configFile = 'application';
+		 			break;
+		 	}
+			Define::load('APPLICATION_STATUS', 'online');
+			Define::load('APPLICATION_BASE_ERROR_MESSAGE', 'Please inform your technical support staff.');
+			Define::load('APPLICATION_DEBUG_NOTIFICATION', 'Debug information available.');
+		 	if ($mode == self::MODE_LF5) {
+				self::_goLaravel();
+				if (\APPLICATION_FORCE_DEBUG) {
+					\Saf_Debug::init(\Saf_Debug::DEBUG_MODE_FORCE, NULL , FALSE);
 				}
-				return $matchLine;
+				self::_goPreRoute();
+				self::_goIdent();
 			} else {
-				$values = array();
-				foreach($lines as $line) {
-					$index = NULL;
-					$indexEnd = strpos($line, $delim);
-					if ($indexEnd !== FALSE) {
-						$index = substr($line, 0, $indexEnd);
-						$values[$index] = substr($line, $indexEnd + strlen($delim));
-					} else {
-						$values[] = $line;
-					}
+				Define::load('APPLICATION_CONFIG', \APPLICATION_PATH . "/configs/{$configFile}.xml");
+				Define::load('APPLICATION_FORCE_DEBUG', FALSE, Cast::TYPE_BOOL);
+				if (\APPLICATION_FORCE_DEBUG) {
+					\Saf_Debug::init(\Saf_Debug::DEBUG_MODE_FORCE, NULL , FALSE);
 				}
-				return $values;
+				self::_goPreRoute();
+				if ($mode != self::MODE_SAF) {
+					self::_goIdent();
+				}
+				if ($mode == self::MODE_ZFMVC || $mode == self::MODE_ZFNONE) {
+					self::_goZend();
+				}
+				if ($mode == self::MODE_SAF) {
+					self::_goSaf();
+				}
 			}
-		} else {
-			return (trim(file_get_contents($sourceConfig)));
+			self::_goPreBoot();
+			self::$_kicked = $mode;
 		}
+ 		return self::$_kicked;
 	}
 
-	protected static function _filterDotFileName($constantName)
+	protected static function _goIdent()
 	{
-		$lowerConstantName = strtolower($constantName);
-		$safeConstantName = preg_replace('/[^a-z0-9_.]/', '', $lowerConstantName);
-		$prefSource = self::_prefFileSource('.' . $safeConstantName);
+		Define::load('APPLICATION_ENV', 'production');
+		Define::load('APPLICATION_ID', '');
+	}
+
+	protected static function _goAutoMode()
+	{
+		$applicationClassFile =
+			\APPLICATION_PATH . '/' . \APPLICATION_ID . '.php';
+		$bootstrapClassFile =
+			\APPLICATION_PATH . '/Bootstrap.php';
+		$laravelFiles = file_exists(\INSTALL_PATH . '/bootstrap/app.php') && file_exists(\INSTALL_PATH . '/config/app.php');
+		if ($laravelFiles) {
+			return self::MODE_LF5;
+		} else if (file_exists($applicationClassFile)) {
+			if (!is_readable($applicationClassFile)) {
+				header('HTTP/1.0 500 Internal Server Error');
+				die('Unable to autodetect application class.');
+			}
+			$parentClass = self::getParentClassIn($applicationClassFile);
+			if (
+				strpos($parentClass, 'Saf_Application') === 0
+			) {
+				return self::MODE_SAF;
+			}
+		} else if (
+			file_exists($bootstrapClassFile)
+		) {
+			if (!is_readable($bootstrapClassFile)) {
+	 			header('HTTP/1.0 500 Internal Server Error');
+	 			die('Unable to autodetect bootstrap class.');
+			}
+			$parentClass = self::getParentClassIn($bootstrapClassFile);
+			if (
+				strpos($parentClass, 'Zend_Application_Bootstrap') === 0
+				|| strpos($parentClass, 'Saf_Bootstrap_Zend') === 0
+			) {
+				return self::MODE_ZFMVC;
+			}
+		}
 		return
-			strlen($safeConstantName) > 1
-			? "{$prefSource}/.{$safeConstantName}"
-			: FALSE;
+			defined('ZEND_PATH')
+				|| Path::fileExistsInPath('Zend/Application.php')
+			? self::MODE_ZFNONE
+			: self::MODE_NONE;
+	}
+
+	/**
+	 * steps to prep the route
+	 */
+	protected static function _goPreRoute()
+	{
+		defined('ROUTER_NAME') || define('ROUTER_NAME', 'index');
+		$routerIndexInPhpSelf = strpos($_SERVER['PHP_SELF'], strtolower(\ROUTER_NAME) . '.php');
+		$routerPathLength = (
+			$routerIndexInPhpSelf !== FALSE
+			? $routerIndexInPhpSelf
+			: PHP_MAXPATHLEN
+		);
+		defined('ROUTER_PATH') || define('ROUTER_PATH', NULL);
+		$defaultRouterlessUrl = substr($_SERVER['PHP_SELF'], 0, $routerPathLength);
+		Define::load('APPLICATION_BASE_URL',
+			\ROUTER_NAME != ''
+			? $defaultRouterlessUrl
+			: './'
+		);
+		Define::load('APPLICATION_HOST', (
+			array_key_exists('HTTP_HOST', $_SERVER) && $_SERVER['HTTP_HOST']
+			? $_SERVER['HTTP_HOST']
+			: 'commandline'
+		));
+		Define::load('STANDARD_PORT', '80');
+		Define::load('SSL_PORT', '443');
+		Define::load('APPLICATION_SSL', //#TODO #2.0.0 this detection needs work
+			array_key_exists('HTTPS', $_SERVER)
+				&& $_SERVER['HTTPS']
+				&& $_SERVER['HTTPS'] != 'off'
+			, Cast::TYPE_BOOL
+		);
+		Define::load('APPLICATION_PORT', (
+				array_key_exists('SERVER_PORT', $_SERVER) && $_SERVER['SERVER_PORT']
+				? $_SERVER['SERVER_PORT']
+				: 'null'
+		));
+		Define::load('APPLICATION_SUGGESTED_PORT',
+			(\APPLICATION_SSL && \APPLICATION_PORT != \SSL_PORT)
+				|| (!\APPLICATION_SSL && \APPLICATION_PORT == \STANDARD_PORT)
+			? ''
+			: \APPLICATION_PORT
+		);
+		if(array_key_exists('SERVER_PROTOCOL', $_SERVER)) {
+			$lowerServerProtocol = strtolower($_SERVER['SERVER_PROTOCOL']);
+			$cleanProtocol = substr($lowerServerProtocol, 0, strpos($lowerServerProtocol, '/'));
+			if ($cleanProtocol == 'https') { //#TODO #2.0.0 figure out what other possible base protocols there might be to filter...
+				$baseProtocol = 'http';
+			} else {
+				$baseProtocol = $cleanProtocol;
+			}
+			define('APPLICATION_PROTOCOL', $baseProtocol);
+		} else {
+			define('APPLICATION_PROTOCOL','commandline');
+		}
+		Define::load('DEFAULT_RESPONSE_FORMAT', (
+			'commandline' == \APPLICATION_PROTOCOL
+			? 'text'
+			: 'html+javascript:css'
+		));
+	}
+
+	/**
+	 * steps that can't wait for a bootstrap to kick in
+	 */
+	protected static function _goPreBoot()
+	{
+		if (function_exists('libxml_use_internal_errors')) {
+			libxml_use_internal_errors(TRUE);
+		} else {
+			\Saf_Debug::out('Unable to connect LibXML to integrated debugging. libxml_use_internal_errors() not supported.', 'NOTICE');
+		}
+		if (defined('APPLICATION_TZ')) {
+			date_default_timezone_set(\APPLICATION_TZ);
+		}
+	}
+
+	/**
+	 * Conveinence setup when not using the kickstart process.
+	 * @param null $mode
+	 */
+	public static function goLight($mode = self::MODE_AUTODETECT)
+	{
+		self::_goPreBoot();
+	}
+
+	/**
+	 * steps to take when preparing for SAF Applications
+	 */
+	protected static function _goSaf()
+	{
+		require_once(\LIBRARY_PATH . '/Saf/Application.php');
 	}
 	
-	protected static function _filterDoubleDotFileName($constantName)
+	/**
+	 * steps to take when preparing for a Zend Framework application
+	 */
+	protected static function _goZend()
 	{
-		$lowerConstantName = strtolower($constantName);
-		$safeConstantName = preg_replace('/[^a-z0-9_.]/', '', $lowerConstantName);
-		$prefSource = self::_prefFileSource('..' . $safeConstantName, FALSE);
-		if (strlen($safeConstantName) <= 1) {
-			return FALSE;
+		self::defineLoad('ZEND_PATH', '');
+		if (\ZEND_PATH != '') {
+			Path::addIfNotInPath(\ZEND_PATH);
 		}
-		if (is_array($prefSource)) {
-			$result = array();
-			foreach($prefSource as $prefSourceOption) {
-				$result[] = "{$prefSourceOption}/..{$safeConstantName}";
-			}
-			return $result;
-		} else {
-			return "{$prefSource}/..{$safeConstantName}";
+		if (
+			!file_exists(\ZEND_PATH . '/Zend/Application.php')
+			&& !file_exists(\LIBRARY_PATH . '/Zend/Application.php')
+			&& !Path::fileExistsInPath('Zend/Application.php')
+		) {
+			header('HTTP/1.0 500 Internal Server Error');
+			die('Unable to find Zend Framework.');
 		}
+		if (
+			!is_readable('Zend/Application.php')
+			&& !is_readable(\ZEND_PATH . '/Zend/Application.php')
+			&& !is_readable(\LIBRARY_PATH . '/Zend/Application.php')
+		) {
+			header('HTTP/1.0 500 Internal Server Error');
+			die('Unable to access Zend Framework.');
+		}
+		if (
+			file_exists(\LIBRARY_PATH . '/Zend/Application.php')
+			&& is_readable(\LIBRARY_PATH . '/Zend/Application.php')
+			&& !Path::fileExistsInPath('Zend/Application.php')
+		) {
+			Path::addIfNotInPath(\LIBRARY_PATH);
+		}
+		require_once('Zend/Application.php');
+		self::$_controllerPath = 'controllers';
 	}
 
-	protected static function _prefFileSource($file, $ifExists = TRUE)
+	/**
+	 * steps to take when preparing for Laravel Applications
+	 */
+	protected static function _goLaravel()
 	{
-		return (
-			defined('APPLICATION_PATH')
-			? (
-				file_exists(\APPLICATION_PATH . "/{$file}")				
-				? APPLICATION_PATH
-				: ($ifExists ? '.' : array(\APPLICATION_PATH, '.'))
-			) : '.'
+		$env = self::envRead(\INSTALL_PATH . '/.env');
+		$detectedEnv = array_key_exists('APP_ENV', $env) ? $env['APP_ENV'] : 'production';
+		defined('APPLICATION_ENV') || define('APPLICATION_ENV',	$detectedEnv);
+		Define::load(
+			'APPLICATION_FORCE_DEBUG',
+			array_key_exists('APP_DEBUG', $env) ? $env['APP_DEBUG'] : FALSE,
+			Cast::TYPE_BOOL
 		);
 	}
-
-	public static function dotFileMatch($constantName, $allowMulti = FALSE)
-	{
-		$sourceFilename = self::_filterDotFileName($constantName);
-		if(is_readable($sourceFilename)){
-			return $sourceFilename;
-		} else {
-			return self::_doubleDotFileScan($constantName, $allowMulti);
-		}
-	}
-
-	protected static function _doubleDotFileScan($constantName, $allowMulti = FALSE)
-	{
-		$sourceFilename = self::_filterDoubleDotFileName($constantName);
-		if (!is_array($sourceFilename)) {
-			$sourceFilename = array($sourceFilename);
-		}
-		$scans = array();
-		foreach($sourceFilename as $currentSourceFilename) {
-			$components = explode('_', $currentSourceFilename);
-			foreach($components as $componentIndex => $componentName) {
-				$fullMatch = implode('_', array_slice($components, 0, $componentIndex + 1));
-				if ($fullMatch != $currentSourceFilename) {
-					$scans[] = array(
-						$fullMatch,
-						implode('_', array_slice($components, $componentIndex + 1))
-					);
-				} else if ($allowMulti && is_readable($fullMatch)) {
-					return array($fullMatch, '');
-				}
-			}
-		}
-		foreach($scans as $scanParts) {
-			if (is_readable($scanParts[0])) {
-				$lines = explode(PHP_EOL, trim(file_get_contents($scanParts[0])));
-				foreach($lines as $line) {
-					$upperMatch = strtoupper($scanParts[1]);
-					$upperLine = strtoupper($line);
-					if (strpos($upperLine, $upperMatch) === 0) {
-						return $scanParts;
-					}
-				}
-			}
-		}
-		return NULL;
-	}
-
-	public static function dotFileExists($constantName)
-	{
-		$sourceFilename = self::_filterDotFileName($constantName);
-		return is_readable($sourceFilename);
-	}
-
-	public static function envRead($filepath)
-	{
-		$return = array();
-		if (file_exists($filepath) && is_readable($filepath)) {
-			$lines = explode(\PHP_EOL,file_get_contents($filepath));
-			foreach($lines as $line) {
-				$line = trim($line);
-				$split = strpos($line,'=');
-				if ($split) {
-					$var = substr($line,0,$split);
-					$val = substr($line,$split + 1);
-					$return[$var] = $val;
-				}
-			}
-		}
-		return $return;
-	}
-
+	
 	/**
-	 * Inserts a new filepath into the path if is not already present. It may
-	 * be relative to a specific other path or the whole list. If the specified
-	 * other path is not present, the new path always goes to the end. The
-	 * specified is also translated into a realpath() for matching purposes. If the
-	 * new path was already present it's old locaiton is removed. This function
-	 * will only add valid, exiecutable paths. Returns true if the path is added.
-	 * @param string $filepath to add
-	 * @param string $preposition optional specification of after (default) or before
-	 * @param string $place for relative placement with preposition.
-	 * @return boolean
-	 */	
-	public static function addInPath($filepath, $preposition = self::POSITION_AFTER, $place = '*')
-	{
-		$realNewPath = realpath($filepath);
-		if(!$realNewPath){
-			return FALSE;
-		}
-		$oldPaths = explode(\PATH_SEPARATOR, ini_get('include_path'));
-		$newPaths = array();
-		$placed = FALSE;
-		$realPlace = realpath($place);
-		foreach ($oldPaths as $path) {
-			$currentRealPath = realpath($path);
-			$currentMatchesNew = (
-				($currentRealPath && ($currentRealPath == $realNewPath))
-				|| $path == $filepath
-			);
-			$currentMatchesPlace = (
-				($currentRealPath && ($currentRealPath == $realPlace))
-				|| $path == $place
-			);
-			if (self::POSITION_BEFORE == $preposition && !$placed) {
-				if ('*' == $place || $currentMatchesPlace) {
-					$newPaths[] = $realNewPath;
-					if (!$currentMatchesNew) {
-						$newPaths[] = $path;
-					}
-					$placed = TRUE;
-				}
-			} else if (!$placed) {
-				if ('*' == $place || $currentMatchesPlace) {
-					if (!$currentMatchesNew) {
-						$newPaths[] = $path;
-					}
-					$newPaths[] = $realNewPath;
-					$placed = TRUE;
-				}
-			} else if (!$currentMatchesNew) {
-				$newPaths[] = $path;
-			}
-
-/*			if(strpos($filepath, PATH_SEPARATOR) !== 0
-				? file_exists(realpath($path . $filepath))
-				: file_exists(realpath($path . PATH_SEPARATOR . $filepath))
-			){
-				return TRUE;
-			}*/
-		}
-		if (!$placed) {
-			$newPaths[] = $realNewPath;
-		}
-		ini_set('include_path', implode(\PATH_SEPARATOR, $newPaths));
-		return TRUE;
-	}
-
-	/**
-	 * Manually checks the path (not always pwd) to see if the file to be included
-	 * is there. Implemented as such because some differences seem to be present
-	 * between PHP implementations.
-	 * @param string filepath relative path to the file or folder in question.
-	 * @return boolean
+	 * @return string the mode the application was started in
 	 */
-	public static function fileExistsInPath($filepath)
+	public static function getMode()
 	{
-		if(strpos($filepath, '/') === 0) {
-			return file_exists($filepath);
-		}
-		$paths = explode(\PATH_SEPARATOR, ini_get('include_path'));
-		foreach($paths as $path){
-			if (file_exists(realpath("{$path}/{$filepath}"))){
-				return TRUE;
-			}
-		}
-		return FALSE;
+		return self::$_kicked;
 	}
 
 	/**
-	 * @param string $filepath
-	 * @param int $order
+	 * perform kickstart based on the provided mode
 	 */
-	public static function addIfNotInPath($filePath, $order = self::POSITION_AFTER)
+	public static function kick($mode)
 	{
-		$includePaths = explode(\PATH_SEPARATOR, get_include_path());
-		$inPath = FALSE;
-		foreach($includePaths as $includePath) {
-			if (realpath($includePath) == realpath($filePath)) {
-				$inPath = TRUE;
-				break;
-			}
+		try {
+			switch ($mode) {
+				case self::MODE_ZFMVC:
+					$application = new \Zend_Application(APPLICATION_ENV, APPLICATION_CONFIG);
+					$application->bootstrap()->run();
+					break;
+				case self::MODE_SAF:
+					$application = \Saf_Application::load(APPLICATION_ID, APPLICATION_ENV, TRUE);
+					break;
+				default:
+				if(file_exists('main.php')){
+					if (!is_readable('main.php')){
+						header('HTTP/1.0 500 Internal Server Error');
+						die('Unable to access main application script.');
+					}
+					require_once('main.php');
+				} else {
+					header('HTTP/1.0 500 Internal Server Error');
+					die('No application to run.');
+				}	
+			} 
+		} catch (Exception $e) {
+			header('HTTP/1.0 500 Internal Server Error');
+			self::exceptionDisplay($e);
 		}
-		if (!$inPath) {
-			if ($order === self::POSITION_AFTER) {
-				$includePaths[] = $filePath;
-			} else {
-				$includePaths = array_unshift($includePaths, $filePath);
-			}
-			set_include_path(implode(\PATH_SEPARATOR, $includePaths));
-		}
-	}
-
-	public static function translatePath($path)
-	{
-		return str_replace(
-			array(
-				'[[APPLICATION_PATH]]',
-				'[[LIBRARY_PATH]]',
-				'[[PUBLIC_PATH]]',
-				'[[INSTALL_PATH]]'
-			), array(
-				\APPLICATION_PATH,
-				\LIBRARY_PATH,
-				\PUBLIC_PATH,
-				\INSTALL_PATH
-			), $path
-		);
-	}
-
-	/**
-	 * Converts a classname and base file path into a full path based
-	 * on Zend Framework class naming conventions. i.e. _ to /
-	 *
-	 */
-	public static function resolveClassPath($className, $basePath = '')
-	{
-		if ('' == $basePath) {
-			$basePath = \LIBRARY_PATH;
-		}
-		$classNameComponents = explode('_', $className);
-		$classPath = $basePath;
-		foreach ($classNameComponents as $nameComponent) {
-			$classPath .= "/{$nameComponent}";
-		}
-		$classPath .= '.php'; //#TODO #2.0.0 handle other file formats
-		return $classPath;
+		\Saf_Debug::dieSafe();
 	}
 
 	public static function resolveControllerClassName($controllerName)
@@ -558,36 +435,6 @@ class Kickstart {
 				|| strrpos($className, $nameSuffix) != strlen($className) - strlen($nameSuffix)
 			? $className .= $nameSuffix
 			: $className;
-	}
-
-	/**
-	 * Converts a controller class name into a filepath
-	 * @param string $className
-	 */
-	public static function resolveControllerPath($controllerName, $coerce = TRUE)
-	{
-		$controllerPath = \APPLICATION_PATH . '/' . self::$_controllerPath . '/';
-		$className = $coerce ? self::resolveControllerClassName($controllerName) : $controllerName;
-		if (!is_readable($controllerPath)) {
-			throw new Exception('This application does not support controllers.');
-		}
-		return(self::resolveClassPath($className, $controllerPath));
-	}
-
-	/**
-	 * casts a value into a different type
-	 * @param mixed $value
-	 * @param int $cast matching one of the CAST_ class constants
-	 * @return mixed
-	 */
-	public static function cast($value, $cast)
-	{
-		switch ($cast) {
-			case self::CAST_BOOL :
-				return \Saf_Filter_Truthy::filter($value);
-			default: //#TODO #2.0.0 support the other cast features
-				return $value;
-		}
 	}
 
 	/**
@@ -648,6 +495,9 @@ class Kickstart {
 	 */
 	public static function initializeAutoloader($takeover = TRUE)
 	{
+		if (!self::$_laced) {
+			self::_lace();
+		}
 		//#TODO #3.0.0 allow for uninstall
 		if ($takeover && !self::$_autoloadingInstalled) {
 			spl_autoload_register('Saf\Kickstart::autoload');
@@ -690,7 +540,7 @@ class Kickstart {
 		}
 		foreach(self::$_autoloaders as $prefix => $paths) {
 			foreach($paths as $pathIndex => $path) {
-				self::$_autoloaders[$prefix][$pathIndex] = self::translatePath($path);
+				self::$_autoloaders[$prefix][$pathIndex] = Path::translatePath($path);
 			}
 		}
 		self::$_initialized = TRUE;
@@ -745,7 +595,7 @@ class Kickstart {
 							$classFile = $callableReflector->invoke($callableInstance, $className);
 							if (
 								$classFile
-								&& self::fileExistsInPath($classFile)
+								&& Path::fileExistsInPath($classFile)
 							) {
 								require_once($classFile);
 								if (!class_exists($className, FALSE)) {
@@ -790,7 +640,7 @@ class Kickstart {
 					$classFile = $callableReflector->invoke($callableInstance, $className);
 					if (
 						$classFile
-						&& self::fileExistsInPath($classFile)
+						&& Path::fileExistsInPath($classFile)
 					) {
 						require_once($classFile);
 						if (!class_exists($className, FALSE)) {
@@ -811,10 +661,10 @@ class Kickstart {
 		foreach (self::$_autoloaders as $classPrefix => $pathList) {
 			if ('' == $classPrefix || strpos($className, $classPrefix) === 0) {
 				foreach($pathList as $path) {
-					$classFile = self::resolveClassPath($className, $path);
+					$classFile = Path::resolveClassPath($className, $path);
 					if (
 						$classFile
-						&& self::fileExistsInPath($classFile)
+						&& Path::fileExistsInPath($classFile)
 					) {
 						require_once($classFile);
 						if (!class_exists($className, FALSE)) {
@@ -854,7 +704,7 @@ class Kickstart {
 	{
 		self::initializeAutoloader(FALSE);
 		if ('' == $resolutionCallable || is_null($resolutionCallable)) {
-			$resolutionCallable = 'Saf\Kickstart::resolveClassPath';
+			$resolutionCallable = 'Saf\Environment\Path::resolveClassPath';
 		}
 		$instantiatedCallable = self::_instantiateCallable($resolutionCallable);
 		if (array_key_exists($libraryPrefix, self::$_libraries)) {
@@ -927,7 +777,7 @@ class Kickstart {
 	public static function addAutoloader($prefix, $path, $preposition = self::POSITION_AFTER)
 	{
 		self::initializeAutoloader(FALSE);
-		$path = self::translatePath($path);
+		$path = Path::translatePath($path);
 		if (array_key_exists($prefix, self::$_autoloaders)) {
 			if ($preposition) {
 				self::$_autoloaders[$prefix] = array_merge(
@@ -995,7 +845,7 @@ class Kickstart {
 	{
 		self::initializeAutoloader(FALSE);
 		if ('' == $resolutionCallable || is_null($resolutionCallable)) {
-			$resolutionCallable = 'Saf\Kickstart::resolveClassPath';
+			$resolutionCallable = 'Saf\Environment\Path::resolveClassPath';
 		}
 		$instantiatedCallable = self::_instantiateCallable($resolutionCallable);
 		if (array_key_exists($name, self::$_specialAutoloaders)) {
@@ -1096,325 +946,6 @@ class Kickstart {
 				);
 		}
 		return NULL;
-	}
-
-	/**
-	 * Starts the kickstart process, preparing the environment for a framework matching $mode
-	 * @param string $mode Any of the class's MODE_ constants
-	 * @return string the mode chosen (useful in the case of default MODE_AUTODETECT)
-	 */
-	public static function go($mode = self::MODE_AUTODETECT, $options = array())
-	{
-		if (!self::$_kicked) {
-			defined('APPLICATION_START_TIME') || define('APPLICATION_START_TIME', microtime(TRUE));
-			self::defineLoad('PUBLIC_PATH', realpath('.'));
-		 	self::defineLoad('INSTALL_PATH', realpath('..'));
-		 	self::defineLoad('LIBRARY_PATH', realpath(__DIR__));
-			$detectedAppPath =
-				realpath(\INSTALL_PATH . '/application')
-				? realpath(\INSTALL_PATH . '/application')
-				: realpath(\INSTALL_PATH . '/app');
-		 	self::defineLoad('APPLICATION_PATH', $detectedAppPath);
-		 	if (
-		 		'' == \APPLICATION_PATH 
-		 		|| (realpath(\INSTALL_PATH . '/application') && '' == realpath(\APPLICATION_PATH . '/configs'))
-		 		|| !is_readable(\APPLICATION_PATH)
-		 	) {
-	 			header('HTTP/1.0 500 Internal Server Error');
-	 			die('Unable to find the application core.');	 		
-		 	}
-		 	if ($mode == self::MODE_AUTODETECT) {
-				$mode = self::_goAutoMode();
-		 	}
-		 	if ($mode == self::MODE_SAF) {
-				self::_goIdent();
-			}
-			switch($mode) {
-		 		case self::MODE_ZFMVC:
-		 			$configFile = 'zend_application';
-		 			break;
-		 		case self::MODE_SAF:
-					if (defined('APPLICATION_ID') && \APPLICATION_ID){
-						$applicationFilePart = strtolower(\APPLICATION_ID); //#TODO #1.0.0 filter file names safely
-						$configFile = "saf_application.{$applicationFilePart}";
-						if (file_exists(\APPLICATION_PATH . "/configs/{$configFile}.xml")) {
-							break;
-						}
-					}
-					$configFile = 'saf_application';
-		 			break;
-		 		default:
-		 			$configFile = 'application';
-		 			break;
-		 	}
-				self::defineLoad('APPLICATION_STATUS', 'online');
-				self::defineLoad('APPLICATION_BASE_ERROR_MESSAGE', 'Please inform your technical support staff.');
-				self::defineLoad('APPLICATION_DEBUG_NOTIFICATION', 'Debug information available.');
-		 	if ($mode == self::MODE_LF5) {
-				self::_goLaravel();
-				if (\APPLICATION_FORCE_DEBUG) {
-					\Saf_Debug::init(\Saf_Debug::DEBUG_MODE_FORCE, NULL , FALSE);
-				}
-				self::_goPreRoute();
-				self::_goIdent();
-			} else {
-				self::defineLoad('APPLICATION_CONFIG', \APPLICATION_PATH . "/configs/{$configFile}.xml");
-				self::defineLoad('APPLICATION_FORCE_DEBUG', FALSE, self::CAST_BOOL);
-				if (\APPLICATION_FORCE_DEBUG) {
-					\Saf_Debug::init(\Saf_Debug::DEBUG_MODE_FORCE, NULL , FALSE);
-				}
-				self::_goPreRoute();
-				if ($mode != self::MODE_SAF) {
-					self::_goIdent();
-				}
-				if ($mode == self::MODE_ZFMVC || $mode == self::MODE_ZFNONE) {
-					self::_goZend();
-				}
-				if ($mode == self::MODE_SAF) {
-					self::_goSaf();
-				}
-			}
-			self::_goPreBoot();
-			self::$_kicked = $mode;
-		}
- 		return self::$_kicked;
-	}
-
-	protected static function _goIdent()
-	{
-		self::defineLoad('APPLICATION_ENV', 'production');
-		self::defineLoad('APPLICATION_ID', '');
-	}
-
-	protected static function _goAutoMode()
-	{
-		$applicationClassFile =
-			\APPLICATION_PATH . '/' . \APPLICATION_ID . '.php';
-		$bootstrapClassFile =
-			\APPLICATION_PATH . '/Bootstrap.php';
-		$laravelFiles = file_exists(\INSTALL_PATH . '/bootstrap/app.php') && file_exists(\INSTALL_PATH . '/config/app.php');
-		if ($laravelFiles) {
-			return self::MODE_LF5;
-		} else if (file_exists($applicationClassFile)) {
-			if (!is_readable($applicationClassFile)) {
-				header('HTTP/1.0 500 Internal Server Error');
-				die('Unable to autodetect application class.');
-			}
-			$parentClass = self::getParentClassIn($applicationClassFile);
-			if (
-				strpos($parentClass, 'Saf_Application') === 0
-			) {
-				return self::MODE_SAF;
-			}
-		} else if (
-			file_exists($bootstrapClassFile)
-		) {
-			if (!is_readable($bootstrapClassFile)) {
-	 			header('HTTP/1.0 500 Internal Server Error');
-	 			die('Unable to autodetect bootstrap class.');
-			}
-			$parentClass = self::getParentClassIn($bootstrapClassFile);
-			if (
-				strpos($parentClass, 'Zend_Application_Bootstrap') === 0
-				|| strpos($parentClass, 'Saf_Bootstrap_Zend') === 0
-			) {
-				return self::MODE_ZFMVC;
-			}
-		}
-		return
-			defined('ZEND_PATH')
-				|| self::fileExistsInPath('Zend/Application.php')
-			? self::MODE_ZFNONE
-			: self::MODE_NONE;
-	}
-
-	/**
-	 * steps to prep the route
-	 */
-	protected static function _goPreRoute()
-	{
-		defined('ROUTER_NAME') || define('ROUTER_NAME', 'index');
-		$routerIndexInPhpSelf = strpos($_SERVER['PHP_SELF'], strtolower(\ROUTER_NAME) . '.php');
-		$routerPathLength = (
-			$routerIndexInPhpSelf !== FALSE
-			? $routerIndexInPhpSelf
-			: PHP_MAXPATHLEN
-		);
-		defined('ROUTER_PATH') || define('ROUTER_PATH', NULL);
-		$defaultRouterlessUrl = substr($_SERVER['PHP_SELF'], 0, $routerPathLength);
-		self::defineLoad('APPLICATION_BASE_URL',
-			\ROUTER_NAME != ''
-			? $defaultRouterlessUrl
-			: './'
-		);
-		self::defineLoad('APPLICATION_HOST', (
-			array_key_exists('HTTP_HOST', $_SERVER) && $_SERVER['HTTP_HOST']
-			? $_SERVER['HTTP_HOST']
-			: 'commandline'
-		));
-		self::defineLoad('STANDARD_PORT', '80');
-		self::defineLoad('SSL_PORT', '443');
-		self::defineLoad('APPLICATION_SSL', //#TODO #2.0.0 this detection needs work
-			array_key_exists('HTTPS', $_SERVER)
-				&& $_SERVER['HTTPS']
-				&& $_SERVER['HTTPS'] != 'off'
-			, self::CAST_BOOL
-		);
-		self::defineLoad('APPLICATION_PORT', (
-				array_key_exists('SERVER_PORT', $_SERVER) && $_SERVER['SERVER_PORT']
-				? $_SERVER['SERVER_PORT']
-				: 'null'
-		));
-		self::defineLoad('APPLICATION_SUGGESTED_PORT',
-			(\APPLICATION_SSL && \APPLICATION_PORT != \SSL_PORT)
-				|| (!\APPLICATION_SSL && \APPLICATION_PORT == \STANDARD_PORT)
-			? ''
-			: \APPLICATION_PORT
-		);
-		if(array_key_exists('SERVER_PROTOCOL', $_SERVER)) {
-			$lowerServerProtocol = strtolower($_SERVER['SERVER_PROTOCOL']);
-			$cleanProtocol = substr($lowerServerProtocol, 0, strpos($lowerServerProtocol, '/'));
-			if ($cleanProtocol == 'https') { //#TODO #2.0.0 figure out what other possible base protocols there might be to filter...
-				$baseProtocol = 'http';
-			} else {
-				$baseProtocol = $cleanProtocol;
-			}
-			define('APPLICATION_PROTOCOL', $baseProtocol);
-		} else {
-			define('APPLICATION_PROTOCOL','commandline');
-		}
-		self::defineLoad('DEFAULT_RESPONSE_FORMAT', (
-			'commandline' == \APPLICATION_PROTOCOL
-			? 'text'
-			: 'html+javascript:css'
-		));
-	}
-
-	/**
-	 * steps that can't wait for a bootstrap to kick in
-	 */
-	protected static function _goPreBoot()
-	{
-		if (function_exists('libxml_use_internal_errors')) {
-			libxml_use_internal_errors(TRUE);
-		} else {
-			\Saf_Debug::out('Unable to connect LibXML to integrated debugging. libxml_use_internal_errors() not supported.', 'NOTICE');
-		}
-		if (defined('APPLICATION_TZ')) {
-			date_default_timezone_set(\APPLICATION_TZ);
-		}
-	}
-
-	/**
-	 * Conveinence setup when not using the kickstart process.
-	 * @param null $mode
-	 */
-	public static function goLight($mode = self::MODE_AUTODETECT)
-	{
-		self::_goPreBoot();
-	}
-
-	/**
-	 * steps to take when preparing for SAF Applications
-	 */
-	protected static function _goSaf()
-	{
-		require_once(\LIBRARY_PATH . '/Saf/Application.php');
-	}
-	
-	/**
-	 * steps to take when preparing for a Zend Framework application
-	 */
-	protected static function _goZend()
-	{
-		self::defineLoad('ZEND_PATH', '');
-		if (\ZEND_PATH != '') {
-			self::addIfNotInPath(\ZEND_PATH);
-		}
-		if (
-			!file_exists(\ZEND_PATH . '/Zend/Application.php')
-			&& !file_exists(\LIBRARY_PATH . '/Zend/Application.php')
-			&& !self::fileExistsInPath('Zend/Application.php')
-		) {
-			header('HTTP/1.0 500 Internal Server Error');
-			die('Unable to find Zend Framework.');
-		}
-		if (
-			!is_readable('Zend/Application.php')
-			&& !is_readable(\ZEND_PATH . '/Zend/Application.php')
-			&& !is_readable(\LIBRARY_PATH . '/Zend/Application.php')
-		) {
-			header('HTTP/1.0 500 Internal Server Error');
-			die('Unable to access Zend Framework.');
-		}
-		if (
-			file_exists(\LIBRARY_PATH . '/Zend/Application.php')
-			&& is_readable(\LIBRARY_PATH . '/Zend/Application.php')
-			&& !self::fileExistsInPath('Zend/Application.php')
-		) {
-			self::addIfNotInPath(\LIBRARY_PATH);
-		}
-		require_once('Zend/Application.php');
-		self::$_controllerPath = 'controllers';
-	}
-
-	/**
-	 * steps to take when preparing for Laravel Applications
-	 */
-	protected static function _goLaravel()
-	{
-		$env = self::envRead(\INSTALL_PATH . '/.env');
-		defined('APPLICATION_ENV')
-			|| define(
-				'APPLICATION_ENV',
-				array_key_exists('APP_ENV', $env) ? $env['APP_ENV'] : 'production'
-			);
-		self::defineLoad(
-			'APPLICATION_FORCE_DEBUG',
-			array_key_exists('APP_DEBUG', $env) ? $env['APP_DEBUG'] : FALSE,
-			self::CAST_BOOL
-		);
-	}
-	
-	/**
-	 * @return string the mode the application was started in
-	 */
-	public static function getMode()
-	{
-		return self::$_kicked;
-	}
-
-	/**
-	 * perform kickstart based on the provided mode
-	 */
-	public static function kick($mode)
-	{
-		try {
-			switch ($mode) {
-				case self::MODE_ZFMVC:
-					$application = new \Zend_Application(APPLICATION_ENV, APPLICATION_CONFIG);
-					$application->bootstrap()->run();
-					break;
-				case self::MODE_SAF:
-					$application = \Saf_Application::load(APPLICATION_ID, APPLICATION_ENV, TRUE);
-					break;
-				default:
-				if(file_exists('main.php')){
-					if (!is_readable('main.php')){
-						header('HTTP/1.0 500 Internal Server Error');
-						die('Unable to access main application script.');
-					}
-					require_once('main.php');
-				} else {
-					header('HTTP/1.0 500 Internal Server Error');
-					die('No application to run.');
-				}	
-			} 
-		} catch (Exception $e) {
-			header('HTTP/1.0 500 Internal Server Error');
-			self::exceptionDisplay($e);
-		}
-		\Saf_Debug::dieSafe();
 	}
 
 	/**

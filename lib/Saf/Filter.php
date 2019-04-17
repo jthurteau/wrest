@@ -1,4 +1,5 @@
 <?php //#SCOPE_OS_PUBLIC
+namespace Saf;
 /*******************************************************************************
 #LIC_FULL
 
@@ -7,7 +8,7 @@
 Base class for filters
 
 *******************************************************************************/
-abstract class Saf_Filter
+abstract class Filter
 {
 	public static function filter($value)
 	{

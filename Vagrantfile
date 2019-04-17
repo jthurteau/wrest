@@ -6,7 +6,7 @@ app = 'saf'
 org_domain = 'lib.ncsu.edu'
 developer = 'jthurtea'
 realm_name = 'ncsu-delta'
-app_stack = 'apache_php_multiviews_starterapp-rh_php72-sample_docroot-starter_app'
+app_stack = 'apache_php_multiviews_starterapp-rh_php72-sample_docroot-starter_app-zend3'
 ##
 # vagrant/puppet specific preferences
 vagrant_guest_path = '/vagrant'
@@ -62,5 +62,5 @@ Vagrant.configure('2') do |config|
   
   # this is where custom provisioning typically happens
 
-  MrRogers::add_helpers(['nano','os']) #optional (provisioners to manage apache, tone down selinux, etc.)
+  MrRogers::add_helpers(['nano','os','composer']) #optional (provisioners to manage apache, tone down selinux, etc.)
 end

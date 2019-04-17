@@ -1,4 +1,5 @@
 <?php //#SCOPE_OS_PUBLIC
+namespace Saf\Filter;
 /*******************************************************************************
 #LIC_FULL
 
@@ -9,7 +10,7 @@ Filter for boolean like strings
 *******************************************************************************/
 require_once(LIBRARY_PATH . '/Saf/Filter.php');
 
-class Saf_Filter_Truthy extends Saf_Filter
+class Truthy extends \Saf\Filter
 {
 	protected static $_truthyStrings = array(
 		'y','yes','1','t','true'
