@@ -665,4 +665,18 @@ Saf_Debug::outData(array('pdo error', $errorInfo));
 		return !is_null($this->_connection) && !$this->_connectionFailure;
 	}
 
+	public static function simpleResult($result)
+	{
+		$return = array();
+		if (is_bool($result)) {
+			$return[] = $result;
+		} else {
+			foreach ($result as $row) {
+				if ($row) {
+					$return[] = $row;
+				}
+			}
+		}
+		return $return;
+	}
 }
