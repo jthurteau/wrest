@@ -209,8 +209,8 @@ class Saf_Pdo_Connection{
 		}
 		$statement = $this->_prepStatement($query, $args);
 		return
-			$statement
-			? $this->_connection->lastInsertId()
+			$statement //#NOTE lastInsertId only works for autoincrement, so -1 indicates explicit id insert
+			? ($this->_connection->lastInsertId() ? $this->_connection->lastInsertId() : -1)
 			: NULL;
 	}
 
