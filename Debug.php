@@ -537,12 +537,12 @@ class Saf_Debug
 
 	public static function outDebugBlockStart($level = 'ERROR')
 	{
-		self::_out("<p class=\"debug{$level}\">");
+		self::_out("<div class=\"debug{$level}\">");
 	}
 
 	public static function outDebugBlockEnd()
 	{
-		self::_out("</p>");
+		self::_out("</div>");
 	}
 
 	public static function takeover()
