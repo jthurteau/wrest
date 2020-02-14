@@ -496,4 +496,28 @@ $(document).ready(function() {
 	{
 		print("");
 	}
+
+	public static function getCdnResource($url, $altContent)
+	{
+		try {
+			$curl = new Saf_Client_Http(array(
+				'url' => $url
+			));
+			$result = $curl->go();
+			if (
+				$result 
+				&& array_key_exists('status', $result)
+				&& $result['status'] > 99
+				&& $result['status'] < 300
+				&& array_key_exists('raw', $result)
+			) {
+				return $result['raw'];
+			} else {
+				Saf_Debug::outData(array('deficient cdn response', $url, $result));
+			}
+		} catch (Exception $e) {
+			Saf_Debug::outData(array('failed to curl cdn resource', $url, $e));
+		}
+		return $altContent;
+	}
 }
