@@ -8,10 +8,9 @@ Thumbs.db
 local-dev.*
 vendor
 public/vendor
+public/localize.php
 #ignores to be deprecated
 *.orig
-localize.php
-public/localize.php
 .application*
 ..password
 .zend*
