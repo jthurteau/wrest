@@ -29,6 +29,6 @@ Vagrant.configure('2') do |v|
   # example : MrRogers::add_provisioners(['',''])
   # optional (post puppetization) meta provisioners to manage apache, tone down selinux, etc.
   # example : MrRogers::add_helper('nano')
-  MrRogers::add_helpers(['nano','os','net'])
+  # MrRogers::add_helpers(['nano','os','net'])
   # helper examples : 'scl+rh-php72' enable rh-php72 in scl
 end

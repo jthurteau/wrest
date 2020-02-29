@@ -10,10 +10,13 @@ stack: [
   #'rh_php72', 
   'php72', 
   'apache_php_multiviews_starterapp', 'ncsu',
-  'composer', 'zend3',
-  'saf', 'saf_shell',
+  # 'composer', 'zend3', #'laminas', #https://getlaminas.org/
+  # 'laravel',
+  # 'slim', #http://www.slimframework.com/
+  'saf', 'saf_devel'
 ]
 #software_collection: 'rhel' #not needed if specified by licesnce ident
+software_collection: 'remi'
 puppet: 
   guest_path: '/vagrant'
   verbose: true
