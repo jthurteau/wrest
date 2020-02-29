@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+<!-- #SCOPE_NCSU_PUBLIC -->
+	<action>[[Form::getBaseUrl]]resource/</action>
+	<method>post</method>
+	<attribs>
+		<id>aForm</id>
+	</attribs>
+	<elements>
+		<elementName>
+			<type>select</type>
+			<options>
+				<label>Select</label>
+				<required>true</required>
+				<multioptions>
+					[[Form->arrayToMultiOptions(Model->getOptions]]
+				</multioptions>
+				[[?value = $elementName]]
+			</options>
+		</elementName>
+		<description>
+			<type>text</type>
+			<options>
+				<label>Description</label>
+				<required>true</required>
+				[[?value = $description]]
+			</options>
+		</description>
+		<send>
+			<type>submit</type>
+			<options>
+				<label>Submit</label>
+			</options>
+		</send>
+	</elements>
+	<elementFilters>
+		<trim>StringTrim</trim>
+	</elementFilters>
+</form>

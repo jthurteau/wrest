@@ -7,8 +7,11 @@
 ---
 app: saf
 stack: [
+  #'rh_php72', 
+  'php72', 
   'apache_php_multiviews_starterapp', 'ncsu',
-  'rh_php72', 'composer', 'zend3', 'saf', 'saf_shell',
+  'composer', 'zend3',
+  'saf', 'saf_shell',
 ]
 #software_collection: 'rhel' #not needed if specified by licesnce ident
 puppet: 
@@ -19,9 +22,8 @@ vagrant:
     ['forwarded_port', {guest: 80, host: 8080, host_ip: '127.0.0.1'}]
   ]
   synced_folder: [
-#    ['.', '{$puppet:guest_path}', owner: 'vagrant', group: 'vagrant', type: 'virtualbox']
 #TODO decide how to handle variables
+#    ['.', '{$puppet:guest_path}', owner: 'vagrant', group: 'vagrant', type: 'virtualbox']
     ['.', '/vagrant', {owner: 'vagrant', group: 'vagrant', type: 'virtualbox'}],
-    ['../saf-shell', '/var/www/application/sample', {owner: 'vagrant', group: 'vagrant', type: 'virtualbox'}]
   ]
 ...

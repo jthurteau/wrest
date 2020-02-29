@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+<!-- #SCOPE_OS_PUBLIC -->
+	<production>
+<!-- these are the "options" for the application object -->
+		<autoLoad>
+			<takeover>true</takeover>
+<!--
+			<libary>
+				LibraryPrefix //uses default resolution
+			</library>
+			<library>
+				Other:MyOwnClass::resolver //uses custom resolution 
+			</library> 
+-->
+<!--
+			<loader>
+				Sample_ //will look for matching prefix anywhere in path
+			</loader>
+			<loader>
+				Another_:another/ //will only look for matching prefix here
+			</loader>
+-->
+<!--
+			<path>
+				/var/www/something/ //added to autoloader path, not php path
+			</path>
+-->
+			<path><const name="LIBRARY_PATH"/></path>
+			<path><const name="APPLICATION_PATH"/>/models</path>
+		</autoLoad>
+		<debug>
+			<mode>off</mode>
+		</debug>
+		<error>
+			<provider>saf_debug</provider>
+			<mode>internal</mode>
+			<display_startup_errors>0</display_startup_errors>
+			<display_errors>0</display_errors>
+			<error_reporting><const name="E_ALL"/> | <const name="E_STRICT"/></error_reporting>
+		</error>
+		<bootstrap>
+			<http>
+				<autoSession>true</autoSession>
+			</http>
+		</bootstrap>
+		<auth>
+			<plugin>Basic</plugin>
+		</auth>
+		<access>
+		
+		</access>
+		<resources>
+<!-- each of these gets passed to the corresponding _init in Bootstrap -->
+<!-- 		<db>
+				<provider></provider>
+				<name>connectionName</name>
+				<adapter>PDO_MYSQL</adapter>
+				<params>
+					<host>localhost</host>
+					<username><username>
+					<password><password>
+					<dbname>schema</dbname>
+				</params>
+			</db>
+			<cache></cache>
+			<log></log>
+			<language>
+				<default>en</default>
+			</language>		
+-->
+		</resources>
+	</production>
+	<development extends="production">
+		<debug>
+			<mode>auto</mode>
+		</debug>
+	</development>
+	<a-local-development extends="development">
+		<auth>
+			<plugin>Local</plugin>
+		</auth>
+	</a-local-development>
+</config>
