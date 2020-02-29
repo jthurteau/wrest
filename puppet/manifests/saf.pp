@@ -10,5 +10,12 @@ file { "${app_path}/library/Saf" :
   ensure  => link,
   force   => true,
   target  => "${vagrant_root}/lib/Saf",
-  require => [File["${app_path}/library"],File["${vagrant_root}"]],
+  require => [File["${app_path}/library"]],
+}
+
+file { '/var/www/html/info.php':
+  ensure => file,
+  mode  => '0755',
+  source => '/vagrant/puppet/info.php',
+  require => File['/var/www/html'],
 }

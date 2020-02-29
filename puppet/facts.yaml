@@ -1,0 +1,26 @@
+# This YAML file populates puppet's factor data and
+# configures mr_rogers to manage vagrant it is included
+# with your sourcecode and can be overlayed by each developer
+# with a local-dev.facts.yaml file.
+# It must have root levels keys, or be an explicit empty hash {}
+# If the YAML resolves to Nil, MrRogers won't start
+---
+app: saf
+stack: [
+  'apache_php_multiviews_starterapp', 'ncsu',
+  'rh_php72', 'composer', 'zend3', 'saf',
+]
+#software_collection: 'rhel' #not needed if specified by licesnce ident
+puppet: 
+  guest_path: '/vagrant'
+  verbose: true
+vagrant: 
+  network: [
+    ['forwarded_port', {guest: 80, host: 8080, host_ip: '127.0.0.1'}]
+  ]
+  synced_folder: [
+#    ['.', '{$puppet:guest_path}', owner: 'vagrant', group: 'vagrant', type: 'virtualbox']
+#TODO decide how to handle variables
+    ['.', '/vagrant', {owner: 'vagrant', group: 'vagrant', type: 'virtualbox'}]
+  ]
+...

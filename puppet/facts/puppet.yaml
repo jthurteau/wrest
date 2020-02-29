@@ -1,3 +1,11 @@
+#app: local #default value
+#developer: nobody #default value
 puppet_files: /vagrant/puppet
-app: local #default value
-developer: nobody #default value
+puppet_modules:
+  - puppetlabs-apache
+  - puppetlabs-mysql
+  - puppetlabs-vcsrepo
+  - puppet-python
+#  - https://github.ncsu.edu/ncsu-libraries/oci8.git AS oci8
+required_facts:
+  - developer

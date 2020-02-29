@@ -8,7 +8,6 @@ Thumbs.db
 local-dev.*
 vendor
 public/vendor
-puppet/.facts
 #ignores to be deprecated
 *.orig
 localize.php

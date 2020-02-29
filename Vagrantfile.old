@@ -1,0 +1,60 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+##
+# project settings
+stack = [
+  'app:saf', 
+  'sc:rhel', 
+  'apache_php_multiviews_starterapp','sample_docroot','ncsu',
+  'rh_php72', 'zend3','saf',
+]
+
+##
+# vagrant/puppet specific preferences
+vagrant_guest_path = '/vagrant'
+
+##
+# find the puppeteer script
+puppeteer = 'puppet/mr_rogers'
+external_puppeteer = '../mr_rogers/' + puppeteer
+require_relative puppeteer if File.exist?(puppeteer + '.rb')
+require_relative external_puppeteer if !defined?(MrRogers) && File.exist?(external_puppeteer + '.rb')
+raise 'Unable to build local development. Puppeteer unavailable.' if !defined?(MrRogers)
+
+##
+# 
+Vagrant.configure('2') do |config|
+  MrRogers::box(config, stack)
+  # config.vm.box_check_update = false
+
+  ##
+  # forwarded ports
+  config.vm.network 'forwarded_port', guest: 80, host: 8080, host_ip: '127.0.0.1'
+  #config.vm.network 'forwarded_port', guest: 8001, host: 8081, host_ip: '127.0.0.1'
+  # new option? config.vm.hostname
+
+  ##
+  # shared folders
+  config.vm.synced_folder '.', vagrant_guest_path, owner: 'vagrant', group: 'vagrant', type: 'virtualbox'
+  config.vm.synced_folder '../saf-shell', '/app', owner: 'vagrant', group: 'vagrant', type: 'virtualbox'
+  
+  ##
+  # providers
+  config.vm.provider 'virtualbox' do |vb|
+    ##TODO we can probably streamline builds with linked clones
+    #vb.linked_clone = true if Gem::Version.new(Vagrant::VERSION) >= Gem::Version.new('1.8.0')
+    vb.gui = false
+    vb.memory = "1024"
+  end
+
+  ##
+  # provisioners
+  MrRogers::puppetize(vagrant_guest_path)
+
+  # custom post puppetization provisioning can happen here
+  # example : config.vm.provision "shell", inline: "echo Hello, World"
+
+  # optional (post puppetization) provisioners to manage apache, tone down selinux, etc.
+  MrRogers::add_helpers(['nano','os','net','composer'])
+  # helper examples : 'scl+rh-php72' enable rh-php72 in scl
+end
