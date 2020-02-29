@@ -20,17 +20,17 @@ file { '/var/www/html/info.php':
   require => File['/var/www/html'],
 }
 
-vcsrepo { "${app_path}/${app}" :
-  ensure   => present,
-  force => true,
-  provider => git,
-  source   => 'git://github.com/jthurteau/saf-shell.git',
-  require => File["${app_path}"],
-}
+# vcsrepo { "${app_path}/${app}" :
+#   ensure   => present,
+#   force => true,
+#   provider => git,
+#   source   => 'git://github.com/jthurteau/saf-shell.git',
+#   require => File["${app_path}"],
+# }
 
-file { "${doc_root}/saf" :
-  ensure  => link,
-  force   => true,
-  target  => "${app_path}/${app}/public",
-  require => [Vcsrepo["${app_path}/${app}"]],
-}
+# file { "${doc_root}/saf" :
+#   ensure  => link,
+#   force   => true,
+#   target  => "${app_path}/${app}/public",
+#   require => [Vcsrepo["${app_path}/${app}"]],
+# }
