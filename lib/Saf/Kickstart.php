@@ -131,6 +131,8 @@ class Kickstart {
 	 */
 	public static function go($mode = self::MODE_AUTODETECT, $options = array())
 	{
+		#TODO handle multiple apps (sub apps)
+		#TODO use $options to pick app/sub app over APPLICATION_ID
 		if (!self::$_kicked) {
 			if (!self::$_laced) {
 				self::_lace();

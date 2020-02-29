@@ -6,6 +6,7 @@ Thumbs.db
 #SAF ignores
 .vagrant
 local-dev.*
+!local-dev.example.*
 vendor
 public/vendor
 public/localize.php
