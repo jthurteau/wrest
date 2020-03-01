@@ -165,7 +165,7 @@ class Define {
 					$upperMatch = strtoupper(trim($sourceConfig[1]) . $delim);
 					$upperLine = strtoupper($line);
 					if (strpos($upperLine,$upperMatch) === 0) {
-						$matchLine = substr($line, strlen($upperMatch));
+						$matchLine = trim(substr($line, strlen($upperMatch)));
 						break;
 					}
 				}
@@ -177,7 +177,7 @@ class Define {
 					$indexEnd = strpos($line, $delim);
 					if ($indexEnd !== FALSE) {
 						$index = substr($line, 0, $indexEnd);
-						$values[$index] = substr($line, $indexEnd + strlen($delim));
+						$values[$index] = trim(substr($line, $indexEnd + strlen($delim)));
 					} else {
 						$values[] = $line;
 					}
