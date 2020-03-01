@@ -119,7 +119,7 @@ class Saf_Debug
 		if (self::$_locked) {
 			return;
 		}
-		if (self::$_sessionReady) {
+		if (self::$_sessionReady && isset($_SESSION)) {
 			$_SESSION['debug'] = FALSE;
 		}
 		self::hush();
@@ -174,12 +174,14 @@ class Saf_Debug
 			self::enable();
 		} else if (self::$_sessionReady) {
 			if (
-				array_key_exists('debug', $_SESSION)
+				isset($_SESSION)
+				&& array_key_exists('debug', $_SESSION)
 				&& !$_SESSION['debug']
 			) {
 				self::disable();
 			} else if (
-				array_key_exists('debug', $_SESSION)
+				isset($_SESSION)
+				&& array_key_exists('debug', $_SESSION)
 				&& $_SESSION['debug']
 			) {
 				self::enable();
@@ -187,6 +189,7 @@ class Saf_Debug
 				self::enable();
 			}
 		}
+		
 // 		if (!self::$_sessionReady || $neitherDefined){
 // 			if (self::$_mode == self::DEBUG_MODE_AUTO) {
 // 				self::on();
@@ -539,12 +542,12 @@ class Saf_Debug
 
 	public static function outDebugBlockStart($level = 'ERROR')
 	{
-		self::_out("<p class=\"debug{$level}\">");
+		self::_out("<div class=\"debug{$level}\">");
 	}
 
 	public static function outDebugBlockEnd()
 	{
-		self::_out("</p>");
+		self::_out("</div>");
 	}
 
 	public static function takeover()

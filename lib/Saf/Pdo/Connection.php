@@ -209,8 +209,8 @@ class Saf_Pdo_Connection{
 		}
 		$statement = $this->_prepStatement($query, $args);
 		return
-			$statement
-			? $this->_connection->lastInsertId()
+			$statement //#NOTE lastInsertId only works for autoincrement, so -1 indicates explicit id insert
+			? ($this->_connection->lastInsertId() ? $this->_connection->lastInsertId() : -1)
 			: NULL;
 	}
 
@@ -665,4 +665,18 @@ Saf_Debug::outData(array('pdo error', $errorInfo));
 		return !is_null($this->_connection) && !$this->_connectionFailure;
 	}
 
+	public static function simpleResult($result)
+	{
+		$return = array();
+		if (is_bool($result)) {
+			$return[] = $result;
+		} else {
+			foreach ($result as $row) {
+				if ($row) {
+					$return[] = $row;
+				}
+			}
+		}
+		return $return;
+	}
 }

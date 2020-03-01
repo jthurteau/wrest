@@ -269,7 +269,7 @@ class Saf_Client_Http{
 			}
 		} else { #TODO #2.0.0 make sure switching back to GET mode when persisting works properly
 			if (!array_key_exists(CURLOPT_POST, $options)) {
-Saf_Debug::out('switching back');
+Saf_Debug::out('switching back to get mode');
 				$options[CURLOPT_POST] = FALSE; //or unset?
 			} else {
 Saf_Debug::out('not switching');

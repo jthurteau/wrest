@@ -395,6 +395,7 @@ $(document).ready(function() {
 			print("<script src=\"//ajax.googleapis.com/ajax/libs/jquery/{$version}/jquery.min.js\"></script>");
 		}
 		if ($uiVersion) {
+			print("<link rel=\"stylesheet\" href=\"https://ajax.googleapis.com/ajax/libs/jqueryui/{$uiVersion}/themes/smoothness/jquery-ui.css\">");
 			print("<script src=\"https://ajax.googleapis.com/ajax/libs/jqueryui/{$uiVersion}/jquery-ui.min.js\"></script>");
 		}
 	}
@@ -494,5 +495,29 @@ $(document).ready(function() {
 	public static function bootStrapCdn($version)
 	{
 		print("");
+	}
+
+	public static function getCdnResource($url, $altContent)
+	{
+		try {
+			$curl = new Saf_Client_Http(array(
+				'url' => $url
+			));
+			$result = $curl->go();
+			if (
+				$result 
+				&& array_key_exists('status', $result)
+				&& $result['status'] > 99
+				&& $result['status'] < 300
+				&& array_key_exists('raw', $result)
+			) {
+				return $result['raw'];
+			} else {
+				Saf_Debug::outData(array('deficient cdn response', $url, $result));
+			}
+		} catch (Exception $e) {
+			Saf_Debug::outData(array('failed to curl cdn resource', $url, $e));
+		}
+		return $altContent;
 	}
 }
