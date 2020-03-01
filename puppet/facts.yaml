@@ -7,8 +7,8 @@
 ---
 app: saf
 stack: [
-  #'rh_php72', 
-  'php72', 
+  'rh_php72', 
+  #'php72', 
   'apache_php_multiviews_starterapp', 'ncsu',
   # 'composer', 'zend3', #'laminas', #https://getlaminas.org/
   # 'laravel',
@@ -16,7 +16,7 @@ stack: [
   'saf', 'saf_devel'
 ]
 #software_collection: 'rhel' #not needed if specified by licesnce ident
-software_collection: 'remi'
+#software_collection: 'remi'
 puppet: 
   guest_path: '/vagrant'
   verbose: true
