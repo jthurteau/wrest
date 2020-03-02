@@ -4,8 +4,8 @@
 # find the puppeteer script
 puppeteer = 'puppet/mr_rogers'
 external_puppeteer = '../mr_rogers/' + puppeteer
-require_relative puppeteer if File.exist?(puppeteer + '.rb')
-require_relative external_puppeteer if !defined?(MrRogers) && File.exist?(external_puppeteer + '.rb')
+puppeteer_order = [puppeteer, external_puppeteer] # an external must be first if attemping uninstall/update
+puppeteer_order.each {|p| require_relative p if !defined?(MrRogers) && File.exist?("#{p}.rb")}
 raise 'Unable to build local development. Puppeteer unavailable.' if !defined?(MrRogers)
 
 Vagrant.configure('2') do |v|
