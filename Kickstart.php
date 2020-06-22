@@ -1146,9 +1146,9 @@ class Saf_Kickstart {
 		 			$configFile = 'application';
 		 			break;
 		 	}
-				Saf_Kickstart::defineLoad('APPLICATION_STATUS', 'online');
-				Saf_Kickstart::defineLoad('APPLICATION_BASE_ERROR_MESSAGE', 'Please inform your technical support staff.');
-				Saf_Kickstart::defineLoad('APPLICATION_DEBUG_NOTIFICATION', 'Debug information available.');
+			Saf_Kickstart::defineLoad('APPLICATION_STATUS', 'online');
+			Saf_Kickstart::defineLoad('APPLICATION_BASE_ERROR_MESSAGE', 'Please inform your technical support staff.');
+			Saf_Kickstart::defineLoad('APPLICATION_DEBUG_NOTIFICATION', 'Debug information available.');
 		 	if ($mode == self::MODE_LF5) {
 				self::_goLaravel();
 				if (APPLICATION_FORCE_DEBUG) {
