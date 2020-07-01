@@ -1,32 +1,26 @@
 # This YAML file populates puppet's factor data and
-# configures mr_rogers to manage vagrant it is included
+# configures mr_rogers to manage vagrant if is included
 # with your sourcecode and can be overlayed by each developer
 # with a local-dev.facts.yaml file.
 # It must have root levels keys, or be an explicit empty hash {}
 # If the YAML resolves to Nil, MrRogers won't start
 ---
 app: saf
+standalone: true
 stack: [
-  'rh_php72', 
-  #'php72', 
+  'php_73', 'rh_scl_php',
   'apache_php_multiviews_starterapp', 'ncsu',
   # 'composer', 'zend3', #'laminas', #https://getlaminas.org/
   # 'laravel',
   # 'slim', #http://www.slimframework.com/
   'saf', 'saf_devel'
 ]
-#software_collection: 'rhel' #not needed if specified by licesnce ident
+sc_repos: ['rhel-server-rhscl-7-rpms']
+software_collection: 'rhel' #not needed if specified by licesnce ident
 #software_collection: 'remi'
-puppet: 
-  guest_path: '/vagrant'
-  verbose: true
-vagrant: 
-  network: [
-    ['forwarded_port', {guest: 80, host: 8080, host_ip: '127.0.0.1'}]
-  ]
-  synced_folder: [
-#TODO decide how to handle variables
-#    ['.', '{$puppet:guest_path}', owner: 'vagrant', group: 'vagrant', type: 'virtualbox']
-    ['.', '/vagrant', {owner: 'vagrant', group: 'vagrant', type: 'virtualbox'}],
-  ]
+global_files: [
+  'templates/php/info.php', 
+  'templates/php/php.conf', 
+  'templates/php/local-dev.example.php.erb',
+]
 ...

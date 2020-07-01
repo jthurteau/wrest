@@ -1,0 +1,1 @@
+This folder contains library code distributed with SAF
