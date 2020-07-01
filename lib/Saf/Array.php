@@ -187,21 +187,27 @@ class Saf_Array
 	public static function coerce($maybeArray, $mode = self::MODE_VERBOSE)
 	{
 		return
-			is_array($maybeArray)
-				|| (is_object($maybeArray) && is_a('Traversable'))
+			self::traversable($maybeArray)
 			? self::clean($maybeArray, $mode)
 			: self::clean(array($maybeArray), $mode);
 	}
 
+	public static function traversable($maybeArray)
+	{
+		return
+			is_array($maybeArray)
+				|| (is_object($maybeArray) && is_a('Traversable'));
+	}
+
 	/**
 	 * depending on $mode, will return the literal value, or one scrubbed for blank values
-	 * MODE_EXACT = no scrubbing
+	 * MODE_VERBOSE = no scrubbing
 	 * MODE_TRUNCATE = remove NULL and empty string values
 	 * MODE_AGGRESSIVE_TRUNCATE remove NULL and white space only strings
 	 */
-	public static function clean($array, $mode = self::MATCH_EXACT)
-	{
-		if (is_null($mode) || $mode === self::MATCH_EXACT) {
+	public static function clean($array, $mode = self::MODE_VERBOSE)
+	{ //#TODO #2.0.0 the default for this should be switched, but that's not backwards compatible
+		if (is_null($mode) || $mode === self::MODE_VERBOSE) {
 			return $array;
 		}
 		foreach($array as $index => $value) {
@@ -580,5 +586,58 @@ class Saf_Array
 		) || (
 			!is_array($array[$key]) && strtolower($array[$key]) == (string)$value
 		);
+	}
+
+	public static function traverse($array, $keys, $keyDelim = ':')
+	{
+		$current = self::coerce($array);
+		$searchParts = 
+			is_string($keys) && $keyDelim
+			? explode($keyDelim, $keys)
+			: self::coerce($keys);
+		foreach($searchParts as $name) {
+            if (self::traversable($current) && array_key_exists($name, $current)) {
+				$current = $current[$name];	
+            } else {
+				return NULL;
+			}
+		}
+		return $current;
+	}
+
+
+	public static function enumCombinations($values, $branch = '')
+	{
+		$combinations = array();
+		foreach( $values as $i => $v) {
+			$combinations[] = $branch . $v;
+			if (count($values) > 1) {
+				$rest = $values;
+				unset($rest[$i]);
+				foreach(self::enumCombinations($rest, $branch . $v) as $n) {
+					$combinations[] = $n;
+				}
+			}			
+		}
+		return $combinations;
+	}
+
+	public static function anyKeyExists($keys, $array)
+	{
+		foreach($keys as $k) {
+			if (array_key_exists($k, $array)) {
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+	public static function prefixAll($array, $prefix)
+	{
+		$return = array();
+		foreach($array as $value) {
+			$return[] = $prefix . $value;
+		}
+		return $return;
 	}
 }
