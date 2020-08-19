@@ -518,7 +518,7 @@ class Saf_Debug
 	{
 		if (self::isEnabled()) {
 			if (self::$_notifyConsole && Saf_Layout::formatIsHtml()) {
-				print('<script type="text/javascript">throw new Error("' . APPLICATION_DEBUG_NOTIFICATION . '");</script>');
+				print('<script type="text/javascript">console.info("' . APPLICATION_DEBUG_NOTIFICATION . '");</script>');
 			}
 			self::printDebugShutdown();
 			self::printDebugExit();
