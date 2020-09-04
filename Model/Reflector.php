@@ -204,9 +204,9 @@ class Saf_Model_Reflector
                     $logged = Saf_Audit::add('reflector_debug', Saf_Audit::exceptionMessage($e), array($term, $config, $depth), Saf_Auth::getPluginProvidedUsername());
                 }
                 if ($logged) {
-                    throw new Saf_Exception_Internal("Model Reflector could not translate object.");
-                } else {
                     throw new Saf_Exception_InternalTracked("Model Reflector could not translate object.", $logged);
+                } else {
+                    throw new Saf_Exception_Internal("Model Reflector could not translate object.");
                 }
             }
         }
