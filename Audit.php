@@ -337,11 +337,11 @@ class Saf_Audit
 			$where .= ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeString(trim($ip));
 		}
 		if (!is_null($payload) && trim($payload) != '') {
-			if (strpos($payload, '%') !== FALSE) {
-				$payload = str_replace('%', '\%', $payload);
-			}
-			$payload = '%' . substr(json_encode($payload), 1, -1) . '%';
-			$where .= ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeSpecialString(trim($payload));
+			$escapedPayload = str_replace(array('%', '"', '/'), array('\%', '\"', '\/'), $payload);
+			$matchPayload = '%' . $escapedPayload . '%';
+			//$where .= ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeSpecialString(trim($payload));
+			$where .= ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeString(trim($matchPayload)); #TODO fix or deprecate escapeSpecialString()
+			//$where2 = ' AND `request` LIKE ' . Saf_Pdo_Connection::escapeString(trim($matchPayload));
 		}
 		switch ($sort) {
 			case 'asc':
@@ -361,9 +361,11 @@ class Saf_Audit
 		$limitString = "LIMIT {$limit} OFFSET {$page}";
 		$query = "SELECT * FROM {$table} WHERE {$where}";
 		$countQuery = "SELECT COUNT(`id`) FROM {$table} WHERE {$where} {$limitString}";
+//		$query2 = $query . $where2 . " ORDER BY {$sortString} {$limitString}";
 		$query .= " ORDER BY {$sortString} {$limitString}";
 		Saf_Debug::outData(array('query', $query));
 		$result = self::$_db->all(self::$_db->query($query));
+//		$result2 = self::$_db->all(self::$_db->query($query2));
 		if (is_null($result)) {
 			$return = array('success' => FALSE);
 			if (Saf_Debug::isEnabled()) {
@@ -371,6 +373,9 @@ class Saf_Audit
 			}
 			return $return;
 		}
+		// if (!is_null($payload) && trim($payload) != '') {
+		// 	print_r(array($result, $result2, $where2, $payload, $escapedPayload, $matchPayload)); die;
+		// }
 		$countResult = self::$_db->one(self::$_db->query($countQuery));
 		return array('success' => TRUE, 'recordCount' => count($result), 'totalCount' => $countResult, 'records' => $result);
 	}
