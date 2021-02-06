@@ -36,6 +36,7 @@ abstract class Saf_Application
 	 */
 	public static function load($applicationName = 'Application', $configEnvironment = NULL, $autoStart = FALSE)
 	{
+		#TODO moved to Environment/Path
 		if (!Kickstart::isValidNameToken($applicationName)) {
 			throw new Exception('Invalid application name specified.');
 		}
@@ -230,6 +231,66 @@ abstract class Saf_Application
 	public function provision($pluginName, $pluginConfig)
 	{
 		$this->_resources[$pluginName] = $pluginConfig; //#TODO #1.0.0 implement
+	}
+
+	#TODO these need to go in the respective Application classes
+	/**
+	 * steps to take when preparing for SAF Applications
+	 */
+	protected static function go() //_goSaf()
+	{
+		require_once(\LIBRARY_PATH . '/Saf/Application.php');
+	}
+	
+	/**
+	 * steps to take when preparing for a Zend Framework application
+	 */
+	protected static function _goZend()
+	{
+		self::defineLoad('ZEND_PATH', '');
+		if (\ZEND_PATH != '') {
+			Path::addIfNotInPath(\ZEND_PATH);
+		}
+		if (
+			!file_exists(\ZEND_PATH . '/Zend/Application.php')
+			&& !file_exists(\LIBRARY_PATH . '/Zend/Application.php')
+			&& !Path::fileExistsInPath('Zend/Application.php')
+		) {
+			header('HTTP/1.0 500 Internal Server Error');
+			die('Unable to find Zend Framework.');
+		}
+		if (
+			!is_readable('Zend/Application.php')
+			&& !is_readable(\ZEND_PATH . '/Zend/Application.php')
+			&& !is_readable(\LIBRARY_PATH . '/Zend/Application.php')
+		) {
+			header('HTTP/1.0 500 Internal Server Error');
+			die('Unable to access Zend Framework.');
+		}
+		if (
+			file_exists(\LIBRARY_PATH . '/Zend/Application.php')
+			&& is_readable(\LIBRARY_PATH . '/Zend/Application.php')
+			&& !Path::fileExistsInPath('Zend/Application.php')
+		) {
+			Path::addIfNotInPath(\LIBRARY_PATH);
+		}
+		require_once('Zend/Application.php');
+		self::$_controllerPath = 'controllers';
+	}
+
+	/**
+	 * steps to take when preparing for Laravel Applications
+	 */
+	protected static function _goLaravel()
+	{
+		$env = self::envRead(\INSTALL_PATH . '/.env');
+		$detectedEnv = array_key_exists('APP_ENV', $env) ? $env['APP_ENV'] : 'production';
+		defined('APPLICATION_ENV') || define('APPLICATION_ENV',	$detectedEnv);
+		Define::load(
+			'APPLICATION_FORCE_DEBUG',
+			array_key_exists('APP_DEBUG', $env) ? $env['APP_DEBUG'] : FALSE,
+			Cast::TYPE_BOOL
+		);
 	}
 
 }

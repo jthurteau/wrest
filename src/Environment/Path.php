@@ -12,6 +12,14 @@ Utility class for managing paths.
 //#TODO #1.0.0 update function header docs
 class Path {
 
+	const REGEX_VAR =
+		'/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$/';
+	const REGEX_CLASS =
+		'/class\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)[\s{]/';
+	const REGEX_PARENT_CLASS =
+		'/class\s+[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\s+extends\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)+[\s{]/';
+
+
     /**
 	 * instructs an inserter to add the new item to the start of the list
 	 * @var bool
@@ -144,12 +152,12 @@ class Path {
 		return str_replace(
 			array(
 				'[[APPLICATION_PATH]]',
-				'[[LIBRARY_PATH]]',
+				// '[[LIBRARY_PATH]]',
 				'[[PUBLIC_PATH]]',
 				'[[INSTALL_PATH]]'
 			), array(
 				\APPLICATION_PATH,
-				\LIBRARY_PATH,
+				// \LIBRARY_PATH,
 				\PUBLIC_PATH,
 				\INSTALL_PATH
 			), $path
@@ -164,7 +172,7 @@ class Path {
 	public static function resolveClassPath($className, $basePath = '')
 	{
 		if ('' == $basePath) {
-			$basePath = \LIBRARY_PATH;
+			$basePath = \INSTALL_PATH;
 		}
 		$classNameComponents = explode('_', $className);
 		$classPath = $basePath;
@@ -187,6 +195,63 @@ class Path {
 			throw new Exception('This application does not support controllers.');
 		}
 		return(self::resolveClassPath($className, $controllerPath));
+	}
+
+	public static function resolveControllerClassName($controllerName)
+	{
+		$nameSuffix = 'Controller';
+		$className = ucfirst($controllerName);
+		return
+			strpos($className, $nameSuffix) == FALSE
+				|| strrpos($className, $nameSuffix) != strlen($className) - strlen($nameSuffix)
+			? $className .= $nameSuffix
+			: $className;
+	}
+
+	/**
+	 * checks to see if a string is a valid class/variable name
+	 * @param string $string
+	 * @return bool
+	 */
+	public static function isValidNameToken($string)
+	{
+		$pattern = self::REGEX_VAR;
+		return preg_match($pattern, $string);
+	}
+
+	/**
+	 * scan a file for the first class definition and return the class name
+	 * @param string $file path
+	 * @returns string class
+	 */
+	public static function getClassIn($file)
+	{
+		$file = file_get_contents($file);
+		$pattern = self::REGEX_CLASS;
+		$matches = NULL;
+		preg_match($pattern, $file, $matches);
+		return
+		$matches && array_key_exists(1, $matches)
+		? $matches[1]
+		: '';
+	}
+
+	/**
+	 * scan a file for the first class definition extending another class
+	 * and return the parent class name
+	 * @param string $file path
+	 * @returns string class
+	 */
+	public static function getParentClassIn($file)
+	{
+		$file = file_get_contents($file);
+		$pattern = self::REGEX_PARENT_CLASS;
+		$matches = NULL;
+		preg_match($pattern, $file, $matches);
+		return
+		$matches && array_key_exists(1, $matches)
+		? $matches[1]
+		: '';
 	}
 
 }

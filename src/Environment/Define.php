@@ -1,20 +1,46 @@
-<?php //#SCOPE_OS_PUBLIC
+<?php 
+
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Utility class for managing constants and environment.
+ */
+
 namespace Saf\Environment;
-/*******************************************************************************
-#LIC_FULL
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+use Saf\Cast;
+use Saf\Brray;
+// use Saf\File\Dot;
+// use Saf\File\Env;
 
-Utility class for managing constants.
+require_once(dirname(dirname(__FILE__)) . '/Cast.php');
+require_once(dirname(dirname(__FILE__)) . '/Brray.php');
+// require_once(dirname(dirname(__FILE__)) . '/File/Dot.php');
+// require_once(dirname(dirname(__FILE__)) . '/File/Env.php');
 
-*******************************************************************************/
-require_once(LIBRARY_PATH . '/Saf/Kickstart.php');
-use Saf\Kickstart as Kickstart;
-require_once(LIBRARY_PATH . '/Saf/Cast.php');
-use Saf\Cast as Cast;
-
-//#TODO #1.0.0 update function header docs
+//#TODO #2.0.0 update function header docs
 class Define {
+	/**
+	 * Looks for a constant returns it if set, otherwise returs the provided default.
+	 * @param string $constantName constant to look
+	 * @param mixed $constantDefault default value to return if it isn't set
+	 */
+	public static function get($constantName, $constantDefault = NULL)
+	{
+		defined($constantName) ? constant($constantName) : $constantDefault;
+	}
+
+	/**
+	 * Looks for a constant returns it if it is in a dotfile or env file.
+	 * @param string $constantName constant to look
+	 * @param mixed $constantDefault default value to return if it isn't set
+	 */
+	public static function find($constantName, $constantDefault = NULL, $cast = Cast::TYPE_STRING)
+	{
+		return self::valueLoad($constantName, $constantDefault, $cast);
+	}
 
     /**
 	 * Accepts a constant name and optional default value. Will attempt to

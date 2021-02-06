@@ -1,20 +1,27 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php 
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Utility class for array manipulation
+ */
 
-Utility class for array manipulation
+namespace Saf;
 
-*******************************************************************************/
+#use Saf\Debug;
+use Saf\Exception\NotAnArray;
+use Saf\Exception\NoDefault;
 
-require_once(LIBRARY_PATH . '/Saf/Exception/NotAnArray.php');
-require_once(LIBRARY_PATH . '/Saf/Exception/NoDefault.php');
+#require_once(dirname(__FILE__) . '/Debug.php');
+require_once(dirname(__FILE__) . '/Exception/NotAnArray.php');
+require_once(dirname(__FILE__) . '/Exception/NoDefault.php');
 
 /**
  * Utility functions for Arrays
  */
-class Saf_Array
+class Brray
 {
 
 	const TYPE_NONE = 0;
@@ -43,10 +50,10 @@ class Saf_Array
 	public static function extract($key, $array, $default = NULL)
 	{
 		if(!is_array($array) && (!is_object($array) && !method_exists($array,'__toArray'))){
-			throw new Saf_Exception_NotAnArray();
+			throw new NotAnArray();
 		}
 		if(NULL === $default && !array_key_exists($key, $array)){
-			throw new Saf_Exception_NoDefault();
+			throw new NoDefault();
 		}
 		return(
 			array_key_exists($key, $array) 
@@ -73,7 +80,7 @@ class Saf_Array
 				? self::extract($key, $array)
 				: self::extract($key, $array, $default);
 		} else if (is_null($default)) {
-			throw new Saf_Exception_NoDefault();
+			throw new NoDefault();
 		} else {
 			return $default;
 		}
@@ -108,7 +115,7 @@ class Saf_Array
 	{
 		try {
 			return self::extract($key,$array);
-		} catch (Saf_Exception_NoDefault $e) { //#TODO #2.0.0 limit to specific exception
+		} catch (NoDefault $e) { //#TODO #2.0.0 limit to specific exception
 			return NULL;
 		}
 	}
@@ -325,7 +332,7 @@ class Saf_Array
 	public static function toHtml($array, $ordered = FALSE, $nested = TRUE, $typed = FALSE, $boolean = FALSE)
 	{
 		if (!is_array($array)) {
-			return '<ul><li>' . gettype($array) . ' ' . Saf_Debug::introspectData($array) . '</li></ul>';
+			return '<ul><li>' . gettype($array) . ' ' . self::introspectData($array) . '</li></ul>';
 		}
 		$return = '';
 		$return .= ($ordered ? '<ol>' : '<ul>');
@@ -339,7 +346,7 @@ class Saf_Array
 				}
 				$return .= '<li>';
 				if (is_object($value)) {
-					$value = Saf_Debug::introspectData($value); //#TODO #2.0.0 make a more user friendly version of this output
+					$value = self::introspectData($value); //#TODO #2.0.0 make a more user friendly version of this output
 				} else if ($nested && is_array($value)) {
 					$value = self::toHtml($value, $ordered, $nested, $typed, $boolean);
 				}
@@ -369,8 +376,9 @@ class Saf_Array
 	public static function keyExistsAndNotBlank($key, $array, $allowedBlankTypes = self::TYPE_NONE)
 	{
 		if (!is_array($array)) {
-			Saf_Debug::out('Saf_Array::keyExistsAndNotBlank got a non-array operand.');
-			return FALSE;
+			throw new NotAnArray('Brray::keyExistsAndNotBlank got a non-array operand.');
+			// Debug::out();
+			// return FALSE;
 		}
 		if (!is_array($key)) {
 			$key = array($key);
@@ -412,7 +420,7 @@ class Saf_Array
 	 * @param int $matchType bitwise integer of match type to be performed
 	 * @return bool key exists and value is not blank
 	 */	
-	public static function keyExistsAndEquals($key, $array, $value, $matchType = Saf_Array::MATCH_EQUAL)
+	public static function keyExistsAndEquals($key, $array, $value, $matchType = Brray::MATCH_EQUAL)
 	{
 		if (!is_array($key)) {
 			$key = array($key);
@@ -422,18 +430,18 @@ class Saf_Array
 				return FALSE;
 			} else {
 				switch ($matchType) {
-					case Saf_Array::MATCH_EXACT:
+					case Brray::MATCH_EXACT:
 						if ($value !== $array[$arrayKey]) {
 							return FALSE;
 						}
 						break;
-					case Saf_Array::MATCH_LOOSE:
+					case Brray::MATCH_LOOSE:
 						if(is_string($value)) {
 							$value = strtolower(trim($value));
 							$array[$arrayKey] = strtolower(trim($array[$arrayKey]));
 						}
 						//no break intentional
-					case  Saf_Array::MATCH_EQUAL:
+					case  Brray::MATCH_EQUAL:
 					default:
 						if ($value != $array[$arrayKey]) {
 							return FALSE;
@@ -472,7 +480,7 @@ class Saf_Array
 	 * @param int $allowedBlankTypes bitwise integer of blank types that are allowed
 	 * @return bool key exists and value is not blank
 	 */	
-	public static function keyExistsAndInArray($key, $array, $list, $matchType = Saf_Array::MATCH_EQUAL)
+	public static function keyExistsAndInArray($key, $array, $list, $matchType = Brray::MATCH_EQUAL)
 	{
 		if (!is_array($key)) {
 			$key = array($key);
@@ -480,10 +488,10 @@ class Saf_Array
 		foreach ($key as $arrayKey) {
 			if( !array_key_exists($arrayKey, $array)) {
 				return FALSE;
-			} else if (in_array($array[$arrayKey], $list, $matchType == Saf_Array::MATCH_EXACT)) {
+			} else if (in_array($array[$arrayKey], $list, $matchType == Brray::MATCH_EXACT)) {
 
 				continue;
-			} else if ($matchType == Saf_Array::MATCH_LOOSE) {
+			} else if ($matchType == Brray::MATCH_LOOSE) {
 				foreach($list as $listValue) {
 					if(strtolower($listValue) == strtolower($array[$arrayKey])) {
 						continue 2;
@@ -532,25 +540,25 @@ class Saf_Array
 	 * @param int $matchType bitwise integer of match type to be performed
 	 * @return bool key exists and value is not blank
 	 */
-	public static function inArray($value, $array, $matchType = Saf_Array::MATCH_LOOSE)
+	public static function inArray($value, $array, $matchType = Brray::MATCH_LOOSE)
 	{
 		if (!is_array($array)) {
 			return FALSE;
 		}
 		foreach ($array as $arrayKey=>$arrayValue) {
 			switch ($matchType) {
-				case Saf_Array::MATCH_EXACT:
+				case Brray::MATCH_EXACT:
 					if ($value === $arrayValue) {
 						return TRUE;
 					}
 					break;
-				case Saf_Array::MATCH_LOOSE:
+				case Brray::MATCH_LOOSE:
 					if(is_string($value)) {
 						$value = strtolower(trim($value));
 						$arrayValue = strtolower(trim($arrayValue));
 					}
 				//#NOTE no break intentional
-				case  Saf_Array::MATCH_EQUAL:
+				case  Brray::MATCH_EQUAL:
 				default:
 					if ($value == $arrayValue) {
 						return TRUE;
@@ -639,5 +647,14 @@ class Saf_Array
 			$return[] = $prefix . $value;
 		}
 		return $return;
+	}
+
+	protected static function introspectData($mixed, $provider = NULL)
+	{ #TODO this is also in debug, so consolidate/improve
+		ob_start();
+		print_r($message);
+		$output = ob_get_contents();
+		ob_end_clean();
+		return $output;
 	}
 }

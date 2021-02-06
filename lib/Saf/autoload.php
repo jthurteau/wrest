@@ -1,3 +1,9 @@
 <?php
-require_once(LIBRARY_PATH . '/Saf/Kickstart.php'); //#TODO attempt to handle if LIBRARY_PATH isn't set
-Saf\Kickstart::initializeAutoloader();
+
+declare(strict_types=1);
+
+use Saf\Kickstart;
+
+require_once(dirname(__FILE__) . '/Kickstart.php');
+
+Kickstart::initializeAutoloader();

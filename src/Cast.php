@@ -1,15 +1,18 @@
-<?php //#SCOPE_OS_PUBLIC
+<?php
+
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Utility class for converting values.
+ */
+
+
 namespace Saf;
-/*******************************************************************************
-#LIC_FULL
+use Saf\Kickstart\Truthy;
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
-
-Utility class for converting.
-
-*******************************************************************************/
-require_once(LIBRARY_PATH . '/Saf/Filter/Truthy.php');
-use Saf\Kickstart\Truthy as Truthy;
+require_once(dirname(__FILE__) . '/Filter/Truthy.php');
 
 //#TODO #1.0.0 update function header docs
 class Cast {

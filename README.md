@@ -1,4 +1,11 @@
 # saf
-Structured Authoring Framework
+Structured Authoring Foundation
 
-Please see the php7 branch (https://github.com/jthurteau/saf/tree/php7) for current developments
+A framework agnostic foundation library for Structured Authoring Development.
+
+SAF provides wrapper funcionality for:
+
+- Some of PHP's native function shortcomings, e.g. Array functions
+- Framework agnostic and chainable application kickstarting
+- Debugging
+- Hooks for RESTFUL API development and consumption
