@@ -7,180 +7,164 @@
  *
  * Utility class for starting up an application and preparing the framework.
  * Also provides autoloading.
+ * #TODO classify Instances/Modes
  */
 
 namespace Saf;
 
-use Saf\Brray; #TODO generalize to these cases: Options
-use Saf\Debug;
-use Saf\Resolver;
-// use Saf\Environment\Autoloader as Autoloader; 
-use Saf\Environment\Define;
-use \PUBLIC_PATH;
-use \INSTALL_PATH;
-use \APPLICATION_INSTANCE as DEFAULT_INSTANCE;
-use \APPLICATION_TZ as DEFAULT_TIMEZONE;
-#use \TRANSACTION_START_TIME as START_TIME;
+use Saf\Environment;
+use Saf\Agent;
 
-require_once(dirname(__FILE__) . '/Brray.php');
-require_once(dirname(__FILE__) . '/Debug.php');
-require_once(dirname(__FILE__) . '/Resolver.php');
-// require_once(LIBRARY_PATH . '/Environment/Autoloader.php');
-require_once(dirname(__FILE__) . '/Environment/Define.php');
-
-
+require_once(dirname(__FILE__) . '/Environment.php');
+require_once(dirname(__FILE__) . '/Agent.php');
 
 //#TODO #1.0.0 update function header docs
 class Kickstart {
 
-	public const MODE_AUTODETECT = null;
-	public const MODE_NONE = 'none';
-	public const MODE_SAF = 'saf';
-	public const MODE_MEZ = 'mezzio';
-	public const MODE_LAMMVC = 'laminas-mvc'; //#TODO #2.1.0 support Laravel
-	public const MODE_LF5 = 'laravel5'; //#TODO #2.1.0 support Laravel
-	public const MODE_SLIM = 'slim'; //#TODO #2.1.0 support Slim
-	public const MODE_ZFMVC = 'zendmvc'; //NOTE deprecated in 2.0
-	public const MODE_ZFNONE = 'zendbare'; //NOTE deprecated in 2.0
+	public const OPTION_INSTANCES = Environment::OPTION_INSTANCES;
+	public const OPTION_AUTOLOAD = 'autoload';
+	public const OPTION_MANAGER = 'managerClass';
+	public const OPTION_START_TIME = Environment::OPTION_START_TIME;
+	public const OPTION_PUBLIC_PATH = Environment::OPTION_PUBLIC_PATH;
+	public const OPTION_INSTALL_PATH = Environment::OPTION_INSTALL_PATH;
+	public const PREBOOT_OPTION_LIBXML = 'libxml';
+	public const PREBOOT_OPTION_TZ = 'timezone';
+	public const PREP_OPTIONS = [
+		'applicationEnv' => 'production',
+		'applicationId' => '$instance',
+	];
+
+	protected const MEDITATION_LEVEL = Agent::MEDITATION_KICKSTART;
 
 	/**
-	 * indicates the mode that each instance environment has been initialized
+	 * indicates the mode for which the instance has been prepped
+	 * for (e.g. autoload)
+	 */
+	protected static $laced = [];
+
+	/**
+	 * indicates what mode the instance has been kickstarted in
 	 * @var array
 	 */
 	protected static $kicked = [];
 
 	/**
-	 * indicates that the bare minimum (e.g. autoload) for each instance 
-	 * initialization has been performed
+	 * stores state of various preboot steps
+	 * false indicates that step will not be auto-attempted
+	 * null indicates the step has not been attempted yet
+	 * an array of the instance idents that executed the step otherwise
 	 */
-	protected static $laced = [];
-
-	/**
-	 * stores the options passed for each instance
-	 */
-	protected static $instanceOptions = [];
-
-	/**
-	 * specifies the path to the exception display view script
-	 * defaults to (set to) APPLICATION_PATH . '/views/scripts/error/error.php'
-	 * the first time exceptionDisplay() is called if not already set by
-	 * setExceptionDisplayScript().
-	 * @var string
-	 */
-	protected static $emergencyView = null;
-
-	protected static function init()
-	{
-		if (defined('START_TIME')) {
-			return;
-		}
-		$start = Define::get(
-			'\TRANSACTION_START_TIME', 
-			Define::get('\APPLICATION_START_TIME', microtime(true))
-		);
-		define('START_TIME', $start);
-		$publicPath = Define::get('\PUBLIC_PATH', Define::find('PUBLIC_PATH', realpath('.')));
-		defined('PUBLIC_PATH') || define('PUBLIC_PATH', $publicPath);
-		$installPath = Define::get('\INSTALL_PATH', Define::find('INSTALL_PATH', realpath('..')));
-		defined('INSTALL_PATH') || define('INSTALL_PATH', $installPath);
-	}
+	protected static $prebootStep = [
+		'libxml' => null,
+		'timezone' => null,
+	];
 
 	/**
 	 * Begins the kickstart process, preparing the instance for a framework autowiring ($mode)
 	 * @param string $mode Any of the class's MODE_ constants
 	 * @return string the mode chosen (useful in the case of default MODE_AUTODETECT)
 	 */
-	public static function go($mode = self::MODE_AUTODETECT, $options = array())
-	{
-		self::init();
-		$instance = self::selectInstance($options);
-		self::instanceInitialize($instance);
-
-		if (!self::$kicked[$instance]) {
-			self::$instanceOptions[$instance] = $options;
+	public static function lace(
+		string $what = Agent::MODE_AUTODETECT, 
+		array $options = []
+	){
+		try {
+			Environment::init($options);
+			$mode = Agent::parseMode($what);
+			$instance = Agent::parseInstance($what);
+			self::instanceInitialize($instance);
 			if (!self::$laced[$instance]) {
-				self::lace($instance);
+				$options = &Environment::init($options, $instance);
+				if ($mode == Agent::MODE_AUTODETECT) {
+					$mode = Agent::autoMode($instance, $options);
+				}
+				$mode = Agent::negotiate($instance, $mode, $options);
+				self::goPreBoot($instance, $mode);
+				self::$laced[$instance] = $mode;
 			}
-		 	if ($mode == self::MODE_AUTODETECT) {
-				$mode = self::goAutoMode($instance);
-		 	}
-		 	if ($mode == self::MODE_SAF) {
-				self::goIdent($instance, $mode);
-			}
-
-			Define::load('\APPLICATION_STATUS', 'online');
-			Define::load('\APPLICATION_BASE_ERROR_MESSAGE', 'Please inform your technical support staff.');
-			Define::load('\APPLICATION_DEBUG_NOTIFICATION', 'Debug information available.');
-		 	if ($mode == self::MODE_LF5) {
-				self::goLaravel($instance);
-				if (\APPLICATION_FORCE_DEBUG) {
-					Debug::init(Debug::DEBUG_MODE_FORCE, null , false);
-				}
-				self::goResolver($instance);
-				self::goIdent($instance);
-			} else {
-				//Define::load('APPLICATION_CONFIG', \APPLICATION_PATH . "/configs/{$configFile}.xml");
-				Define::load('APPLICATION_FORCE_DEBUG', false, Define::TYPE_BOOL);
-				if (\APPLICATION_FORCE_DEBUG) {
-					Debug::init(Debug::DEBUG_MODE_FORCE, null , false);
-				}
-				self::goResolver($instance);
-				if ($mode != self::MODE_SAF) {
-					self::goIdent($instance);
-				}
-				if ($mode == self::MODE_ZFMVC || $mode == self::MODE_ZFNONE) {
-					self::goZend($instance);
-				}
-				if ($mode == self::MODE_SAF) {
-					self::goSaf($instance);
-				}
-			}
-			self::goPreBoot($instance);
-			self::$kicked[$instance] = $mode;
+			return Agent::instanceIdent($instance, self::$laced[$instance]);
+		} catch (\Exception $e) { #TODO handle redirects and forwards
+			Agent::meditate($e, self::MEDITATION_LEVEL);
 		}
- 		return self::$kicked[$instance];
 	}
 
 	/**
-	 * perform kickstart based on the provided $mode
+	 * perform kickstart based on the provided ident
+	 * @param string $instanceIdent (instance@mode)
+	 * @return mixed application result (optional)
 	 */
-	public static function kick($mode)
+	public static function kick(string $instanceIdent)
 	{
 		try {
-			$fallbackMainScript = '../main.php';
-			$modeClass = ucfirst($mode); #TODO externalize this
-			$modeManagerClass = 'Saf\Framework\\' . $modeClass;
-			$modeFile = dirname(__FILE__) . '/Framework/Saf.php';
-			if (file_exists($modeFile)) {
-				require_once($modeFile);
+			$mode = Agent::parseMode($instanceIdent);
+			$instance = Agent::parseInstance($instanceIdent);
+			if (!self::$laced[$instance]) {
+				throw new \Exception('Requested instance has not been initialized.');
 			}
-			if (class_exists($modeManagerClass, false)) {
-				return $modeManagerClass::run($instance);
-			} else {
-				if(file_exists($fallbackMainScript)){
-					if (!is_readable($fallbackMainScript)){
-						throw new Exception('Unable to access main application script.');
+			$options = &Environment::options($instance);
+			if ($mode != Agent::MODE_NONE) {
+				$modeClass = Environment::instanceOption($instance, self::OPTION_MANAGER);
+				if ($modeClass) {
+					$requestedModeClass = Agent::getModeClass($mode);
+					if ($modeClass != $requestedModeClass) {
+						throw new \Exception('Instance has not been configured for the requested mode.');
+					} elseif (!class_exists($modeClass, false)) {
+						throw new \Exception('Requested mode is not loaded.');
+					} else {
+						return $modeClass::run($instance, $options);
 					}
-					require_once($fallbackMainScript);
+				}
+			} else {
+				$modeMain = Environment::instanceOption($instance, 'mainScript', 'main');
+				$installPath = Environment::path('install') ?: '.';
+				$mainScript = "{$installPath}/{$modeMain}.php";
+				if (file_exists($mainScript)) {
+					if (!is_readable($mainScript)){
+						throw new \Exception('Unable to access main application script.');
+					}
+					return require_once($mainScript);
 				} else {
-					throw new Exception('No application to run.');
+					throw new \Exception('No application to run.');
 				}
 			}
-		} catch (Exception $e) { #TODO handle redirects and forwards
-			header('HTTP/1.0 500 Internal Server Error');
-			self::emergencyDisplay($e);
+			return null;//isset($result) && is_callable($result) ? $result($options) : $result;
+		} catch (\Exception $e) { #TODO handle redirects and forwards
+			Agent::meditate($e, self::MEDITATION_LEVEL);
 		}
 	}	
 
 	/**
+	 * Leverage preboot when not using the kickstart process.
+	 * @param string $instance
+	 * @param string $mode
+	 * @param array $options
+	 */
+	public static function bypass(
+		?string $instance = null,
+		array $options = [],
+		?string $mode = Agent::MODE_NONE
+	){
+		try {
+			$mode = $mode == Agent::MODE_AUTODETECT ? Agent::MODE_NONE : $mode;
+			#TODO #2.0.0 Environment::init($intance, $options)?
+			self::goPreBoot($instance, $mode);
+		} catch (\Exception $e) { #TODO handle redirects and forwards
+			Agent::meditate($e, self::MEDITATION_LEVEL);
+		}
+	}
+
+	/**
 	 * @return string the mode the application was started in
 	 */
-	public static function getMode($instance = null)
+	public static function getMode(?string $instance = null)
 	{
-		if(is_null($instance)) {
-			$instance = self::selectInstance();
+		if (is_null($instance)) {
+			$instance = Agent::DEFAULT_INSTANCE;
 		}
-		return array_key_exists($instance, self::$kicked) ? self::$kicked[$instance] : false;
+		return 
+			array_key_exists($instance, self::$kicked) 
+			? self::$kicked[$instance] 
+			: null;
 	}
 
 	/**
@@ -191,120 +175,76 @@ class Kickstart {
 		return array_keys(self::$kicked);
 	}
 
-	/**
-	 * Conveinence setup when not using the kickstart process.
-	 * @param null $mode
-	 */
-	public static function bypass($instance = null, $mode = self::MODE_AUTODETECT)
-	{
-		self::goPreBoot($instance);
-	}
-
-	/**
-	 * Outputs in the case of complete and total failure during the kickstart process.
-	 * @param Exception $e
-	 * @param string $caughtLevel
-	 * @param string $additionalError
-	 */
-	public static function emergencyDisplay($e, $caughtLevel = 'BOOTSTRAP', $additionalError = '')
-	{
-		$rootUrl = defined('\APPLICATION_BASE_URL') ? \APPLICATION_BASE_URL : '';
-		$title = 'Configuration Error';
-		if (is_null(self::$emergencyView)) {
-			self::$emergencyView = self::findFallbackEmergencyDisplay();
-		}
-		if (self::$emergencyView) {
-			include(self::$emergencyView);
-		} else {
-			header('HTTP/1.0 500 Internal Server Error');
-			die($e->getMessage());
-		}
-		if (class_exists('Debug', false)) {
-			Debug::dieSafe();
-		}
-	}
-
-	/**
-	 * sets the path to the php script used by exceptionDisplay()
-	 * @param string $path
-	 */
-	public static function setEmergencyDisplayScript($path)
-	{
-		self::$emergencyView = realpath($path);
-	}
-
-
-	protected static function lace($instance)
-	{
-		#TODO autoloading also belongs here
-
-		#NOTE below is deprecated at this stage as the container/servicemanager should abstract such concerns
-		// $detectedAppPath =
-		// 	realpath(\INSTALL_PATH . '/application')
-		// 	? realpath(\INSTALL_PATH . '/application')
-		// 	: realpath(\INSTALL_PATH . '/app');
-		// Define::load('APPLICATION_PATH', $detectedAppPath);
-		// if (
-		// 	'' == \APPLICATION_PATH 
-		// 	|| (realpath(\INSTALL_PATH . '/application') && '' == realpath(\APPLICATION_PATH . '/configs'))
-		// 	|| !is_readable(\APPLICATION_PATH)
-		// ) {
-		// 	header('HTTP/1.0 500 Internal Server Error');
-		// 	die('Unable to find the application core.');	 		
-		// }
-		self::$laced[$instance] = true;
-	}
-
-	protected static function goAutoMode($instance)
-	{
-		$detectableModes = [
-			self::MODE_SAF, 
-			self::MODE_MEZ,
-			self::MODE_LAMMVC,
-			self::MODE_LF5,
-			self::MODE_SLIM
-		];
-		foreach($detectableModes as $mode)
-		{
-			if(self::detectMode($mode, $instance)){
-				return $mode;
-			}
-		}
-		return self::MODE_NONE;
-	}
-
-	protected static function goIdent($instance, $mode = null)
-	{
-		Define::load('APPLICATION_ENV', 'production');
-		Define::load('APPLICATION_ID', $instance);
-	}
-
-	/**
-	 * steps to prep the resolver (route/pipe)
-	 */
-	protected static function goResolver($instance, $mode = null)
-	{
-		Resolver::init($instance, $mode);
-	}
 	
 	/**
-	 * steps that can't wait for a bootstrap to kick in
+	 * steps that can't wait for a bootstrap to kick in, 
+	 * @param string $instance
+	 * @param string $mode
 	 */
-	protected static function goPreBoot($instance = null, $mode = null)
+	protected static function goPreboot(?string $instance, ?string $mode)
 	{
-		#TODO when this list gets long, farm it out to another class
-		if (function_exists('libxml_use_internal_errors')) {
-			libxml_use_internal_errors(true);
-		} else {
-			Debug::out('Unable to connect LibXML to integrated debugging. libxml_use_internal_errors() not supported.', 'NOTICE');
+		$mode = $mode == Agent::MODE_AUTODETECT ? Agent::MODE_NONE : $mode;
+		$options = &Environment::options($instance);
+		Environment::prep($instance, self::PREP_OPTIONS); #TODO #2.0.0 expand Environment::parse so it can handle managerClass, autoload, etc.
+		Environment::set($instance, 'resolution', Agent::resolve($instance, $options));
+		if (
+			$mode != Agent::MODE_NONE
+			&& is_null(Environment::instanceOption($instance, self::OPTION_MANAGER))
+		) {
+			Environment::set($instance, self::OPTION_MANAGER, Agent::getModeClass($mode));
 		}
-		if (defined('DEFAULT_TIMEZONE')) {
-			date_default_timezone_set(DEFAULT_TIMEZONE);
+		if (is_null(Environment::instanceOption($instance, self::OPTION_AUTOLOAD))) {
+			Environment::set($instance, self::OPTION_AUTOLOAD, Environment::DEFAULT_AUTOLOAD);
+		}
+		foreach(self::$prebootStep as $prebootOption => $value) {
+			if (is_null($value)) {
+				self::prebootStep($prebootOption, $instance, $mode);
+			}
+		}
+		$modeClass = Environment::instanceOption($instance, self::OPTION_MANAGER);
+		if ($modeClass) {
+			Environment::autoload($modeClass);
+			if (Environment::instanceOption($instance, self::OPTION_AUTOLOAD)){
+				$modeClass::autoload($instance, $options);
+			}
+			$modeClass::preboot($instance, $options, self::$prebootStep);
+		}
+	}
+
+	/**
+	 * Handling for various preboot steps, #TODO #2.0.0 candidate to move into Agent? Framework/$Mode
+	 * @param string $step matching PREBOOT_OPTION_*
+	 * @param string $instance 
+	 * @param string $mode
+	 */
+	protected static function prebootStep($step, $instance = 'INTERNAL', $mode = 'INIT')
+	{
+		switch ($step) {
+			case self::PREBOOT_OPTION_LIBXML :
+				if (function_exists('libxml_use_internal_errors')) {
+					libxml_use_internal_errors(true);
+				} else {
+					Agent::mediate('libxml_use_internal_errors() not supported.', 'NOTICE');
+				}
+				break;
+			case self::PREBOOT_OPTION_TZ :
+				if (defined('DEFAULT_TIMEZONE')) {
+					date_default_timezone_set(DEFAULT_TIMEZONE);
+				}				
+				break;
+			default:
+			#TODO implement plugins?
+		}
+		if (!array_key_exists($step, self::$prebootStep) || !self::$prebootStep[$step]) {
+			self::$prebootStep[$step] = [Agent::instanceIdent($instance, $mode)];
+		} else {
+			self::$prebootStep[$step][] = Agent::instanceIdent($instance, $mode);
 		}
 	}
 
 	/**
 	 * handles any internal initialization for referenced instances
+	 * @param string instance to initialize
 	 */
 	protected static function instanceInitialize($instance)
 	{
@@ -313,50 +253,4 @@ class Kickstart {
 			self::$laced[$instance] = false; 
 		}
 	}
-
-	/**
-	 * 
-	 */
-	protected static function selectInstance($options = [])
-	{
-		$defaultInstance = 
-			defined('APPLICATION_ID') && defined('APPLICATION_INSTANCE')
-			? (
-				APPLICATION_ID . (
-					strpos(APPLICATION_INSTANCE, '_') === 0
-					? APPLICATION_INSTANCE 
-					: ('_' . APPLICATION_INSTANCE)
-				)
-			) : (defined('DEFAULT_INSTANCE') ? DEFAULT_INSTANCE : 'LOCAL_INSTANCE');
-		return Brray::extractIfNotBlank('instance', $options, Brray::TYPE_NONE, $defaultInstance);
-		#TODO normalize the string (e.g. upper,-/ws to _,strip other non-alphanum?)
-	}
-
-	/**
-	 * @return bool true if $mode seems applicable to $instance
-	 */
-	protected static function detectMode($mode, $instance)
-	{
-		$modeClass = ucfirst($mode); #TODO externalize this
-		$modeManagerClass = 'Saf\Framework\\' . $modeClass;
-		require_once(dirname(__FILE__) . '/Framework/Saf.php');
-		return $modeManagerClass::detect($instance);
-	}
-
-	/**
-	 * 
-	 */
-	protected static function findFallbackEmergencyDisplay()
-	{
-		$possibilities = [
-			'../error.php'
-		];
-		foreach($possibilities as $path){
-			if (file_exists($path)) {
-				return $path;
-			}
-		}
-		return realpath(\APPLICATION_PATH . '/views/scripts/error/error.php');
-	}
-
 }

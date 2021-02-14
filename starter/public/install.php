@@ -1,7 +1,9 @@
-<?php //#SCOPE_OS_PUBLIC
-/***
-#LIC_SHORT
+<?php 
+/**
+ * #SCOPE_NCSU_PUBLIC #LIC_SHORT
+ * Set MultiViews resolver hint and forward to gateway script
  */
-define('ROUTER_NAME', 'install');
+
+define('RESOLVER_NAME', 'install');
 include_once('index.php');
 

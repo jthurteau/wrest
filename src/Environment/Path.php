@@ -14,10 +14,6 @@ class Path {
 
 	const REGEX_VAR =
 		'/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$/';
-	const REGEX_CLASS =
-		'/class\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)[\s{]/';
-	const REGEX_PARENT_CLASS =
-		'/class\s+[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\s+extends\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)+[\s{]/';
 
 
     /**
@@ -217,41 +213,6 @@ class Path {
 	{
 		$pattern = self::REGEX_VAR;
 		return preg_match($pattern, $string);
-	}
-
-	/**
-	 * scan a file for the first class definition and return the class name
-	 * @param string $file path
-	 * @returns string class
-	 */
-	public static function getClassIn($file)
-	{
-		$file = file_get_contents($file);
-		$pattern = self::REGEX_CLASS;
-		$matches = NULL;
-		preg_match($pattern, $file, $matches);
-		return
-		$matches && array_key_exists(1, $matches)
-		? $matches[1]
-		: '';
-	}
-
-	/**
-	 * scan a file for the first class definition extending another class
-	 * and return the parent class name
-	 * @param string $file path
-	 * @returns string class
-	 */
-	public static function getParentClassIn($file)
-	{
-		$file = file_get_contents($file);
-		$pattern = self::REGEX_PARENT_CLASS;
-		$matches = NULL;
-		preg_match($pattern, $file, $matches);
-		return
-		$matches && array_key_exists(1, $matches)
-		? $matches[1]
-		: '';
 	}
 
 }

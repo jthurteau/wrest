@@ -16,12 +16,15 @@ use Saf\Brray;
 // use Saf\File\Env;
 
 require_once(dirname(dirname(__FILE__)) . '/Cast.php');
-require_once(dirname(dirname(__FILE__)) . '/Brray.php');
+require_once(dirname(dirname(__FILE__)) . '/Utils/Brray.php');
 // require_once(dirname(dirname(__FILE__)) . '/File/Dot.php');
 // require_once(dirname(dirname(__FILE__)) . '/File/Env.php');
 
 //#TODO #2.0.0 update function header docs
 class Define {
+
+	public const CAST_TYPE_STRING = Cast::TYPE_STRING;
+
 	/**
 	 * Looks for a constant returns it if set, otherwise returs the provided default.
 	 * @param string $constantName constant to look
@@ -29,7 +32,7 @@ class Define {
 	 */
 	public static function get($constantName, $constantDefault = NULL)
 	{
-		defined($constantName) ? constant($constantName) : $constantDefault;
+		return defined($constantName) ? constant($constantName) : $constantDefault;
 	}
 
 	/**

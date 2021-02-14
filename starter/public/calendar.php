@@ -1,7 +1,9 @@
-<?php //#SCOPE_NCSU_PUBLIC
-/***
-#LIC_SHORT
+<?php 
+/**
+ * #SCOPE_NCSU_PUBLIC #LIC_SHORT
+ * Set MultiViews resolver hint and forward to gateway script
  */
-define('ROUTER_NAME', 'calendar');
+
+define('RESOLVER_NAME', 'calendar');
 include_once('index.php');
 

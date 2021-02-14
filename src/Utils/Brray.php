@@ -15,8 +15,8 @@ use Saf\Exception\NotAnArray;
 use Saf\Exception\NoDefault;
 
 #require_once(dirname(__FILE__) . '/Debug.php');
-require_once(dirname(__FILE__) . '/Exception/NotAnArray.php');
-require_once(dirname(__FILE__) . '/Exception/NoDefault.php');
+require_once(dirname(dirname(__FILE__)) . '/Exception/NotAnArray.php');
+require_once(dirname(dirname(__FILE__)) . '/Exception/NoDefault.php');
 
 /**
  * Utility functions for Arrays
