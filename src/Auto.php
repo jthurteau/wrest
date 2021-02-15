@@ -115,6 +115,51 @@ class Auto {
 			: '';
 	}
 
+	/**
+	 * Inserts a new filepath into the path if is not already present. It will
+	 * be added after the specified other path, the end if none is specified, and
+	 * the beginning if the second param is false
+	 * @param string $filepath to add
+	 * @param string $after
+	 * @return boolean
+	 */	
+	public static function insertPath(string $filepath, $after = null)
+	{
+		$realPath = realpath($filepath);
+		if(!$realPath){
+			return false;
+		}
+		$originalPaths = explode(\PATH_SEPARATOR, ini_get('include_path'));
+
+		if ($after === false) {
+			$newPaths = array();
+			$placed = false;
+		} else {
+			$newPaths = array($filepath);
+			$placed = true;
+		}
+		foreach ($originalPaths as $path) {
+			$newPaths[] = $path;
+			if (!$placed) {
+				$currentReal = realpath($path);
+				if ($currentReal == $realPath || $path == $filepath) {
+					return true;
+				}
+				$realAfter = realpath($after);
+				$currentMatch = $currentReal == $realAfter || $path == $after;
+				if ($currentMatch) {
+					$newPaths[] = $realPath;
+					$placed = true;
+				}
+			}
+		}
+		if (!$placed) {
+			$newPaths[] = $realPath;
+		}
+		ini_set('include_path', implode(\PATH_SEPARATOR, $newPaths));
+		return true;
+	}
+
 // 	/**
 // 	 * indicates that the internal autoloader is in charge
 // 	 * @var bool

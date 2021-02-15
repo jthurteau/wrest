@@ -11,8 +11,11 @@
 namespace Saf\Framework;
 
 use Saf\Environment;
+use Saf\Auto;
 
 abstract class Manager{
+
+    public const DEFAULT_APPLICATION_ROOT = '/var/www/aplication';
 
     abstract public static function detect($instance, $options = null);
     abstract public static function autoload($instance, $options = null);
@@ -35,8 +38,8 @@ abstract class Manager{
             : Environment::DEFAULT_INSTALL_PATH;
     }
 
-    protected static function env(string $string)
+    protected static function insertPath(string $new, $after = null)
     {
-        return Environment::get($string);
+        Auto::insertPath($new, $after);
     }
 }

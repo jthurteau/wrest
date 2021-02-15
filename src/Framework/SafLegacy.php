@@ -23,13 +23,21 @@ class SafLegacy extends Manager{
     
     public static function autoload($instance, $options = null)
     {
-        print_r(['autoloading zend mvc']); die;
+        if (array_key_exists('legacyMode', $options) && $options['legacyMode'] == 'zend-mvc') {
+            $path = 
+                array_key_exists('zendPath', $options)
+                ? $options['zendPath']
+                : self::getFrameworkPath($options);
+        }
+        self::insertPath($path,'.') || self::insertPath($path);
+        require_once("{$path}/Zend/Loader/Autoloader.php");
+		\Zend_Loader_Autoloader::getInstance()->setFallbackAutoloader(TRUE);
     }
 
     public static function run($instance, $options = null)
     {
         if (array_key_exists('legacyMode', $options) && $options['legacyMode'] == 'zend-mvc') {
-			$application = new Zend_Application(\APPLICATION_ENV, \APPLICATION_CONFIG);
+			$application = new \Zend_Application(\APPLICATION_ENV, \APPLICATION_CONFIG);
 			$application->bootstrap()->run();
         } else {
             $application = Saf\Legacy\Application::load(\APPLICATION_ENV, \APPLICATION_CONFIG, TRUE);
@@ -57,6 +65,17 @@ class SafLegacy extends Manager{
         // defined('\LIBRARY_PATH') || define('\LIBRARY_PATH', realpath(\INSTALL_PATH . '/../library'));
         // \APPLICATION_ENV 
         // \APPLICATION_CONFIG
+    }
+
+    protected static function getFrameworkPath($options){
+        $srcPath = 'Zend/library/Zend';
+        $path = self::installPath($options) . "/vendor/{$srcPath}";
+        if (array_key_exists('vendorRoot', $options)) {
+            $path = "{$options['vendorRoot']}/{$srcPath}";
+        } elseif (array_key_exists('applicationRoot', $options)) {
+            $path = "{$options['applicationRoot']}/{$srcPath}";
+        }
+        return $path;
     }
 
 }
