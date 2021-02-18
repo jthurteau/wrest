@@ -12,10 +12,12 @@ namespace Saf;
 
 use Saf\Auto;
 use Saf\Resolver;
+use Saf\Agent\Meditation;
 //use Saf\Framework\Manager;
 
 require_once(dirname(__FILE__) . '/Auto.php');
 require_once(dirname(__FILE__) . '/Resolver.php');
+require_once(dirname(__FILE__) . '/Agent/Meditation.php');
 //require_once(dirname(__FILE__) . '/Framework/Manager.php');
 
 abstract class Agent{
@@ -35,12 +37,14 @@ abstract class Agent{
 
 	protected static $_path = '.';
 
-	public const MEDITATION_KICKSTART = 'KICKSTART';
-	public const MEDITATION_BOOTSTRAP = 'BOOTSTRAP';
-	public const MEDITATION_MIDDLEWARE = 'MIDDLEWARE';
-	public const MEDITATION_REMOTE = 'REMOTE';
+	public const MEDITATION_KICKSTART = 'KICKSTART_ERROR';
+	public const MEDITATION_BOOTSTRAP = 'BOOTSTRAP_ERROR';
+	public const MEDITATION_MIDDLEWARE = 'MIDDLEWARE_ERROR';
+	public const MEDITATION_REMOTE = 'REMOTE_ERROR';
 	public const MEDITATION_WARNING = 'WARNING';
 	public const MEDITATION_NOTICE = 'NOTICE';
+	public const MEDITATION_TIME = 'PROFILE_TIME';
+	public const MEDITATION_MEMORY = 'PROFILE_MEMORY';
 
 
     /**
@@ -68,6 +72,19 @@ abstract class Agent{
 	];
 
 	/**
+	 * 
+	 */
+	protected static $profileMeditations = [
+		self::MEDITATION_TIME,
+		self::MEDITATION_MEMORY,
+		//self::MEDITATION_REMOTE,
+	];
+
+	protected static $outputMeditations = false;
+
+	protected static $idSeed = 0;
+
+	/**
 	 * Outputs in the case of complete and total failure during the kickstart process.
 	 * @param mixed $e \Exception, error string, or dump array
 	 * @param string $level error level
@@ -77,12 +94,16 @@ abstract class Agent{
 
         if (!is_a($e, '\Exception')) {
             if (is_string($e)) {
-                $e = new \Exception($e);
+                $meditationText = $e;
+				$e = null;
             } else {
+				$meditationText = 'Data Meditation';
                 $e = new \Exception(Auto::meditate($e));
             }
-        }
-		if (in_array($level, self::$criticalMeditations)) {
+        } else {
+			$meditationText = 'Exception Meditation';
+		}
+		if (self::$outputMeditations && in_array($level, self::$criticalMeditations)) {
 			$rootUrl = defined('\APPLICATION_BASE_URL') ? \APPLICATION_BASE_URL : ''; #TODO #2.0.0 cleanup
 			$title = 'Configuration Error';
 			if (is_null(self::$meditationView)) {
@@ -96,7 +117,8 @@ abstract class Agent{
 			}
 			self::dieSafe();
 		} else {
-			self::$meditations[] = [$level => $e];
+			$m = new Meditation($meditationText, self::idStrategy($e), $e);
+			self::$meditations[$m->getCode()] = $m;
 		}
 
 	}
@@ -195,6 +217,9 @@ abstract class Agent{
 
     public static function instanceIdent(string $instance, $mode)
     {
+		if ($mode === false) {
+			$mode = '';
+		}
         return "{$instance}@{$mode}";
     }
 
@@ -280,9 +305,26 @@ abstract class Agent{
 		return Resolver::init($instance, $options);
 	}
 
+	public static function getMeditation($id = null)
+	{
+		if (!is_null($id) && array_key_exists($id, self::$meditations)) {
+			return self::$meditations[$id];
+		} elseif (is_null($id)) {
+			return self::$meditations[array_key_last(self::$meditations)];
+		}
+		return null;
+	}
+
 	protected static function dieSafe()
 	{
 		#TODO #2.0.0 decide how to implement.
+		die();
+
+	}
+
+	protected static function idStrategy($e)
+	{
+		return ++self::$idSeed;
 	}
 
 }

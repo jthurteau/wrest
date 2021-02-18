@@ -31,7 +31,7 @@ class Kickstart {
 	public const PREBOOT_OPTION_TZ = 'timezone';
 	public const PREP_OPTIONS = [
 		'applicationEnv' => 'production',
-		'applicationId' => '$instance',
+		'applicationId' => '{$instanceName}',
 	];
 
 	protected const MEDITATION_LEVEL = Agent::MEDITATION_KICKSTART;
@@ -60,21 +60,21 @@ class Kickstart {
 	];
 
 	/**
-	 * Begins the kickstart process, preparing the instance for a framework autowiring ($mode)
-	 * @param string $mode Any of the class's MODE_ constants
-	 * @return string the mode chosen (useful in the case of default MODE_AUTODETECT)
+	 * Begins the kickstart process, preparing the instance for a framework autowiring
+	 * @param string $what instance identifier, [instance@]mode || instance (if no match on mode)
+	 * @param array options to initiaize the instance, and environment if not already initilaized
+	 * @return string full instance identifier for what was prepared: instance@mode
 	 */
 	public static function lace(
-		string $what = Agent::MODE_AUTODETECT, 
-		array $options = []
+		?string $what = Agent::MODE_AUTODETECT, 
+		array &$options = []
 	){
 		try {
-			Environment::init($options);
 			$mode = Agent::parseMode($what);
 			$instance = Agent::parseInstance($what);
 			self::instanceInitialize($instance);
 			if (!self::$laced[$instance]) {
-				$options = &Environment::init($options, $instance);
+				Environment::init($options, $instance);
 				if ($mode == Agent::MODE_AUTODETECT) {
 					$mode = Agent::autoMode($instance, $options);
 				}
@@ -85,7 +85,11 @@ class Kickstart {
 			return Agent::instanceIdent($instance, self::$laced[$instance]);
 		} catch (\Exception $e) { #TODO handle redirects and forwards
 			Agent::meditate($e, self::MEDITATION_LEVEL);
+			if (array_key_exists('throwMeditations', $options) && $options['throwMeditations']) {
+				throw new \Exception("Failed to prepare {$instance}@{$mode} for kickstart", 0, Agent::getMeditation());
+			}
 		}
+		return Agent::instanceIdent($instance, self::$laced[$instance]);
 	}
 
 	/**
@@ -98,6 +102,7 @@ class Kickstart {
 		try {
 			$mode = Agent::parseMode($instanceIdent);
 			$instance = Agent::parseInstance($instanceIdent);
+			self::instanceInitialize($instance);
 			if (!self::$laced[$instance]) {
 				throw new \Exception('Requested instance has not been initialized.');
 			}
@@ -127,10 +132,13 @@ class Kickstart {
 					throw new \Exception('No application to run.');
 				}
 			}
-			return null;//isset($result) && is_callable($result) ? $result($options) : $result;
 		} catch (\Exception $e) { #TODO handle redirects and forwards
 			Agent::meditate($e, self::MEDITATION_LEVEL);
+			if (array_key_exists('throwMeditations', $options) && $options['throwMeditations']) {
+				throw new \Exception("Failed to kickstart instance {$instance}@{$mode}", 0, Agent::getMeditation());
+			}
 		}
+		return null;//isset($result) && is_callable($result) ? $result($options) : $result;
 	}	
 
 	/**
@@ -151,6 +159,14 @@ class Kickstart {
 		} catch (\Exception $e) { #TODO handle redirects and forwards
 			Agent::meditate($e, self::MEDITATION_LEVEL);
 		}
+	}
+
+	/**
+	 * Convenience function, laces the default-instance and kicks it
+	 */
+	public static function go(?array $options)
+	{
+		self::kick(self::lace(null, $options));
 	}
 
 	/**

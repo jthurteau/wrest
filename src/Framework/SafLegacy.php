@@ -11,8 +11,10 @@
 namespace Saf\Framework;
 
 use Saf\Framework\Manager;
+use Saf\Legacy\Autoloader;
 
 require_once(dirname(dirname(__FILE__)) . '/Framework/Manager.php');
+require_once(dirname(dirname(__FILE__)) . '/Legacy/Autoloader.php');
 
 class SafLegacy extends Manager{
 
@@ -29,9 +31,16 @@ class SafLegacy extends Manager{
                 ? $options['zendPath']
                 : self::getFrameworkPath($options);
         }
+        if (!array_key_exists('applicationRoot', $options)) {
+            throw new \Exception('applicationRoot not defined by the negotiating manager.');
+        }
+        if (!array_key_exists('libraryPath', $options)) {
+            $options['libraryPath'] = "{$options['applicationRoot']}/library";
+        }
         self::insertPath($path,'.') || self::insertPath($path);
         require_once("{$path}/Zend/Loader/Autoloader.php");
 		\Zend_Loader_Autoloader::getInstance()->setFallbackAutoloader(TRUE);
+        Autoloader::init($options);
     }
 
     public static function run($instance, $options = null)
@@ -46,25 +55,43 @@ class SafLegacy extends Manager{
         print_r(['running saf application', $instance, $options]); die;
     }
 
-    public static function prep($instance, $options = null)
-    {
-
-    }
-
     public static function preboot($instance, $options = [], $prebooted = [])
     {
-        // define('\APPLICATION_START_TIME', microtime(TRUE));
+        $configPath = array_key_exists('configPath', $options) ? $options['configPath'] : 'configs';
+        $required = [
+            'APPLICATION_START_TIME' => 'startTime',
+            'INSTALL_PATH' => 'installPath',
+            'LIBRARY_PATH' => [
+                'libraryPath',
+                '{$applicationRoot}/library'
+            ],
+            'APPLICATION_PATH' => 'applicationPath',
+            'APPLICATION_CONFIG' => [
+                'applicationConfig',
+                "{\$applicationPath}/{$configPath}/{\$configFile}",
+            ],
+        ];
+        foreach($required as $requiredConst => $requiredKey) {
+            if (!defined($requiredConst)) {
+                self::dumpEnv($requiredConst, $options, $requiredKey);
+            }
+            if (!defined($requiredConst)) {
+                throw new \Exception("Required framework constant missing {$requiredConst}");
+            }
+        }
+        $optional = [
+            'APPLICATION_ENV' => 'applicationEnv',
+        ];
+        foreach($optional as $optionalConst => $optionalKey) {
+            if (!defined($optionalConst)) {
+                self::dumpEnv($optionalConst, $options, $optionalKey, false);
+            }            
+        }
         // define('\APPLICATION_VERSION', '1.12.2102'); //#TODO #RELEASE
         // define('\APPLICATION_ID', 'ROOMRES'); //#NOTE Set this once per instance and NEVER change it
         // define('\APPLICATION_INSTANCE', '_LIB_NCSU_EDU'); //#NOTE Set this once per instance and NEVER change it
         // define('\APPLICATION_TZ', 'EST5EDT');
-        // if(file_exists('localize.php')){
-        //     require_once('localize.php');
-        // }
-        // defined('\INSTALL_PATH') || define('\INSTALL_PATH', realpath(dirname(__FILE__) . '/..'));
-        // defined('\LIBRARY_PATH') || define('\LIBRARY_PATH', realpath(\INSTALL_PATH . '/../library'));
-        // \APPLICATION_ENV 
-        // \APPLICATION_CONFIG
+
     }
 
     protected static function getFrameworkPath($options){

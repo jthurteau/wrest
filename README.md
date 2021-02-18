@@ -124,3 +124,5 @@ LOCALIZE_TOKEN
 ENABLE_LOCAL_DEV
 FOUNDATION_PATH
 **START_TIME
+
+LIBRARY_PATH - an older form of VENDOR_PATH where each directory is source code (e.g. LIBRARY_PATH/library_name/ may simply be a symlink to VENDOR_PATH/project_name/src). Useful for including external code prior to modern autoloader methods.

@@ -143,7 +143,7 @@ class Path {
 		}
 	}
 
-	public static function translatePath($path)
+	public static function translatePath($path, $map = null)
 	{
 		return str_replace(
 			array(

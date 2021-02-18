@@ -51,7 +51,19 @@ class ZendMvc extends Manager{
 
     public static function negotiate($instance, $mode, &$options)
     {
+        $installPath = self::installPath($options);
+        $applicationDir = self::$applicationDir;
+        $configType = array_key_exists('configType', $options) ? $configType[$options] : 'xml';
+        $options['applicationPath'] = "{$installPath}/{$applicationDir}";
+        $options['controllerPath'] = "{$installPath}/{$applicationDir}/controllers";
+        if (!array_key_exists('applicationRoot', $options)) {
+            $scanApplicationRoot = realpath("{$installPath}/../library");
+            $options['applicationRoot'] = $scanApplicationRoot ?: Manager::DEFAULT_APPLICATION_ROOT;
+        }
         $options['legacyMode'] = 'zend-mvc';
+        if (!array_key_exists('configFile', $options)) {
+            $options['configFile'] = "zend_application.{$configType}";
+        }
         return 'saf-legacy';
     }
 

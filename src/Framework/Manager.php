@@ -15,7 +15,7 @@ use Saf\Auto;
 
 abstract class Manager{
 
-    public const DEFAULT_APPLICATION_ROOT = '/var/www/aplication';
+    public const DEFAULT_APPLICATION_ROOT = '/var/www/application';
 
     abstract public static function detect($instance, $options = null);
     abstract public static function autoload($instance, $options = null);
@@ -41,5 +41,28 @@ abstract class Manager{
     protected static function insertPath(string $new, $after = null)
     {
         Auto::insertPath($new, $after);
+    }
+
+    protected static function dumpEnv(string $envConst, array $options, $strategy)
+    {
+        if (is_string($strategy)) {
+            if (strpos($strategy, Environment::INTERPOLATE_START) !== false) {
+                $parsed = Environment::parse($strategy, $options);
+                if (!is_null($parsed)) {
+                    define($envConst, $parsed);
+                }
+            } elseif (array_key_exists($strategy, $options)) {
+                if (!defined($envConst)) {
+                    define($envConst, $options[$strategy]);
+                }
+            }
+        } elseif(is_array($strategy)) {
+            foreach($strategy as $currentStrategy) {
+                self::dumpEnv($envConst, $options, $currentStrategy);
+                if (defined($envConst)){
+                    break;
+                } 
+            }
+        }
     }
 }
