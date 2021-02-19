@@ -6,6 +6,10 @@
 
 *******************************************************************************/
 
+use Saf\Environment\Define;
+use Saf\Exception\Redirect;
+use Saf\Exception\NotImplemented;
+
 class IndexController extends Saf_Controller_Zend
 {
 
@@ -16,7 +20,7 @@ class IndexController extends Saf_Controller_Zend
     
     public function loginAction()
     {
-    	Saf_Kickstart::defineLoad('APPLICATION_SIMULATED_USER', '');
+    	Define::load('APPLICATION_SIMULATED_USER', '');
     	$request = $this->getRequest();
     	if (APPLICATION_SIMULATED_USER) {
     		Saf_Auth::autodetect(Saf_Auth::MODE_SIMULATED);
@@ -25,14 +29,14 @@ class IndexController extends Saf_Controller_Zend
     			$url
     			? Saf_UrlRewrite::decodeForward($url)
     			: Saf_UrlRewrite::decodeForward(trim($request->getParam('forwardCode')));
-    		throw new Saf_Exception_Redirect($url);
+    		throw new Redirect($url);
     	}
-    	throw new Saf_Exception_NotImplemented('Please Login Using Shibboleth.'); //#TODO #2.0.0 roll this into the framework/language
+    	throw new NotImplemented('Please Login Using Shibboleth.'); //#TODO #2.0.0 roll this into the framework/language
     }
     
     public function logoutAction()
     {
     	Saf_Auth::logout();
-    	throw new Saf_Exception_Redirect('?loggedout=true');
+    	throw new Redirect('?loggedout=true');
     }
 }

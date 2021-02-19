@@ -1,13 +1,16 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php 
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Instructs the framework to redirect the user to continue
+ */
 
-Instructs the framework to redirect the user to continue
+namespace Saf\Exception;
 
-*******************************************************************************/
-class Saf_Exception_Redirect extends Exception {
+class Redirect extends \Exception {
 
 	/**
 	 * indicates if the exception's redirect should be kept in the browser history

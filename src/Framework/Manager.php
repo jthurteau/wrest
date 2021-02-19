@@ -5,7 +5,7 @@
  * 
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  *
- * Base class for Framework Managers
+ * Base class for framework Kickstart managers
  */
 
 namespace Saf\Framework;
@@ -17,44 +17,77 @@ abstract class Manager{
 
     public const DEFAULT_APPLICATION_ROOT = '/var/www/application';
 
-    abstract public static function detect($instance, $options = null);
-    abstract public static function autoload($instance, $options = null);
-    abstract public static function run($instance, $options = null);
-	abstract public static function preboot($instance, $options, $prebooted = []);
+    /**
+     * returns true if the manager can support the instance and its options
+     * @param string $instance
+     * @param array $options reference to options, which may be altered
+     * @return bool supported 
+     */
+    abstract public static function detect(string $instance, array $options);
 
-    public static function negotiate($instance, $mode, &$options)
+    /**
+     * 
+     */
+    abstract public static function autoload(string $instance, array $options);
+
+    /**
+     * 
+     */
+    abstract public static function run(string $instance, array $options);
+
+    /**
+     * 
+     */
+	abstract public static function preboot(string $instance, array $options, array $prebooted = []);
+
+    /**
+     * allows managers to assess instances and suggest an alternative options or mode to 
+     * better handle the setup and execution
+     * @param string $instance
+     * @param string $mode requested mode
+     * @param array $options reference to options, which may be altered
+     * @return string suggested mode
+     */
+    public static function negotiate(string $instance, string $mode, array &$options)
     {
         return $mode;
     }
 
-    protected static function installPath($config)
+    /**
+     * #TODO #2.0.0 fold this back to Environment?
+     */
+    protected static function installPath(array $config)
     {
-        if (!is_array($config)) {
-            throw new \Exception('invalid config for install path lookup');
-        }
         return
             array_key_exists('installPath', $config)
             ? $config['installPath']
             : Environment::DEFAULT_INSTALL_PATH;
     }
 
+    /**
+     * Wrapper for Auto::insertPath
+     */
     protected static function insertPath(string $new, $after = null)
     {
         Auto::insertPath($new, $after);
     }
 
+    /**
+     * Convenince wrapper for Environment::dump, 
+     */
     protected static function dumpEnv(string $envConst, array $options, $strategy)
     {
+        if (defined($envConst)) {
+            return;
+        }
         if (is_string($strategy)) {
             if (strpos($strategy, Environment::INTERPOLATE_START) !== false) {
                 $parsed = Environment::parse($strategy, $options);
                 if (!is_null($parsed)) {
-                    define($envConst, $parsed);
+                    Environment::dump([$envConst => $parsed]);
                 }
             } elseif (array_key_exists($strategy, $options)) {
-                if (!defined($envConst)) {
-                    define($envConst, $options[$strategy]);
-                }
+                    Environment::dump([$envConst => $options[$strategy]]);
             }
         } elseif(is_array($strategy)) {
             foreach($strategy as $currentStrategy) {

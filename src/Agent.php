@@ -41,8 +41,11 @@ abstract class Agent{
 	public const MEDITATION_BOOTSTRAP = 'BOOTSTRAP_ERROR';
 	public const MEDITATION_MIDDLEWARE = 'MIDDLEWARE_ERROR';
 	public const MEDITATION_REMOTE = 'REMOTE_ERROR';
+	public const MEDITATION_SHUTDOWN = 'SHUTDOWN';
+	public const MEDITATION_FATAL_EXCEPTION = 'FATAL_EXCEPTION';
 	public const MEDITATION_WARNING = 'WARNING';
 	public const MEDITATION_NOTICE = 'NOTICE';
+	public const MEDITATION_DEBUG = 'DEBUG';
 	public const MEDITATION_TIME = 'PROFILE_TIME';
 	public const MEDITATION_MEMORY = 'PROFILE_MEMORY';
 
@@ -68,6 +71,8 @@ abstract class Agent{
 		self::MEDITATION_KICKSTART,
 		self::MEDITATION_BOOTSTRAP,
 		self::MEDITATION_MIDDLEWARE,
+		self::MEDITATION_SHUTDOWN,
+		self::MEDITATION_FATAL_EXCEPTION,
 		//self::MEDITATION_REMOTE,
 	];
 
@@ -90,9 +95,11 @@ abstract class Agent{
 	 * @param string $level error level
 	 */
 	public static function meditate($e, $level = self::MEDITATION_NOTICE) #TODO add interface for detailed exceptions, $additionalError = '')
-	{
-
-        if (!is_a($e, '\Exception')) {
+	{		
+		if (is_null(self::$meditationView)) {
+			self::$meditationView = self::findMeditation();
+		}
+        if (!self::isProtoMeditation($e)){
             if (is_string($e)) {
                 $meditationText = $e;
 				$e = null;
@@ -101,19 +108,22 @@ abstract class Agent{
                 $e = new \Exception(Auto::meditate($e));
             }
         } else {
-			$meditationText = 'Exception Meditation';
+			$type = get_class($e);
+			$meditationText = "{$type} Meditation";
 		}
 		if (self::$outputMeditations && in_array($level, self::$criticalMeditations)) {
 			$rootUrl = defined('\APPLICATION_BASE_URL') ? \APPLICATION_BASE_URL : ''; #TODO #2.0.0 cleanup
 			$title = 'Configuration Error';
-			if (is_null(self::$meditationView)) {
-				self::$meditationView = self::findMeditation();
-			}
+
 			if (self::$meditationView) {
+				#TODO #2.0.0 grab the metadataCanister?
+				$canister = [
+					'forceDebug' => true //#TODO #2.0.0 attach meditations to an instance?
+				];
 				include(self::$meditationView);
 			} else {
 				header('HTTP/1.0 500 Internal Server Error');
-				$e->getMessage();
+				print($e->getMessage());
 			}
 			self::dieSafe();
 		} else {
@@ -315,6 +325,16 @@ abstract class Agent{
 		return null;
 	}
 
+	public static function getDefaultInstance()
+	{
+		return self::DEFAULT_INSTANCE;
+	}
+
+	public static function panic()
+	{
+		self::$outputMeditations = true;
+	}
+
 	protected static function dieSafe()
 	{
 		#TODO #2.0.0 decide how to implement.
@@ -325,6 +345,14 @@ abstract class Agent{
 	protected static function idStrategy($e)
 	{
 		return ++self::$idSeed;
+	}
+
+	protected static function isProtoMeditation($e, $asString = false)
+	{
+		return (
+			(is_object($e) || (is_string($e) && $asString))
+			&& in_array('Throwable', class_implements($e, false))
+		);
 	}
 
 }

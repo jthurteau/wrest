@@ -7,8 +7,10 @@
 Utility class for authentication
 
 *******************************************************************************/
-require_once(LIBRARY_PATH . '/Saf/Kickstart.php');
-use Saf\Kickstart as Kickstart;
+
+use Saf\Environment\Define;
+use Saf\Legacy\Autoloader;
+use Saf\Filter\Truthy;
 
 class Saf_Auth{
 
@@ -47,7 +49,7 @@ class Saf_Auth{
 		self::$_loadedConfig = $config;
 		if (
 			array_key_exists('supportsInternal', $config)
-			&& Saf_Filter_Truthy::filter($config['supportsInternal'])
+			&& Truthy::filter($config['supportsInternal'])
 		) {
 			self::$_activePlugin = new Saf_Auth_Plugin_Local();
 			self::$_supportsInternal = TRUE;
@@ -85,13 +87,14 @@ class Saf_Auth{
 			if (!in_array($pluginName, self::$_loadedPlugins)) {
 				self::$_loadedPlugins[] = $pluginName;
 				$className = 'Saf_Auth_Plugin_' . $pluginName;
+				Autoloader::autoload($className);
 				$classPath = LIBRARY_PATH . '/'
 					. str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
 				if (!file_exists($classPath)) {
 					$className = $pluginName;
-					Kickstart::autoload($className);
+					Autoloader::autoload($className);
 				} else {
-					Kickstart::autoload($className);
+					Autoloader::autoload($className);
 				}
 				if ($pluginConfig) {
 					self::$_classMap[$pluginName] = array($className => $pluginConfig);
@@ -126,7 +129,7 @@ class Saf_Auth{
 				: '';
 			if ($simulatedLockOn) {
 				$mode = self::MODE_SIMULATED;
-				Kickstart::defineLoad(
+				Define::load(
 					'AUTH_SIMULATED_USER',
 					$currentSimulatedUser
 				);

@@ -50,13 +50,48 @@ class Auto {
 		return "{$foundationPath}/{$classPath}.php";
 	}
 
-	public static function meditate($nonException)
+	public static function meditate($meditationData, $depth = 0)
 	{ #TODO this is also in debug, so consolidate/improve
+		$tab = str_repeat('  ', $depth + 1);
+		$style = $depth ? ' style="padding-left:2rem;margin-top: -1.2rem;"' : '';
+		$inline = false;
 		ob_start();
-		print_r($nonException);
+		if (is_array($meditationData)) {
+			foreach($meditationData as $key => $value) {
+				$key = is_int($key) ? $key : "'{$key}'";
+				$value = self::meditate($value, $depth + 1);
+				print("\n{$tab}{$key}:{$value}");
+			}
+		} elseif (is_a($meditationData, 'Exception')) {
+			//$font = 'font-family:\'Helvetica Neue\',Helvetica,Roboto,Arial,sans-serif;';
+			$font = 'font-family:UniversLight;'; #TODO handle this with themeing styles instead;
+			$isMeditation = get_class($meditationData) == 'Saf\Agent\Meditation';
+			$exceptionClass = $isMeditation ? 'meditation' : 'exception';
+			$code = $meditationData->getCode();
+			$idData = $isMeditation ? "data-id=\"{$code}\" " : '';
+			print("{$tab}<div {$idData}class=\"{$exceptionClass}\" style=\"white-space:normal;{$font}\">");
+			print("{$tab}<div>" . $meditationData->getMessage() .'</div>');
+			print("{$tab}<div>" . $meditationData->getFile() . ' : ' . $meditationData->getLine() . '</div>');
+			$trace = $meditationData->getTraceAsString();
+			print("\n{$tab}<pre class=\"trace\">{$trace}</pre>");
+			if ($meditationData->getPrevious()) {
+				print(self::meditate($meditationData->getPrevious(), $depth + 1));
+			}
+			print('</div>');
+		} elseif (is_object($meditationData)) {
+			$class = get_class($meditationData);
+			print("\n{$tab}{$class}<span class=\"inner-data\" style=\"display:none;\">");
+			print_r($meditationData);
+			print('</span>');
+		} else {
+			$inline = true;
+			$style = $depth ? ' style="display:inline;"' : '' ;
+			print_r($meditationData);
+		}
+		$blockCap = !$inline ? str_repeat('  ', $depth) : '';
 		$output = ob_get_contents();
 		ob_end_clean();
-		return gettype($nonException) ."[\n{$output}\n]";
+		return gettype($meditationData) ."[<pre class=\"data\"{$style}>{$output}</pre>{$blockCap}]";
 	}
 
 

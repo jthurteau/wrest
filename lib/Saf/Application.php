@@ -7,13 +7,15 @@
 Base class for application loading
 
 *******************************************************************************/
+use Saf\Kickstart as Kickstart; 
+
+use Saf\Filter\Truthy;
+
 require_once(LIBRARY_PATH . '/Saf/Kickstart.php');
-use Saf\Kickstart as Kickstart;
 require_once(LIBRARY_PATH . '/Saf/Config.php');
 require_once(LIBRARY_PATH . '/Saf/Debug.php');
 require_once(LIBRARY_PATH . '/Saf/Status.php');
 require_once(LIBRARY_PATH . '/Saf/Array.php');
-require_once(LIBRARY_PATH . '/Saf/Filter/Truthy.php');
 require_once(LIBRARY_PATH . '/Saf/Filter/ConfigString.php');
 require_once(LIBRARY_PATH . '/Saf/Application/Mvc.php');
 
@@ -106,7 +108,7 @@ abstract class Saf_Application
 		if ($autoLoad) {
 			$autoLoadTakeover =
 			array_key_exists('takeover', $autoLoad)
-			&& Saf_Filter_Truthy::filter($autoLoad['takeover']);
+			&& Truthy::filter($autoLoad['takeover']);
 			Kickstart::initializeAutoloader($autoLoad);
 			if (array_key_exists('loader', $autoLoad)) {
 				$loaders = Saf_Config::autoGroup($autoLoad['loader']);

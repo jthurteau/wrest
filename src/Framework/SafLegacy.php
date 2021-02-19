@@ -25,28 +25,35 @@ class SafLegacy extends Manager{
     
     public static function autoload($instance, $options = null)
     {
-        if (array_key_exists('legacyMode', $options) && $options['legacyMode'] == 'zend-mvc') {
-            $path = 
-                array_key_exists('zendPath', $options)
-                ? $options['zendPath']
-                : self::getFrameworkPath($options);
-        }
         if (!array_key_exists('applicationRoot', $options)) {
             throw new \Exception('applicationRoot not defined by the negotiating manager.');
         }
         if (!array_key_exists('libraryPath', $options)) {
             $options['libraryPath'] = "{$options['applicationRoot']}/library";
         }
-        self::insertPath($path,'.') || self::insertPath($path);
-        require_once("{$path}/Zend/Loader/Autoloader.php");
-		\Zend_Loader_Autoloader::getInstance()->setFallbackAutoloader(TRUE);
+        if (!array_key_exists('zendPath', $options)) {
+            $options['zendPath'] = self::getFrameworkPath($options);
+        }
+        // if (array_key_exists('legacyMode', $options) && $options['legacyMode'] == 'zend-mvc') {
+        //     $path = 
+        //         array_key_exists('zendPath', $options)
+        //         ? $options['zendPath']
+        //         : self::getFrameworkPath($options);
+        // }
+        self::insertPath($options['zendPath'], '.') || self::insertPath($options['zendPath']);
+        // require_once("{$path}/Zend/Loader/Autoloader.php");
+		// \Zend_Loader_Autoloader::getInstance()->setFallbackAutoloader(TRUE);
         Autoloader::init($options);
     }
 
-    public static function run($instance, $options = null)
+    /**
+     * 
+     */
+    public static function run(string $instance, ?array $options = null)
     {
         if (array_key_exists('legacyMode', $options) && $options['legacyMode'] == 'zend-mvc') {
 			$application = new \Zend_Application(\APPLICATION_ENV, \APPLICATION_CONFIG);
+            spl_autoload_unregister(array('Zend_Loader_Autoloader','autoload'));
 			$application->bootstrap()->run();
         } else {
             $application = Saf\Legacy\Application::load(\APPLICATION_ENV, \APPLICATION_CONFIG, TRUE);
@@ -95,12 +102,21 @@ class SafLegacy extends Manager{
     }
 
     protected static function getFrameworkPath($options){
-        $srcPath = 'Zend/library/Zend';
+        $srcPath = 'Zend/library/';
         $path = self::installPath($options) . "/vendor/{$srcPath}";
+        if (realpath($path)) {
+            return $path;
+        }
         if (array_key_exists('vendorRoot', $options)) {
-            $path = "{$options['vendorRoot']}/{$srcPath}";
+            $vendorPath = "{$options['vendorRoot']}/{$srcPath}";
+            if (realpath($vendorPath)) {
+                return $vendorPath;
+            }
         } elseif (array_key_exists('applicationRoot', $options)) {
-            $path = "{$options['applicationRoot']}/{$srcPath}";
+            $libraryPath = "{$options['applicationRoot']}/library/";
+            if (realpath($libraryPath)) {
+                return $libraryPath;
+            }
         }
         return $path;
     }

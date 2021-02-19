@@ -38,16 +38,28 @@ class Autoloader {
 	protected static $enabled = false;
 
 	/**
+	 * indicates if the fallback (Zend_Autoloader), should be used when this
+	 * autoloader is disabled (can be used to toggle active autoloading)
+	 */
+	protected static $useFallback = false;
+
+	/**
+	 * indicates that the internal autoloader throws on failure
+	 * @var bool
+	 */
+	protected static $throws = true;
+
+	/**
 	 * list of class prefixes and paths for autoloading
 	 * @var array
 	 */
 	protected static $autoloaders = array(
 		'' => array(
-			'[[APPLIATION_PATH]]/models',
+			'[[APPLICATION_PATH]]/models',
         ),
-        'Saf_' => array(
-			'[[LEGACY_SAF_PATH]]',
-		)
+        // 'Saf_' => array(
+		// 	'[[LEGACY_SAF_PATH]]',
+		// )
 	);
 
 	/**
@@ -65,8 +77,14 @@ class Autoloader {
 	 * @var array
 	 */
 	protected static $libraries = array(
+		'Saf\\' => array(
+			'SAF:PHP7' => 'Saf\Auto::classPathLookup'
+		),
 		'Saf' => array(
-			'Saf\Legacy\Autoloader::resolveClassPath' => 'Saf\Legacy\Autoloader::resolveClassPath'
+			'SAF:PHP5' => 'Saf\Legacy\Autoloader::resolveClassPath'
+		),
+		'Zend' => array(
+			'ZEND:V1' => 'Saf\Legacy\Autoloader::resolveClassPath'
 		)
 	);
 
@@ -77,6 +95,9 @@ class Autoloader {
         'LIBRARY_PATH' => null,
         'APPLICATION_PATH' => null,
     ];
+
+
+	protected static $badFiles = [];
 
     /**
      * returns true if the legacy autoloader has been registered with the spl
@@ -161,62 +182,26 @@ class Autoloader {
 	public static function autoload($className, $specialLoader = '')
 	{
 		if (class_exists($className, false)) {
-			return true;
-		}
-		if (!self::$enabled && class_exists('Zend_Loader_Autoloader', false)) {
-			$zendAutoloader = \Zend_Loader_Autoloader::getInstance();
-			$currentSetting = $zendAutoloader->suppressNotFoundWarnings();
-			$zendAutoloader->suppressNotFoundWarnings(true);
-			$zendResult = \Zend_Loader_Autoloader::autoload($className);
-			$zendAutoloader->suppressNotFoundWarnings($currentSetting);
-			return $zendResult;
-		}
-		if (!self::$initialized) {
+			return;
+		} elseif ($specialLoader) {
+			return self::autoloadSpecial($className,$specialLoader);
+		} elseif (
+			!self::$enabled 
+			&& self::$useFallback 
+			&& class_exists('Zend_Loader_Autoloader', false)
+		) {
+			return self::fallbackAutoloader($className);
+		} elseif (!self::$initialized) {
 			self::init(false);
 		}
-		if ($specialLoader) {
-			if (!is_array($specialLoader)) {
-				$specialLoader = array();
-			}
-			foreach($specialLoader as $loader) {
-				if (array_key_exists($specialLoader, self::$special)) {
-					foreach(self::$special[$specialLoader] as $callableList) {
-						foreach ($callableList as $callableSet) {
-							if(is_array($callableSet)) {
-								$callableInstance = $callableSet[0];
-								$callableReflector = $callableSet[1];
-							} else {
-								$callableInstance = null;
-								$callableReflector = $callableSet;
-							}
-							$classFile = $callableReflector->invoke($callableInstance, $className);
-							if (self::fileExistsInPath($classFile)) {
-								require_once($classFile);
-								if (!class_exists($className, false)) {
-									throw new \Exception('Failed to special autoload class'
-										. (
-											self::$debuggingEnabled
-											? " {$className}"
-											: ''
-										) . '. Found class file, but no definition inside.'
-									);
-								}
-								return true;
-							}
-						}
-					}
-				} else {
-					throw new \Exception('Failed to special autoload class'
-						. (
-							self::$debuggingEnabled
-							? " {$className}"
-							: ''
-						) . '. invalid loader specified.'
-					);
-				}
-			}
-			return false;
-		}
+		$result = 
+			self::autoloadLibrary($className) 
+			|| self::autoloadStandard($className) 
+			|| self::handle($className, null, 'Failed resolving file to autoload class{$className}.');
+	}
+
+	protected static function autoloadLibrary($className)
+	{
 		foreach(self::$libraries as $classPrefix => $callableList) {
 			if (strpos($className, $classPrefix) === 0) {
 				foreach ($callableList as $callableSet) {
@@ -232,55 +217,101 @@ class Autoloader {
 // 						throw new \Exception('huh');
 // 					}
 					$classFile = $callableReflector->invoke($callableInstance, $className);
-					if (self::fileExistsInPath($classFile)) {
-						require_once($classFile);
-						if (!class_exists($className, false)) {
-							throw new \Exception('Failed to autoload class'
-								. (
-									self::$debuggingEnabled
-									? " {$className}"
-									: ''
-								)
-								. '. Found a library, but no definition inside.'
-							);
-						}
-						return true;
+					if (self::handle($className, $classFile, 'Failed to autoload class{$className}. Found a library, but no definition inside.')) {
+						return;
+					} elseif (self::fileExistsInPath($classFile)) { // #NOTE this is legacy behavior
+						return;
 					}
 				}
 			}
 		}
+		return false;
+	}
+
+	protected static function autoloadStandard($className)
+	{
 		foreach (self::$autoloaders as $classPrefix => $pathList) {
 			if ('' == $classPrefix || strpos($className, $classPrefix) === 0) {
 				foreach($pathList as $path) {
 					$classFile = self::resolveClassPath($className, $path);
-					if (self::fileExistsInPath($classFile)) {
-						require_once($classFile);
-						if (!class_exists($className, false)) {
-							throw new \Exception('Failed to autoload class' 
-								. (
-									self::$debuggingEnabled
-									? " {$className}"
-									: ''
-								) 
-								. '. Found a file, but no definition inside.'
-							);
-						}
-						return true;
+					if (self::handle($className, $classFile, 'Failed to autoload class{$className}. Found a file, but no definition inside.')) {
+						return;
+					} elseif (self::fileExistsInPath($classFile)) { // #NOTE this is legacy behavior
+						return;
 					}
 				}
 			}
 		}
-		if (!class_exists($className, false)) {
-			throw new \Exception('Failed resolving file to autoload class' 
-				. (
-					self::$debuggingEnabled
-					? " {$className}"
-					: ''
-				) 
-				. '.'
-			);
+	}
+
+	protected static function autoloadSpecial($className, $specialLoader)
+	{
+		if (!is_array($specialLoader)) {
+			$specialLoader = array();
 		}
-		return true;
+		foreach($specialLoader as $loader) {
+			if (array_key_exists($specialLoader, self::$special)) {
+				foreach(self::$special[$specialLoader] as $callableList) {
+					foreach ($callableList as $callableSet) {
+						if(is_array($callableSet)) {
+							$callableInstance = $callableSet[0];
+							$callableReflector = $callableSet[1];
+						} else {
+							$callableInstance = null;
+							$callableReflector = $callableSet;
+						}
+						$classFile = $callableReflector->invoke($callableInstance, $className);
+						if (self::handle($className, $classFile, $errorMessage)) {
+							return;
+						}
+					}
+				}
+			} else { #TODO #2.0.0 handle directly passed callables?
+				self::handle($className, null, "Failed to special autoload class{$className}.  Invalid loader ({$loader}) specified.");
+			}
+		}
+	}
+
+	protected static function handle($className, $classFile = null, $errorMessage = null)
+	{
+		if (!is_null($classFile)) {
+			try{
+				if (self::fileExistsInPath($classFile)) {
+					require_once($classFile);
+				}
+			} catch ( \ParseError $e) {
+				$badFiles[$classFile] = [
+					$className, 
+					'Parse Exception in ' . $e->getFile() . ' on line ' . $e->getLine() . ': ' 
+						. $e->getMessage() . ' '
+				];
+			}
+		}
+		$classLoaded = class_exists($className, false);
+		if (self::$throws && !$classLoaded) {
+			$classOut = self::$debuggingEnabled ? " {$className}" : '';
+			$exceptionMessage = (
+				array_key_exists($classFile,$badFiles) 
+					&& $badFiles[$classFile][0]
+				? "{$badFiles[$classFile][1]} "
+				: ''
+			) . (
+				$errorMessage
+				? str_replace('{$className}', $classOut, $errorMessage)
+				: str_replace('{$className}', $classOut, 'Failed to autoload class{$className}.')
+			);
+			throw new \Exception($exceptionMessage);
+		}
+		return $classLoaded;
+	}
+
+	protected static function fallbackAutoloader($className)
+	{
+		$zendAutoloader = \Zend_Loader_Autoloader::getInstance();
+		$currentSetting = $zendAutoloader->suppressNotFoundWarnings();
+		$zendAutoloader->suppressNotFoundWarnings(true);
+		$zendResult = \Zend_Loader_Autoloader::autoload($className);
+		$zendAutoloader->suppressNotFoundWarnings($currentSetting);
 	}
 
 	/**
@@ -565,6 +596,14 @@ class Autoloader {
         ) {
             self::$debuggingEnabled = true;
         }
+		if (
+            (array_key_exists('psrAutoloading', $options) && $options['psrAutoloading'])
+        ) {
+            self::$throws = false;
+        }
+		// if (array_key_exists('zendPath',$options)) {
+		// 	print_r($options); die;
+		// }
     }
 
     public static function translatePath(string $path)
@@ -609,4 +648,5 @@ class Autoloader {
 		}
 		return false;
 	}
+
 }

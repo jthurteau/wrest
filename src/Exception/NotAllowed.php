@@ -1,13 +1,15 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php 
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Exception when a request is trying to so something that isn't allowed (at all)
+ */
 
-Exception when a request is trying to so something that isn't allowed
+namespace Saf\Exception;
 
-*******************************************************************************/
-
-class Saf_Exception_NotAllowed extends Exception {
+class NotAllowed extends \Exception {
 
 }

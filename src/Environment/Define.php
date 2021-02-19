@@ -10,11 +10,14 @@
 
 namespace Saf\Environment;
 
+use Saf\Exception\NoResource;
 use Saf\Cast;
 use Saf\Brray;
 // use Saf\File\Dot;
 // use Saf\File\Env;
 
+
+require_once(dirname(dirname(__FILE__)) . '/Exception/NoResource.php');
 require_once(dirname(dirname(__FILE__)) . '/Cast.php');
 require_once(dirname(dirname(__FILE__)) . '/Utils/Brray.php');
 // require_once(dirname(dirname(__FILE__)) . '/File/Dot.php');
@@ -97,7 +100,7 @@ class Define {
 			} else if (!is_null($constantDefault)) {
 				define($constantName, $constantDefault);
 			} else {
-				die($failureMessage);
+				throw new \Exception($failureMessage);
 			}
 		}
 		return TRUE;
@@ -144,7 +147,7 @@ class Define {
 		} else if (!is_null($valueDefault)) {
 			return $valueDefault;
 		} else {
-			die($failureMessage);
+			throw new NoResource($failureMessage);
 		}
 	}
 
@@ -174,7 +177,7 @@ class Define {
 		} else if (!is_null($valueDefault)) {
 			return $valueDefault;
 		} else {
-			die($failureMessage);
+			throw new \Exception($failureMessage);
 		}
 	}
 	

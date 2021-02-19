@@ -1,13 +1,15 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php 
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Exception when a required resource is not found (or search requirements are not met)
+ */
 
-Exception when a required resource is not included in the URL 
-(or a resourse specified isn't a valid format i.e. not a 404)
+namespace Saf\Exception;
 
-*******************************************************************************/
-class Saf_Exception_NoResource extends Exception {
+class NoResource extends \Exception {
 
 }

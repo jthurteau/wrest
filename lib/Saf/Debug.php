@@ -1,27 +1,16 @@
-<?php 
+<?php //#SCOPE_OS_PUBLIC
+/*******************************************************************************
+#LIC_FULL
 
-/*
- * #SCOPE_OS_PUBLIC #LIC_FULL
- * 
- * @author Troy Hurteau <jthurtea@ncsu.edu>
- *
- * Utility class for debugging
- */
+@author Troy Hurteau <jthurtea@ncsu.edu>
 
-print_r([__FILE__,__LINE__,'no']);
-namespace Saf;
+Utility class for debugging
 
-use Saf\Kickstart;
-use Saf\Brray;
-use Saf\Status;
-use Saf\Layout;
+*******************************************************************************/
+require_once(LIBRARY_PATH . '/Saf/Status.php');
+require_once(LIBRARY_PATH . '/Saf/Layout.php');
 
-require_once(dirname(__FILE__) . '/Kickstart.php');
-require_once(dirname(__FILE__) . '/Brray.php');
-require_once(dirname(__FILE__) . '/Status.php');
-require_once(dirname(__FILE__) . '/Layout.php');
-
-class Debug
+class Saf_Debug
 {
 
 	protected static $_mode = NULL;
@@ -254,7 +243,7 @@ class Debug
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
-		$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
 		$output = "<div class=\"debug{$level}\"><p>{$message}{$icon}</p>{$trace}</div>\n";
 		self::_out($output, $level != 'Status' && $level != 'Other');
 	}
@@ -263,7 +252,7 @@ class Debug
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
-		$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
 		$output = "<div class=\"debug{$level}\">{$message}{$icon}{$trace}</div>\n";
 		self::_out($output);
 	}
@@ -272,7 +261,7 @@ class Debug
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
-		$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+		$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
 		ob_start();
 		print("\n<div class=\"debug{$level}\"><pre>Data:{$icon}<br/>\n");
 		print($trace);
@@ -372,7 +361,7 @@ class Debug
 
 	public static function cleanBuffer()
 	{
-		if (self::$_verbose && Layout::formatIsHtml()) {
+		if (self::$_verbose && Saf_Layout::formatIsHtml()) {
 			print('<!-- debug buffer cleared -->');
 		}
 		self::$buffer = '';
@@ -418,7 +407,7 @@ class Debug
 		print('<ul class="debugList">');
 		foreach($sanitizedRequest as $key=>$item) {
 			if (is_array($item)) {
-				$item = Brray::toString($item);
+				$item = Saf_Array::toString($item);
 			}
 			print('<li class="noBullet">[' . htmlentities($key) . '] : ' . '<span class="literal">' . htmlentities($item) . '</span></li>');
 		}
@@ -442,7 +431,7 @@ class Debug
 	public static function printDebugExit($force = FALSE)
 	{
 		if (!self::$_alreadyPrintedDebugExit || $force) {
-			if (Layout::formatIsHtml()) {
+			if (Saf_Layout::formatIsHtml()) {
 				if (!self::isForced()) {
 					print("\n<p class=\"debugOther\"><a href=\"?nodebug=true\">Disable debugging for this session.</a></p>\n");
 				} else {
@@ -458,7 +447,7 @@ class Debug
 		if (self::isAvailable() && !self::isVerbose()) {
 			if (!self::$_alreadyPrintedDebugEntry || $force) {
 				$mode = self::$_mode;
-				if (Layout::formatIsHtml()) {
+				if (Saf_Layout::formatIsHtml()) {
 					print("\n<p class=\"debugEntry\"><a href=\"?debug=true\">Enable debugging for this session. Debug mode: {$mode}</a></p>\n");
 				} //#TODO #2.0.0 figure out what to do for other formats...
 			}
@@ -468,12 +457,12 @@ class Debug
 
 	public static function printDebugShutdown()
 	{
-		if (!self::$_alreadyPrintedDebugShutdown && Layout::formatIsHtml()) {
+		if (!self::$_alreadyPrintedDebugShutdown && Saf_Layout::formatIsHtml()) {
 			$loadTime = microtime(TRUE) - APPLICATION_START_TIME;
 			if (self::isVerbose()) {
 				if (self::$_muted) {
 					foreach (self::$_muted as $trace) {
-						$icon = ' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>';
+						$icon = ' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>';
 						print("\n<div class=\"debugStatus\"><pre>Data:{$icon}<br/>\n");
 						print(htmlentities($trace));
 						print('Unclosed Mute');
@@ -499,8 +488,8 @@ class Debug
 
 	public static function printDebugReveal()
 	{
-		if (Layout::isReady()) {
-			$icon = Layout::getIcon('bug');
+		if (Saf_Layout::isReady()) {
+			$icon = Saf_Layout::getIcon('bug');
 			$accessible = ' class="accessibleHidden"';
 		} else {
 			$icon = '';
@@ -513,8 +502,8 @@ class Debug
 
 	public static function printProfileReveal()
 	{
-		if (Layout::isReady()) {
-			$icon = Layout::getIcon(self::LAYOUT_PROFILE_INFO_ICON);
+		if (Saf_Layout::isReady()) {
+			$icon = Saf_Layout::getIcon(self::LAYOUT_PROFILE_INFO_ICON);
 			$accessible = ' class="accessibleHidden"';
 		} else {
 			$icon = '';
@@ -528,8 +517,8 @@ class Debug
 	public static function dieSafe($message = '')
 	{
 		if (self::isEnabled()) {
-			if (self::$_notifyConsole && Layout::formatIsHtml()) {
-				print('<script type="text/javascript">throw new Error("' . APPLICATION_DEBUG_NOTIFICATION . '");</script>');
+			if (self::$_notifyConsole && Saf_Layout::formatIsHtml()) {
+				print('<script type="text/javascript">console.info("' . APPLICATION_DEBUG_NOTIFICATION . '");</script>');
 			}
 			self::printDebugShutdown();
 			self::printDebugExit();
@@ -546,7 +535,7 @@ class Debug
 	public static function registerDieSafe()
 	{
 		self::$_terminateOnShutdown = FALSE;
-		register_shutdown_function('Debug::dieSafe');
+		register_shutdown_function('Saf_Debug::dieSafe');
 	}
 
 	public static function outDebugBlockStart($level = 'ERROR')
@@ -565,10 +554,10 @@ class Debug
 			return;
 		}
 		if (!self::$_inControl) {
-			self::$_oldErrorHandler = set_error_handler('Debug::handle');
-			self::$_oldExceptionHandler = set_exception_handler('Debug::handleException');
+			self::$_oldErrorHandler = set_error_handler('Saf_Debug::handle');
+			self::$_oldExceptionHandler = set_exception_handler('Saf_Debug::handleException');
 			if (!self::$_shutdownRegistered) {
-				register_shutdown_function('Debug::shutdown');
+				register_shutdown_function('Saf_Debug::shutdown');
 				self::$_shutdownRegistered = TRUE;
 			}
 			ini_set('display_errors', self::$_disabledDisplayMode);
@@ -625,7 +614,7 @@ class Debug
 		self::$_shuttingDown = TRUE;
 		if (self::$_inControl) {
 			$error = error_get_last();
-			if (array_key_exists($error["type"], $handledErrors)) {
+			if ($error && array_key_exists($error["type"], $handledErrors)) {
 				self::handle($error["type"], $error["message"], $error["file"], $error["line"]);
 			}
 		}
@@ -638,7 +627,12 @@ class Debug
 		$errorFile = $e->getFile();
 		$errorLine = $e->getLine();
 		self::outRaw('<span class="phpException">');
-		self::handle($errorType, $errorString, $errorFile, $errorLine);
+		if(class_exists('Saf\Agent', false)) {
+			Saf\Agent::panic();
+			Saf\Agent::meditate($e, Saf\Agent::MEDITATION_SHUTDOWN);
+		} else {
+			self::handle($errorType, $errorString, $errorFile, $errorLine);
+		}
 		self::outRaw('<pre class="phpErrorTrace">');
 		self::outRawData($e->getTraceAsString());
 		self::outRaw('</pre>');
@@ -684,8 +678,14 @@ class Debug
 			'E_DEPRECATED' => 'warning',
 			'E_USER_DEPRECATED' => 'warning'
 		);
-		$fatalErrorList = array(1, 4, 16, 64, 256);
-		$fatal = in_array($errorNo, $fatalErrorList);
+		$fatalErrorList = [
+			E_ERROR, 
+			E_PARSE, 
+			E_CORE_ERROR, 
+			E_COMPILE_ERROR, 
+			E_USER_ERROR,
+		];//array(1, 4, 16, 64, 256,);
+		$fatal = in_array($errorNo, $fatalErrorList) || !is_int($errorNo);
 		$description =
 			array_key_exists($errorNo, $lookupTable)
 				? $lookupTable[$errorNo]
@@ -693,10 +693,18 @@ class Debug
 		$at = $errorLine ? " on line {$errorLine}" : '';
 		$in = $errorFile ? " in file {$errorFile}" . $at : $at;
 		if ($fatal) {
-			$caughtBy = self::$_shuttingDown ? 'SHUTDOWN' : 'DEBUG';
-			Status::set(Status::STATUS_500_ERROR);
+			$caughtBy = self::$_shuttingDown ? 'SHUTDOWN' : 'FATAL_EXCEPTION';
+			Saf_Status::set(Saf_Status::STATUS_500_ERROR);
 			$e = new Exception("{$description} {$in}");
-			Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
+			if(class_exists('Saf\Agent', false)) {
+				Saf\Agent::panic();
+				Saf\Agent::meditate($e, $caughtBy);
+			} elseif (class_exists('Saf_Kickstart', false)) {
+				Saf_Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
+			} else{
+				header('HTTP/1.0 500 Internal Server Error');
+				die('Exhausted built-in error handling options.');
+			}
 		} else {
 			$show = self::$_enabledErrorLevel === -1 || $errorNo & self::$_enabledErrorLevel;
 			if ($show && !self::$_muted) {
@@ -707,9 +715,9 @@ class Debug
 				$level =
 					array_key_exists($description, $simplifyTable)
 						? $simplifyTable[$description]
-						: 'error';
+						: (is_int($errorNo) ? 'error' : 'exception');
 				$level = htmlentities(ucfirst(strtolower($level)));
-				$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+				$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
 				$output = "{$message}{$icon}{$trace}\n";
 				self::_out(
 					"<div class=\"debug{$level}\">"
@@ -764,7 +772,7 @@ class Debug
 				}
 				$err .= "</errorentry>\n\n";
 
-				if(self::isEnabled()) {
+				if(Saf_Debug::isEnabled()) {
 					print('<pre>' . htmlentities($err) . '</pre>');
 				}
 				if ($errno <> E_NOTICE && $errno <> E_STRICT && $errno <> E_WARNING) {

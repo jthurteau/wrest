@@ -1,15 +1,17 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php 
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Indicates an exception that should be shown to the user 
+ * (but does not replace the default support message like Saf_Exception_Workflow
+ */
 
-Indicates an exception that should be shown to the user 
-(but does not replace the default support message like Saf_Exception_Workflow
+namespace Saf\Exception;
 
-*******************************************************************************/
-
-class Saf_Exception_Startup extends Exception {
+class Startup extends \Exception {
 
 	public function getTitle()
 	{
@@ -20,4 +22,5 @@ class Saf_Exception_Startup extends Exception {
 	{//#TODO #1.5.0 pull from dict
 		return APPLICATION_BASE_ERROR_MESSAGE;
 	}
+
 }

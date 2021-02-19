@@ -1,13 +1,15 @@
-<?php //#SCOPE_OS_PUBLIC
+<?php
+
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Base class for filters
+ */
+
 namespace Saf;
-/*******************************************************************************
-#LIC_FULL
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
-
-Base class for filters
-
-*******************************************************************************/
 abstract class Filter
 {
 	public static function filter($value)
