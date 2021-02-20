@@ -5,18 +5,33 @@ A framework agnostic foundation library for Structured Authoring Development.
 
 SAF provides wrapper funcionality for:
 
-- Some of PHP's native function shortcomings, e.g. Array functions
+
 - Framework agnostic and chainable application kickstarting
-- Debugging
+- Debugging and Insulation
 - Hooks for RESTFUL API development and consumption
+- Some of PHP's native function shortcomings, e.g. Array functions
 
 SAF introduces no global scope pollution and aims to provide mechanims to allow the transition from reliance of such practices. While it allows complete flexibility in coding practices, the recommended mechanism for "kickstart" is as follows:
 
-SAF is not an application framework, though it can perform that role or work in tandem with one or more frameworks. Rather than focusing on monolithic application design, SAF adopts a middleware/pipeline approach. The traditional monolithic approach can be supported, but shoe horns many of the following mechanism into a very specific mode of operation.
+Encapsulate entry into the "application" as a "transaction". The web server hands off the transaction to a "gateway script", which identifies what to execute and provides a baseline response if the application fails.
 
-SAF works with a software "project", a bundle of one or more units of code. These might be defined as applications, modules, or some other core functionality. The project is leveraged through "transactions" to make the code useful work.
+Most frameworks provide a "bootstrap" process that may include some functions of the gateway, and fill a similar role in executive function. Since SAF is framework agnostic, it provides an optional intermediary "kickstart" process. It is designed to be flexible such that SAF can manage the entire gateway-to-bootstrap process, or negotiate any portions of it.
 
-Every transaction enters through a "gateway script" regardless of the PHP_SAPI (e.g. a request coming in from the web server, or a commandline interaction). For web based PHP transactions the gateway is a PHP file in a public path on the server.
+## Core Concepts ##
+
+SAF works with a software "project", a bundle of one or more units of code that can be compined in different ways to create one or more applications. The project is leveraged through "transactions" to make the code useful work.
+
+Every transaction enters through a "gateway script" regardless of the PHP_SAPI (e.g. a request coming in through a web server, or a commandline interaction). For web based PHP transactions the gateway is a PHP file in a public path on the server.
+
+SAF supports single gateway models (e.g. using URL Rewrites to tunnel all requests through one gateway), and multi-gateway models (e.g. using Multiviews to negotiate the mixture of static and dynamic content).
+
+A strong gateway completely encapulates the server environment from the application it delegates to, and traps any application errors. SAF provides many optional components towards these goals. These insulating tools have a wide variety of appliations, from testing to cloud deployment.
+
+Using "rooting" as Configuration Providers is one way SAF can helps insulate the application from environment. Through the kickstart process, relevant environment details are captured and passed on in towards building the application's "container" or "configuration"
+
+SAF's flexible "tethering" method for routing from the gateway to any bootstrapping that needs to happen keeps the global scope clean and allows multiple applications leveraging different frameworks to dispatch each other over the course of a single transaction.
+
+## Gateways, Kickstart, Bootstrapping ##
 
 In trivial cases, the gateway script may perform all of the following functions of kickstart, but most often it will minimally delegate to another script outside of the server's public path.
 
@@ -118,11 +133,31 @@ SAF's foundation script simply checks the canister for a "mainScript", which it 
 
 SAF assumes the source names from the environment will be in CONSTANT_FORMAT and recommends storing options into the passed canisters in camelCase (studlyCaps)
 
-PUBLIC_PATH
-INSTALL_PATH
-LOCALIZE_TOKEN
+## Core Environment Values 
+PUBLIC_PATH - path to the root of public files, typically INSTALL_PATH/public
+INSTALL_PATH - path to the root of the project, typically the root of the project repo
+STORAGE_PATH - default write path for the application, sometimes INSTALL_PATH/data but better practice is outsite of INSTALL_PATH, e.g. somewhere in /var
+START_TIME - timestamp of the transaction's start, typically aquired from the web server environment
+LOCAL_TIMEZONE - timezone associated with START_TIME and calls to Saf\Time
+
+FOUNDATION_PATH - path to the foundation source code, i.e. where SAF is installed, defaults to VENDOR_PATH/Saf
+
+## Common Environment Values 
+BASE_URI - root relative or absolute URI that maps to PUBLIC_PATH
+APPLICATION_PATH - path to the root of a signified application, mapping varies by project structure
+APPLICATION_ROOT - path to the root of managed applications, typically /opt/application, /opt, /var/www/application, /var/www, etc.
+VENDOR_PATH - path to the root of managed dependencies, typically INSTALL_PATH/vendor, but paths outside of INSTALL_PATH are suppored.
+
+## Other Environment Values (less common, or supported in a deprecated manner)
+
+LIBRARY_PATH - deprecated path to root of managed libraries, use VENDOR_PATH when possible. LIBRARY_PATH is often symlinked directly to the relevant portion of a complementary VENDOR_PATH (e.g. LIBRARY_PATH/Zend = VENDOR_PATH/Zend/library/Zend )
+APPLICATION_ID
+APPLICATION_HANDLE
+APPLICATION_NAME
+
+LOCALIZE_TOKEN -
 ENABLE_LOCAL_DEV
-FOUNDATION_PATH
-**START_TIME
+CANISTER_FIFO - determines if kickstart prefers earlier set canister values (defaults to true)
+
 
 LIBRARY_PATH - an older form of VENDOR_PATH where each directory is source code (e.g. LIBRARY_PATH/library_name/ may simply be a symlink to VENDOR_PATH/project_name/src). Useful for including external code prior to modern autoloader methods.
