@@ -386,6 +386,8 @@ class Environment
 		return array_key_exists($option, $search) ? $search[$option] : $default;
 	}
 
+	#TODO #2.0.0 public static function readOption($option, $instance, $default) then instanceOption can be a non-static Agent method
+
 	/**
 	 * returns the stored path constant for a given path type
 	 * @param string $type (install, public, etc).

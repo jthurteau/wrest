@@ -9,7 +9,7 @@
  * 
  */
 
-return function( #TODO #PHP8 allows throw as an expression
+return function ( #TODO #PHP8 allows throw as an expression
     array $canister = [],
     string $defaultApp = null,
     string $defaultFoundationPath = null

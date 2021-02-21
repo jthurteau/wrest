@@ -10,7 +10,7 @@
 
 $source = dirname(__FILE__) . '/composer.json';
 if (file_exists($source) && is_readable($source)) {
-    $composerMeta = json_decode(file_get_contents($source),JSON_OBJECT_AS_ARRAY);
+    $composerMeta = json_decode(file_get_contents($source), true);
     if ($composerMeta && is_array($composerMeta)) {
         $result = [
             'projectFile' => 'composer.json', 

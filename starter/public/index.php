@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-(static function( #TODO #PHP8 allows throw as an expression
+(static function ( #TODO #PHP8 allows throw as an expression
 	string $vector, #an init script (*.tether.php) in project root
 	string $installPath, #relative or absolute path to project root
 	$canister = [], #array of data to initialize the canister or an optional non-cached root file #TODO #PHP8 allows array|string typing

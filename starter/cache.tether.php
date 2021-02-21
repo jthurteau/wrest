@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-return function(
+return function (
     array &$canister = []
 ){
     if (!key_exists('installPath', $canister)) {
@@ -20,7 +20,7 @@ return function(
         key_exists('fileSafeFilter', $canister) 
             && is_callable($canister['fileSafeFilter'])
         ? $canister['fileSafeFilter']
-        : function($string)
+        : function ($string)
         {
             return strtolower(
                 preg_replace('/[^A-Za-z0-9-]/', '', str_replace(['_', ' '],'-', $string))

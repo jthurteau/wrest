@@ -12,7 +12,7 @@
 /**
  * @param object|array $target to generate a getter for 
  */
-return function($target) {
+return function ($target) {
     /**
      * @param string|array $find traverses $target, 
      *  if $find is an array any entries will match, 

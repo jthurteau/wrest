@@ -32,8 +32,7 @@ abstract class Agent{
 	public const MODE_LF5 = 'laravel5'; //#TODO #2.1.0 support Laravel
 	public const MODE_SLIM = 'slim'; //#TODO #2.1.0 support Slim
 	public const MODE_NONE = 'none';
-
-    protected const DEFAULT_INSTANCE = 'LOCAL_INSTANCE';
+    public const DEFAULT_INSTANCE = 'LOCAL_INSTANCE';
 
 	protected static $_path = '.';
 
@@ -90,11 +89,17 @@ abstract class Agent{
 	protected static $idSeed = 0;
 
 	/**
+	 * Instantiated agents are bound to an enviroment
+	 */
+	protected $environment = [];
+
+	/**
 	 * Outputs in the case of complete and total failure during the kickstart process.
 	 * @param mixed $e \Exception, error string, or dump array
 	 * @param string $level error level
+	 * @param string|null $instance associated with the meditation (may be called before an Agent is instantiated)
 	 */
-	public static function meditate($e, $level = self::MEDITATION_NOTICE) #TODO add interface for detailed exceptions, $additionalError = '')
+	public static function meditate($e, $level = self::MEDITATION_NOTICE, $instance = null) #TODO add interface for detailed exceptions, $additionalError = '')
 	{		
 		if (is_null(self::$meditationView)) {
 			self::$meditationView = self::findMeditation();

@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-return function( #TODO #PHP8 allows throw as an expression
+return function ( #TODO #PHP8 allows throw as an expression
     array $canister = []
 ){
     $installPath = dirname(__FILE__);

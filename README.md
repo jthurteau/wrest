@@ -44,35 +44,78 @@ The functions of kickstart are:
 
 The functions of kickstart happen across script files (PHP files) and execution scopes which can be tailored to the project's needs.
 
-## Gateway Scripts
+## Gateway Pattern
 
-Assuming the gateway doesn't handle all of the work itself, it minimally needs to know what path the scripts that follow are at. It is recommended that the gateway not change the current path (chdir).
+The gateway pattern establishes a controled anchor into the PHP execution, it is designed to work for web transacitons and on the commandline. Gateways abstract a transaction, insulating the transaction from the executing environment, and other transactions.
 
-It is recommended that the gateway delegate the bulk of kickstart operations to scripts in a non-public path, centralized as best suited to the project.
+Gateways conform to the following criteria:
 
-The gateway may delegate rooting tasks to a localization script (prefered), or itself perform some rooting operations as described for localization scripts below. If the gateway delegates rooting tasks it should assume the Rooting Pattern detailed below.
+- a script that is directly triggered from "outside" (e.g. web request, commandline or interactive session), and
+- has intentionaly minimal direct contact with its executing environment, and
+- ideally in no way changes the local executing environment, and
+- it delegates reading environment to "rooting" scripts, and
+- creates a canister (array) of data, and
+- it (typically) delegates execution to one or more "tether" scripts, and
+- passes the (or a) canister to tethered scripts, and
+- the script closes around all of the above activity, and
+- the script executes the closure (it does not just return it), and
+- the script handles all exceptions and non-fatal errors, and does not throw
 
-The gateway and merge and manage canister data in whatever manner is most suitable for the project. If any canister data is provided and deemed appropriate it should be padded using the Tethering Pattern detailed below.
+### Gateway Scripts
 
-The primary recommendation for a gateway script is to keep its work minimal and tether forward as much work as possible to later scripts. Projects may build/manage gateway scripts, or focus on making them as universally static and portable as possible.
+Assuming the gateway doesn't handle all of the work itself, it minimally needs to know what path the scripts that follow are at. It is recommended that the gateway not change aspects if environment e.g. the current path (chdir).
 
-## Gateway Scope
+It is recommended that the gateway delegate the bulk of kickstart operations to scripts in a non-public path, centralized as best suited to the project. Generally, "gateways" should be the only PHP files in a public path.
 
-The gateway should also create a scope. The recommended scope is a closure (an anonymous function, called immediately following declaration). It should close all operations over try/catch constructs with a bare-minimum handling for any untrapped exceptions. The behavior of handling may be influenced by rooting, and it may tether forward.
+The gateway may delegate localization tasks to a localization script (prefered), or itself perform some of the operations as described for localization scripts. If the gateway delegates localization tasks it should use the Rooting Pattern detailed below.
+
+When gateways "root" they (may) get an array of data. Gateways decide how to manage that data and what to forward on via tethering. It is generally best practice to do the least possible amount of rooting in the gateway.
+
+The primary recommendation for a gateway script is to keep its work minimal and tether forward as much work as possible to later scripts. Projects may build/manage gateway scripts, or focus on making them as universally static and portable.
+
+Gateways may tether to more than one other script, sequentially or conditionally. Gateways are not themselves tethers, gateways should not directly invoke other gateways.
+
+Gateways are executive files, they take action upon invocation (as do Roots). This is in contrast to Tethers which declare and return an anonymous closure, but don't otherwise execute other actions.
+
+While gateways ideally don't (leak) output, in the case of a sufficiently critial error or exception they may use the ""Strand"" pattern to "vent" the error.
+
+### Gateway Scope
+
+The gateway should also create a scope. The recommended scope is a closure (an anonymous function, called immediately following declaration). It should close all internal operations over try/catch constructs with a bare-minimum handling for any untrapped critical errors and exceptions. The behavior of handling may be influenced by rooting, and it may tether forward handling.
+
+The data passed forward through tethering is (typically) passed by reference, so it often serves as an additional resource source for shutdown operations, or venting any critical errors or exceptions when execution returns to the gateway.
+
+In a "normal" transaction, execution returns back through the gateway, and the gateway terminates naturally (implicit void return). Gateways only return/exit/die as needed for their function. Gateways may interpret the return of a tether as part of their operation. 
 
 SAF aims for Zero Pollution, so gateways should also avoid defining any constants in the global scope, but may optionally use a namespace and define constants in that namespace. SAF makes a few assertions about how such a namespace should not be used during kickstart and no assertions on how may may/should/shouldn't be used beyond the scope of kickstart (e.g. by code that is native to the project).
 
+Typical data management assumes that the Gateway "creates" its own canister of data based on information from rooting, It should
+
 ## Localization Scripts
 
-While optional, localization scripts facilitate a low-level option for rooting of the PHP envorinment. SAF's provided gateway script looks for an optional "local-dev" localization script. As the name implies, it is for facilitating normalization of local-development environments. As such a sample of the local-dev script is included, but the sample file is not leveraged "out ot the box".
+While optional, localization scripts facilitate a low-level option for rooting and normalization of the PHP envorinment. SAF's provided gateway script looks for an optional "local-dev" localization script. As the name implies, it is for facilitating normalization of local-development environments. As such, a sample of the local-dev script is included, but the sample file is not leveraged "out ot the box".
 
-Projects may build/manage other localizations scripts as appropriate.
+Projects may build/manage localizations scripts as appropriate.
 
-Localization scripts should follow the Rooting Pattern outlined below.
+Localization scripts should follow the Rooting Pattern outlined below, with the exception that it is understood they may introduce sideffects into the local environment (e.g. ini_set). Such operations should happen as immediately after the start of the transaction as possible, i.e. localization should be the first thing gateway scripts do.
 
-Localizations scripts may introduce sideeffects, especially at it relates to the PHP environment (e.g. ini_set). Such operations should happen as immediately after the start of the transaction as possible, i.e. localization should be the first thing gateway scripts do.
+Other scripts following the gateway should avoid localization operations.
 
-Other scripts following the gateway should not perform localization operations.
+Since the localization script is also a "rooting" script, it acts as a seed for data tetheref forward. It is a general practice that earlier rooted data is favored over later rooted data.
+
+# SAF Patterns
+
+SAF leverages a number of patterns for clean and consistent mechanisms. These include some conventsions:
+
+"Including" generally means include\[_once] or require\[_once] depending on desired behavior.
+
+"Verifying" generally means taking reasonable precautions with a file or its contents before including.
+
+These two guildelines largely depend on intent and impact. 
+
+If files are considered optional, they should be included. If files are considered, they should be required. The choice to invoke files with the "_once" variant of include/require involves similar invormed judgement about optimization and behavior (i.e. use them if you're certain).
+
+Verification similarly depends on adhering to expectations, it is a recommendation that aims to prevent uncaught exceptions and fatal errors when they are not appropriate. Should an applicaiton fail when caching isn't working? The answer is up to the programmer, but if it is considered "optional" it should not.
 
 ## Rooting Pattern
 
@@ -81,7 +124,7 @@ The rooting pattern provides a way to gather optional data. Rooting should not t
 Rooting happens when:
 
 - one (outer) script with it's own scope (closure) includes another, and 
-- the outer script verifies the other script exists and is reabable first, and
+- the outer script "verifies" the other script first, and
 - the outer script gets an array from the returned value of the include, and
 - if any of the preconditions fail the outer script treats the result as an empty array (no data, not an error)
 
@@ -161,3 +204,11 @@ CANISTER_FIFO - determines if kickstart prefers earlier set canister values (def
 
 
 LIBRARY_PATH - an older form of VENDOR_PATH where each directory is source code (e.g. LIBRARY_PATH/library_name/ may simply be a symlink to VENDOR_PATH/project_name/src). Useful for including external code prior to modern autoloader methods.
+
+# PHAGENT
+
+Phagent or PHP-Agent, is a IoC programming pattern involving a canister (array) that includes self modifying callables (functions that accept an array reference). The Phagent is passed along using tethering, but it can effectively tether itself when IoC is desireable.
+
+Phagents can wrap core php functions or control structures that might normally trigger a fatal error and attempt to mitigate them with a thrown exeception/error instead.
+
+Phagents can also be cached to create a sort of application state snapshot, which in combination with a stack-trace can be used to re-create that appliation state.
