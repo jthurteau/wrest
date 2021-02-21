@@ -12,7 +12,10 @@ namespace Saf;
 
 #use Saf\Auto;
 
+use Saf\Resolver;
+
 #require_once(dirname(__FILE__) . '/Auto.php');
+require_once(dirname(__FILE__) . '/Resolver.php');
 
 class Preboot
 {
@@ -41,7 +44,7 @@ class Preboot
 		$mode = $mode == Agent::MODE_AUTODETECT ? Agent::MODE_NONE : $mode;
 		$options = &Environment::options($instance);
 		Environment::expand($instance, self::INSTANCE_DEFAULTS); #TODO #2.0.0 expand Environment::parse so it can handle managerClass, autoload, etc.
-		Environment::set($instance, self::OPTION_RESOLVER, Agent::resolve($instance, $options));
+		Environment::set($instance, self::OPTION_RESOLVER, Manager::resolve($instance, $options));
 		if (array_key_exists('meditationScript', $options)) {
 			Agent::setMeditation($options['meditationScript']);
 		}
@@ -98,6 +101,15 @@ class Preboot
 		} else {
 			self::$prebootSteps[$step][] = Agent::instanceIdent($instance, $mode);
 		}
+	}
+    
+    /**
+	 * returns a resolver to help other frameworks route cases not natively 
+	 * supported (like multi-views)
+	 */
+	public static function resolve($instance, $options)
+	{
+		return Resolver::init($instance, $options);
 	}
 
 }

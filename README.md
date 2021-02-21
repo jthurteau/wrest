@@ -73,7 +73,7 @@ When gateways "root" they (may) get an array of data. Gateways decide how to man
 
 The primary recommendation for a gateway script is to keep its work minimal and tether forward as much work as possible to later scripts. Projects may build/manage gateway scripts, or focus on making them as universally static and portable.
 
-Gateways may tether to more than one other script, sequentially or conditionally. Gateways are not themselves tethers, gateways should not directly invoke other gateways.
+Gateways may tether to more than one other script, sequentially or conditionally. Gateways are not themselves tethers, gateways cannot "tether" another gateway, but they may invoke them. 
 
 Gateways are executive files, they take action upon invocation (as do Roots). This is in contrast to Tethers which declare and return an anonymous closure, but don't otherwise execute other actions.
 
@@ -91,6 +91,20 @@ SAF aims for Zero Pollution, so gateways should also avoid defining any constant
 
 Typical data management assumes that the Gateway "creates" its own canister of data based on information from rooting, It should
 
+### Recommended Gateway Footprint
+
+The implementation of gateways is entirely up to the developer. The following are purely recommendations as a basis of good design:
+
+- a flexible gateway needs to be able to tether an arbitrary file in the public path to an arbitrary file in a directory outside of the public path. The directory outside of the public path is refered to as the "install path" and is also often the "project root" when a more complicated multi-project scenario is not in play. The common modern practice is for the public path to be a subdirectory of the install path, so mapping is as simple as going up the directory tree one level. If the mapping is always straightforward and predictable, it can be hard coded. If it is parametarized, it is recommended to be the first parameter (even if it is the one least likely to varry). Auto-detection and reading from the environment are acceptable, but not fitting in best practice.
+
+- in addition to the path for the non-public directory holding the tether, the other component of any tether is the filename. It isn't assumed how this might varry. An implementation where there are multiple tethers per install path is just as valid as multiple install paths with a uniform tether, or different tether setups. The tether file name and path may be a single or seprate parameter depending on what makes the most sense.
+
+- in addition to paths related to gateway entry, there is another common case that the gateway needs to handle and that is critical error display (venting). This can be as simple as a 30\[2|3|7] redirect, or serving a static file. It is also possible to serve a tratitional PHP template style file. It is common, but not assumed that the file(s) needed for this are in the same install path. A third parameter may be needed for pathing to a script/tether for venting.
+
+- gateways may allow soft-wiring of root/canister data to pass forward, when this is parametarized it should be the last parameter.
+
+- gateways may have any return value. It is not recommended to use them as a tether script even when they happen conform to the single array param, callable return footprint. Tethers should not vet.
+
 ## Localization Scripts
 
 While optional, localization scripts facilitate a low-level option for rooting and normalization of the PHP envorinment. SAF's provided gateway script looks for an optional "local-dev" localization script. As the name implies, it is for facilitating normalization of local-development environments. As such, a sample of the local-dev script is included, but the sample file is not leveraged "out ot the box".
@@ -107,7 +121,7 @@ Since the localization script is also a "rooting" script, it acts as a seed for 
 
 SAF leverages a number of patterns for clean and consistent mechanisms. These include some conventsions:
 
-"Including" generally means include\[_once] or require\[_once] depending on desired behavior.
+"Invoking" generally means include\[_once] or require\[_once] depending on desired behavior.
 
 "Verifying" generally means taking reasonable precautions with a file or its contents before including.
 
@@ -123,10 +137,11 @@ The rooting pattern provides a way to gather optional data. Rooting should not t
 
 Rooting happens when:
 
-- one (outer) script with it's own scope (closure) includes another, and 
+- one (outer) script with it's own scope (closure) invokes another, and 
 - the outer script "verifies" the other script first, and
 - the outer script gets an array from the returned value of the include, and
-- if any of the preconditions fail the outer script treats the result as an empty array (no data, not an error)
+- if any of the preconditions fail the outer script treats the result as an empty array (no data, not an error), and
+- the called script does not leak/vent (produce output)
 
 It is recommended that "root scripts" make no assumptions about variables provided in the local scope by the outer script. There is no mechanism for passing data from the outer script, the root script should only read from the "environment". The outerscript may buffer its local scope from the root script if appropriate.
 
@@ -134,25 +149,29 @@ Root scripts should be freely allowed to establish local variables as needed. Na
 
 While root scripts can't return a closure, the array returned may include closures.
 
+Root scripts may close over their contents to ensure a separate scope when polution is a concern. Distributed/reused roots, for example should, single-use roots tightly coupled with a specific outer script don't need to.
+
 ## Tethering Pattern
 
 The gateway and any other scripts between it and the core code of the project are connected by tethering.
 
 Tethering happens when:
 
-- one (outer) script includes another, and
-- the outer script verifies the other script exists and is reabable first, and
+- one (outer) script invokes another, and
+- the outer script "verifies" the called script first, and
 - the outer script gets a callable from the returned value of the include, and
 - if the outer script has data to pass forward it invokes the callable with that data as a single array, and
 - if the return value isn't callable the transaction is considered "handled", and
-- if the invocation doesn't throw an exception the transaction is considered "handled"
+- if the invocation doesn't throw an exception the transaction is considered "handled", and
+- the called script does not leak/vent (produce output)
 
-Tethered scripts should declare their own closure and return it for the outer script to call. Passing to the closure is the only mechanism for passing data from the outer script. The closure must accept one array
-of data. It may accept additional optional parameters (not recommended).
+Tethered scripts should declare their own closure and return it for the outer script to call. Passing to the closure is the only mechanism for passing data from the outer script. The closure must accept one array of data. It may accept additional optional parameters (not recommended).
 
 Tethered scripts should be freely allowed to establish local variables. Tethered scripts may declare namespaces and should not declare contants not in a namespace. Tethered scripts should access the limited about of global environment (e.g. the file system) needed to do their work and leverage data passed in as much as possible.
 
-Tethered scripts may throw exceptions.
+Tethered scripts may throw errors or exceptions and should not generate output.
+
+Tethered scripts may invoke a gateway.
 
 ## Planning and Agency
 

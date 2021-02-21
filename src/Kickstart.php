@@ -11,12 +11,12 @@
 namespace Saf;
 
 use Saf\Environment;
-use Saf\Agent;
 use Saf\Preboot;
+use Saf\Agent;
 
 require_once(dirname(__FILE__) . '/Environment.php');
-require_once(dirname(__FILE__) . '/Agent.php');
 require_once(dirname(__FILE__) . '/Preboot.php');
+require_once(dirname(__FILE__) . '/Agent.php');
 
 class Kickstart {
 	/**
@@ -32,8 +32,8 @@ class Kickstart {
 	public const PREBOOT_STEP_LIBXML = 'LibXml';
 	public const PREBOOT_STEP_TZ = 'Timezone';
 
-
-	public const OPTION_NAME = 'instanceName';
+	public const OPTION_NAME = Agent::OPTION_NAME;
+	public const OPTION_MODE = Agent::OPTION_MODE;
 	public const OPTION_START_TIME = Environment::OPTION_START_TIME;
 	public const OPTION_PUBLIC_PATH = Environment::OPTION_PUBLIC_PATH;
 	public const OPTION_INSTALL_PATH = Environment::OPTION_INSTALL_PATH;
@@ -71,27 +71,22 @@ class Kickstart {
 		array &$options = []
 	){
 		try {
-			$mode = Agent::parseMode($instanceIdentifier);
-			$instance = Agent::parseInstance($instanceIdentifier); //,$options
-			if (
-				Agent::parseInstance($instanceIdentifier) === Agent::DEFAULT_INSTANCE
-				&& array_key_exists(self::OPTION_NAME, $options) 
-			) {
-				$instance = $options[self::OPTION_NAME];
-			} #TODO OPTION_NAME is only used by agent, so move that and above block into it
+			$mode = Agent::parseMode($instanceIdentifier, $options);
+			$instance = Agent::parseInstance($instanceIdentifier, $options);
 			self::instanceInitialize($instance);
 			if (!self::$laced[$instance]) {
 				Environment::init($options, $instance);
 				if ($mode == Agent::MODE_AUTODETECT) {
 					$mode = Agent::autoMode($instance, $options);
 				}
-				$mode = Agent::negotiate($instance, $mode, $options);
+				$mode = Agent::negotiate($instance, $mode, $options) ?: $mode;
 				self::preboot($instance, $mode);
 				self::$laced[$instance] = $mode;
 			}
 		} catch (\Exception $e) {
 			Agent::meditate($e, self::MEDITATION_LEVEL, $instance); #TODO #2.0.0 staticMeditate
 			if (Environment::instanceOption($options, self::OPTION_THROW_MEDITATIONS)) {
+				#TODO #2.0.0 get the correct deilm
 				throw new \Exception("Failed to prepare {$instance}@{$mode} for kickstart", 0, Agent::getMeditation());
 			}
 		}
@@ -130,6 +125,7 @@ class Kickstart {
 		} catch (\Exception $e) { #TODO #2.0.0 handle redirects and forwards
 			Agent::meditate($e, self::MEDITATION_LEVEL);
 			if (Environment::instanceOption($instance, self::OPTION_THROW_MEDITATIONS)) {
+				#TODO #2.0.0 get the correct deilm
 				throw new \Exception("Failed to kickstart instance {$instance}@{$modeRequested}", 0, Agent::getMeditation());
 			} elseif (Environment::instanceOption($instance, self::OPTION_RETURN_EXCEPTIONS)) {
 				return $e;
@@ -178,7 +174,7 @@ class Kickstart {
 	public static function getMode(?string $instance = null)
 	{
 		if (is_null($instance)) {
-			$instance = Agent::getDefaultInstance(); //DEFAULT_INSTANCE;
+			$instance = Agent::defaultInstance();
 		}
 		$instance = Agent::getInstance($instance);
 		return 
@@ -228,7 +224,7 @@ class Kickstart {
 		$mode = $mode == Agent::MODE_AUTODETECT ? Agent::MODE_NONE : $mode;
 		$options = &Environment::options($instance);
 		Environment::expand($instance, self::INSTANCE_DEFAULTS); #TODO #2.0.0 expand Environment::parse so it can handle managerClass, autoload, etc.
-		Environment::set($instance, self::OPTION_RESOLVER, Agent::resolve($instance, $options));
+		Environment::set($instance, self::OPTION_RESOLVER, Preboot::resolve($instance, $options));
 		if (array_key_exists('meditationScript', $options)) {
 			Agent::setMeditation($options['meditationScript']);
 		}
@@ -247,12 +243,14 @@ class Kickstart {
 			}
 		}
 		$modeClass = Environment::instanceOption($instance, self::OPTION_MANAGER);
-		if ($modeClass) { #TODO change autoload to a step for custom ordering
+		if ($modeClass && class_exists($modeClass, false)) { #TODO #2.0.0 change autoload to a step for custom ordering
 			Environment::autoload($modeClass);
 			if (Environment::instanceOption($instance, self::OPTION_AUTOLOAD)){
 				$modeClass::autoload($instance, $options);
 			}
 			$modeClass::preboot($instance, $options, self::$prebootSteps);
+		} elseif ($modeClass) {
+			//#TODO #2.0.0 warn about invalid mode class?
 		}
 	}
 

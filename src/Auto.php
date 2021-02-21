@@ -23,12 +23,12 @@ class Auto {
 	 * @param string $class
 	 * @return bool success
 	 */
-	public static function loadInternalClass(string $class)
+	public static function loadInternalClass(string $class, bool $required = true)
 	{
 		$file = self::classPathLookup($class);
 		if (file_exists($file) && is_readable($file)) {
-			require_once($file);
-			return true;
+			$required ? (require_once($file)) : (include_once($file));
+			return true; //#TODO #2.0.0 only because require triggers fatal, return class_exists?
 		}
 		return false;
 	}

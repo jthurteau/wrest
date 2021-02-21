@@ -362,7 +362,7 @@ class Environment
 	 */
 	public static function autoload($string)
 	{
-		#TODO more anaylsis on how to route
+		#TODO more anaylsis on how to route #TODO #2.0.0 see if we can handle this as include and throw on failure
 		Auto::loadInternalClass($string);
 	}
 

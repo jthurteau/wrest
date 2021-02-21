@@ -18,8 +18,8 @@ class Mezzio extends Manager{
 
     public static function detect($instance, $options = null)
     {
-        return false;
         print_r(['detect mezzio', $instance, $options]); die;
+        return false;
     }
     
     public static function autoload($instance, $options = null)
