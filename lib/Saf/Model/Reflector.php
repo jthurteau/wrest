@@ -186,6 +186,30 @@ class Saf_Model_Reflector
         }
         Saf_Debug::unmute($myMute);
         $zendAutoloader->suppressNotFoundWarnings($currentZendAutoloaderSetting);
+        if (
+            (class_exists('Saf_Audit', FALSE) && class_exists('Saf_Auth', FALSE)) 
+            && (is_object($model))
+        ) {
+            if (!method_exists( $model, '__toString' )) {
+                try {
+                    throw new Exception('stringable object');
+                } catch (Exception $e) {
+                    Saf_Audit::add('reflector_debug', Saf_Audit::exceptionMessage($e), array($term, $config, $depth), Saf_Auth::getPluginProvidedUsername());
+                }
+            } else {
+                $logged = NULL;
+                try {
+                    throw new Exception('non-stringable object');
+                } catch (Exception $e) {
+                    $logged = Saf_Audit::add('reflector_debug', Saf_Audit::exceptionMessage($e), array($term, $config, $depth), Saf_Auth::getPluginProvidedUsername());
+                }
+                if ($logged) {
+                    throw new Saf_Exception_InternalTracked("Model Reflector could not translate object.", $logged);
+                } else {
+                    throw new Saf_Exception_Internal("Model Reflector could not translate object.");
+                }
+            }
+        }
         return
             $allowsNonString
             ? ($modelIsIterable ? $model : $model[0])

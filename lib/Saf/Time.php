@@ -387,4 +387,55 @@ class Saf_Time {
 		return date($format, $hourStamp + $dateStamp);
 	}
 
+	public static function detectSpringForward($date)
+	{
+		if (is_array($date)) {
+			foreach($date as $d) {
+				$spring = self::detectSpringForward($d);
+				if(!is_null($spring)) {
+					$d + $spring;
+					//return array($d => $spring);
+				}
+			}
+			return NULL;
+		}
+		$date = self::modify($date, self::MODIFIER_START_DAY);
+		$dateIsDaylight = date('I', $date);
+		for ($i = 0; !$dateIsDaylight && $i < self::QUANT_DAY; $i += self::QUANT_HOUR) {
+			if (date('I', $i + $date)) {
+				return $i;
+			}
+		}
+		return NULL;
+	}
+
+
+	public static function detectFallBack($date)
+	{
+		if (is_array($date)) {
+			foreach($date as $d) {
+				$fall = self::detectSpringForward($d);
+				if(!is_null($fall)) {
+					$d + $fall;
+					//return array($d => $fall);
+				}
+			}
+			return NULL;
+		}
+		$date = self::modify($date, self::MODIFIER_START_DAY);
+		$dateIsDaylight = date('I', $date);
+		for ($i = 0; $dateIsDaylight && $i < self::QUANT_DAY; $i += self::QUANT_HOUR) {
+			if (!date('I', $i + $date)) {
+				return $i;
+			}
+		}
+		return NULL;
+	}
+
+	#TODO a future goal is implement a condensed version of spring and fall once we have a proper testing framework
+	// public static function detectDstShift($date)
+	// {
+
+	// }
+
 }
