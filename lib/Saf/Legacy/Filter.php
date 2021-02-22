@@ -1,4 +1,5 @@
 <?php //#SCOPE_OS_PUBLIC
+namespace Saf\Legacy;
 /*******************************************************************************
 #LIC_FULL
 
@@ -7,7 +8,6 @@
 Base class for filters
 
 *******************************************************************************/
-
 abstract class Saf_Filter
 {
 	public static function filter($value)
@@ -77,14 +77,14 @@ abstract class Saf_Filter
 	protected static function _instantiateCallable($callable)
 	{//#TODO #2.0.0 this is a candidate for being made a public member of Kickstart or something more global
 		if (is_string($callable) && strpos($callable, '::') === FALSE) {
-			return new ReflectionFunction($callable);
+			return new \ReflectionFunction($callable);
 		}
 		if (!is_array($callable)) {
 			$callable = explode('::', $callable);
 //print_r(array($callable)); //die;
-			return new ReflectionMethod($callable[0],$callable[1]);
+			return new \ReflectionMethod($callable[0],$callable[1]);
 		} else {
-			return array($callable[0], new ReflectionMethod($callable[0],$callable[1]));
+			return array($callable[0], new \ReflectionMethod($callable[0],$callable[1]));
 		}
 	}
 }

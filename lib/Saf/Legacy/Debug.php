@@ -614,7 +614,7 @@ class Saf_Debug
 		self::$_shuttingDown = TRUE;
 		if (self::$_inControl) {
 			$error = error_get_last();
-			if (array_key_exists($error["type"], $handledErrors)) {
+			if ($error && array_key_exists($error["type"], $handledErrors)) {
 				self::handle($error["type"], $error["message"], $error["file"], $error["line"]);
 			}
 		}
@@ -627,7 +627,12 @@ class Saf_Debug
 		$errorFile = $e->getFile();
 		$errorLine = $e->getLine();
 		self::outRaw('<span class="phpException">');
-		self::handle($errorType, $errorString, $errorFile, $errorLine);
+		if(class_exists('Saf\Agent', false)) {
+			Saf\Agent::panic();
+			Saf\Agent::meditate($e, Saf\Agent::MEDITATION_SHUTDOWN);
+		} else {
+			self::handle($errorType, $errorString, $errorFile, $errorLine);
+		}
 		self::outRaw('<pre class="phpErrorTrace">');
 		self::outRawData($e->getTraceAsString());
 		self::outRaw('</pre>');
@@ -673,8 +678,14 @@ class Saf_Debug
 			'E_DEPRECATED' => 'warning',
 			'E_USER_DEPRECATED' => 'warning'
 		);
-		$fatalErrorList = array(1, 4, 16, 64, 256);
-		$fatal = in_array($errorNo, $fatalErrorList);
+		$fatalErrorList = [
+			E_ERROR, 
+			E_PARSE, 
+			E_CORE_ERROR, 
+			E_COMPILE_ERROR, 
+			E_USER_ERROR,
+		];//array(1, 4, 16, 64, 256,);
+		$fatal = in_array($errorNo, $fatalErrorList) || !is_int($errorNo);
 		$description =
 			array_key_exists($errorNo, $lookupTable)
 				? $lookupTable[$errorNo]
@@ -682,10 +693,18 @@ class Saf_Debug
 		$at = $errorLine ? " on line {$errorLine}" : '';
 		$in = $errorFile ? " in file {$errorFile}" . $at : $at;
 		if ($fatal) {
-			$caughtBy = self::$_shuttingDown ? 'SHUTDOWN' : 'DEBUG';
+			$caughtBy = self::$_shuttingDown ? 'SHUTDOWN' : 'FATAL_EXCEPTION';
 			Saf_Status::set(Saf_Status::STATUS_500_ERROR);
 			$e = new Exception("{$description} {$in}");
-			Saf_Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
+			if(class_exists('Saf\Agent', false)) {
+				Saf\Agent::panic();
+				Saf\Agent::meditate($e, $caughtBy);
+			} elseif (class_exists('Saf_Kickstart', false)) {
+				Saf_Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
+			} else{
+				header('HTTP/1.0 500 Internal Server Error');
+				die('Exhausted built-in error handling options.');
+			}
 		} else {
 			$show = self::$_enabledErrorLevel === -1 || $errorNo & self::$_enabledErrorLevel;
 			if ($show && !self::$_muted) {
@@ -696,7 +715,7 @@ class Saf_Debug
 				$level =
 					array_key_exists($description, $simplifyTable)
 						? $simplifyTable[$description]
-						: 'error';
+						: (is_int($errorNo) ? 'error' : 'exception');
 				$level = htmlentities(ucfirst(strtolower($level)));
 				$icon = $trace ? (' <span class="debugExpand"> ' . Saf_Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
 				$output = "{$message}{$icon}{$trace}\n";

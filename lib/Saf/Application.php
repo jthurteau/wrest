@@ -7,15 +7,12 @@
 Base class for application loading
 
 *******************************************************************************/
-use Saf\Kickstart as Kickstart; 
-
-use Saf\Filter\Truthy;
-
 require_once(LIBRARY_PATH . '/Saf/Kickstart.php');
 require_once(LIBRARY_PATH . '/Saf/Config.php');
 require_once(LIBRARY_PATH . '/Saf/Debug.php');
 require_once(LIBRARY_PATH . '/Saf/Status.php');
 require_once(LIBRARY_PATH . '/Saf/Array.php');
+require_once(LIBRARY_PATH . '/Saf/Filter/Truthy.php');
 require_once(LIBRARY_PATH . '/Saf/Filter/ConfigString.php');
 require_once(LIBRARY_PATH . '/Saf/Application/Mvc.php');
 
@@ -38,11 +35,10 @@ abstract class Saf_Application
 	 */
 	public static function load($applicationName = 'Application', $configEnvironment = NULL, $autoStart = FALSE)
 	{
-		#TODO moved to Environment/Path
-		if (!Kickstart::isValidNameToken($applicationName)) {
+		if (!Saf_Kickstart::isValidNameToken($applicationName)) {
 			throw new Exception('Invalid application name specified.');
 		}
-		Kickstart::go();
+		Saf_Kickstart::go();
 		if (is_null($applicationName)) {
 			$applicationName = 'Application';
 		}
@@ -63,7 +59,7 @@ abstract class Saf_Application
 	
 	public function __construct($configEnvironment = NULL, $configFilePath = NULL, $autoStart = FALSE)
 	{
-		Kickstart::go();
+		Saf_Kickstart::go();
 		try {
 			$this->_config = Saf_Config::load(
 				!is_null($configFilePath) ? $configFilePath : APPLICATION_CONFIG,
@@ -81,17 +77,17 @@ abstract class Saf_Application
 			//#TODO how to access install
 			$e = new Exception('This application is Install Mode and currently unavailable.');
 			Saf_Status::set(Saf_Status::STATUS_503_UNAVAILABLE);
-			Kickstart::exceptionDisplay($e);
+			Saf_Kickstart::exceptionDisplay($e);
 		}
 		if('down' == APPLICATION_STATUS) {
 			$e = new Exception('This application is in Maintenance Mode and currently unavailable.');
 			Saf_Status::set(Saf_Status::STATUS_503_UNAVAILABLE);
-			Kickstart::exceptionDisplay($e);
+			Saf_Kickstart::exceptionDisplay($e);
 		}
 		if ('online' != APPLICATION_STATUS) {
 			$e = new Exception('This application is an unrecognized mode: ' . APPLICATION_STATUS . ' and currently unavailable.');
 			Saf_Status::set(Saf_Status::STATUS_503_UNAVAILABLE);
-			Kickstart::exceptionDisplay($e);			
+			Saf_Kickstart::exceptionDisplay($e);			
 		}
 		if ($autoStart) {
 			$this->start();
@@ -108,15 +104,15 @@ abstract class Saf_Application
 		if ($autoLoad) {
 			$autoLoadTakeover =
 			array_key_exists('takeover', $autoLoad)
-			&& Truthy::filter($autoLoad['takeover']);
-			Kickstart::initializeAutoloader($autoLoad);
+			&& Saf_Filter_Truthy::filter($autoLoad['takeover']);
+			Saf_Kickstart::initializeAutoloader($autoLoad);
 			if (array_key_exists('loader', $autoLoad)) {
 				$loaders = Saf_Config::autoGroup($autoLoad['loader']);
 				foreach($loaders as $loader) {
 					$loaderParts = explode(':', Saf_Filter_ConfigString($loader),2);
 					!array_key_exists(1, $loaderParts)
-					? Kickstart::addAutoloader($loaderParts[0])
-					: Kickstart::addAutoloader($loaderParts[0],$loaderParts[1]);
+					? Saf_Kickstart::addAutoloader($loaderParts[0])
+					: Saf_Kickstart::addAutoloader($loaderParts[0],$loaderParts[1]);
 				}
 			}
 			if (array_key_exists('library', $autoLoad)) {
@@ -124,8 +120,8 @@ abstract class Saf_Application
 				foreach($libraries as $library) {
 					$libParts = explode(':', Saf_Filter_ConfigString($library),2);
 					!array_key_exists(1, $libParts)
-					? Kickstart::addLibrary($libParts[0])
-					: Kickstart::addLibrary(array($libParts[0], $libParts[1]));
+					? Saf_Kickstart::addLibrary($libParts[0])
+					: Saf_Kickstart::addLibrary(array($libParts[0], $libParts[1]));
 				}
 			}
 			if (array_key_exists('special', $autoLoad)) {
@@ -133,8 +129,8 @@ abstract class Saf_Application
 				foreach($specialLoaders as $special) {
 					$specialParts = explode(':', Saf_Filter_ConfigString($special),2);
 					!array_key_exists(1, $specialParts)
-					? Kickstart::addLibrary(array($specialParts[0]))
-					: Kickstart::addLibrary(array($specialParts[0], $specialParts[1]));
+					? Saf_Kickstart::addLibrary(array($specialParts[0]))
+					: Saf_Kickstart::addLibrary(array($specialParts[0], $specialParts[1]));
 				}
 			}
 		}
@@ -155,7 +151,7 @@ abstract class Saf_Application
 	
 	public function bootstrap($type = NULL)
 	{
-		if (!is_null($type) && !Kickstart::isValidNameToken($type)) {
+		if (!is_null($type) && !Saf_Kickstart::isValidNameToken($type)) {
 			throw new Exception('Invalid bootstrap specified.');
 		}
 		if (is_null($type) && !is_null($this->_bootstrap)) {
@@ -180,10 +176,10 @@ abstract class Saf_Application
 		try {
 			$bootstrapClass = "Saf_Bootstrap_{$type}";
 			if (
-				!Kickstart::isAutoloading() 
+				!Saf_Kickstart::isAutoloading() 
 				&& !class_exists($bootstrapClass)
 			) {
-				Kickstart::autoload($bootstrapClass);
+				Saf_Kickstart::autoload($bootstrapClass);
 			}
 			$this->_bootstrap = new $bootstrapClass($this, $this->_bootstrapConfig);
 		} catch (Exception $e) {
@@ -191,7 +187,7 @@ abstract class Saf_Application
 			//!in_array($bootstrapClass, get_declared_classes())) { //also seems to fail
 			//#TODO #RAINYDAY for some reason if spl_autoload throws an exception for a class, 
 			//PHPseems to refuse try again, or even load the class manually...
-				if (Kickstart::isAutoloading()) {
+				if (Saf_Kickstart::isAutoloading()) {
 					throw new Exception('Unable to load the requested Bootstrap'
 						. (Saf_Debug::isEnabled() ? " ({$bootstrapClass}) " : '') 
 						. '. Autoloading is enabled, but unable to find the bootstrap.', 0, $e);
@@ -233,66 +229,6 @@ abstract class Saf_Application
 	public function provision($pluginName, $pluginConfig)
 	{
 		$this->_resources[$pluginName] = $pluginConfig; //#TODO #1.0.0 implement
-	}
-
-	#TODO these need to go in the respective Application classes
-	/**
-	 * steps to take when preparing for SAF Applications
-	 */
-	protected static function go() //_goSaf()
-	{
-		require_once(\LIBRARY_PATH . '/Saf/Application.php');
-	}
-	
-	/**
-	 * steps to take when preparing for a Zend Framework application
-	 */
-	protected static function _goZend()
-	{
-		self::defineLoad('ZEND_PATH', '');
-		if (\ZEND_PATH != '') {
-			Path::addIfNotInPath(\ZEND_PATH);
-		}
-		if (
-			!file_exists(\ZEND_PATH . '/Zend/Application.php')
-			&& !file_exists(\LIBRARY_PATH . '/Zend/Application.php')
-			&& !Path::fileExistsInPath('Zend/Application.php')
-		) {
-			header('HTTP/1.0 500 Internal Server Error');
-			die('Unable to find Zend Framework.');
-		}
-		if (
-			!is_readable('Zend/Application.php')
-			&& !is_readable(\ZEND_PATH . '/Zend/Application.php')
-			&& !is_readable(\LIBRARY_PATH . '/Zend/Application.php')
-		) {
-			header('HTTP/1.0 500 Internal Server Error');
-			die('Unable to access Zend Framework.');
-		}
-		if (
-			file_exists(\LIBRARY_PATH . '/Zend/Application.php')
-			&& is_readable(\LIBRARY_PATH . '/Zend/Application.php')
-			&& !Path::fileExistsInPath('Zend/Application.php')
-		) {
-			Path::addIfNotInPath(\LIBRARY_PATH);
-		}
-		require_once('Zend/Application.php');
-		self::$_controllerPath = 'controllers';
-	}
-
-	/**
-	 * steps to take when preparing for Laravel Applications
-	 */
-	protected static function _goLaravel()
-	{
-		$env = self::envRead(\INSTALL_PATH . '/.env');
-		$detectedEnv = array_key_exists('APP_ENV', $env) ? $env['APP_ENV'] : 'production';
-		defined('APPLICATION_ENV') || define('APPLICATION_ENV',	$detectedEnv);
-		Define::load(
-			'APPLICATION_FORCE_DEBUG',
-			array_key_exists('APP_DEBUG', $env) ? $env['APP_DEBUG'] : FALSE,
-			Cast::TYPE_BOOL
-		);
 	}
 
 }

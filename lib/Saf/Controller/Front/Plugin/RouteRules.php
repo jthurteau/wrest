@@ -7,12 +7,6 @@
 Router Plugin to enforce various routing rules.
 
 *******************************************************************************/
-//namespace Saf\Legacy;
-
-use Saf\Exception\Startup;
-use Saf\Exception\NotImplemented;
-use Saf\Exception\NotAllowed;
-use Saf\Exception\Redirect;
 
 class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abstract
 {
@@ -79,7 +73,7 @@ class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abst
 		$e = $bootstrap->getStartupException();
 		$applicationAcl = Saf_Acl::getInstance();
 		if ($e && !$applicationAcl->allowStartupException($module, $controller, $action, $stack)) {
-			throw new Startup('An error occured during startup.', 0, $e);
+			throw new Saf_Exception_Startup('An error occured during startup.', 0, $e);
 		}
 	}
 
@@ -123,28 +117,28 @@ class Saf_Controller_Front_Plugin_RouteRules extends Zend_Controller_Plugin_Abst
 			case Saf_Acl::ACL_WHO_ANYUSER:
 			case Saf_Acl::ACL_WHO_USER:
 				if (!Saf_Auth::isLoggedIn()) {
-					throw new Redirect($redirectUrl);
+					throw new Saf_Exception_Redirect($redirectUrl);
 				}
 				break;
 			case Saf_Acl::ACL_WHO_SOMEUSER:
 				if (!Saf_Auth::isLoggedIn()) {
-					throw new Redirect($redirectUrl);
+					throw new Saf_Exception_Redirect($redirectUrl);
 				} else {
-					throw new NotAllowed('Insufficient permissions for operation.');
+					throw new Saf_Exception_NotAllowed('Insufficient permissions for operation.');
 				}
 				break;
 			case Saf_Acl::ACL_WHO_ANYONE:
 				break;
 			case Saf_Acl::ACL_WHO_OTHERUSER:
 				if (!$username) {
-					throw new NotAllowed('Insufficient permissions for operation.');
+					throw new Saf_Exception_NotAllowed('Insufficient permissions for operation.');
 				}
 				//#TODO #1.3.0 verify this works preoprly
 				break;
 			case Saf_Acl::ACL_WHO_NOONE:
-				throw new NotAllowed('Operation Not Allowed.');
+				throw new Saf_Exception_NotAllowed('Operation Not Allowed.');
 			default:
-				throw new NotImplemented('Operation Not Supported.');
+				throw new Saf_Exception_NotImplemented('Operation Not Supported.');
 				
 		}
 	}

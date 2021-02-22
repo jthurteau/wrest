@@ -7,9 +7,12 @@
 Utility class for managing configuration data
 
 *******************************************************************************/
-
+require_once(LIBRARY_PATH . '/Saf/Kickstart.php');
+use Saf\Kickstart as Kickstart;
 require_once(LIBRARY_PATH . '/Saf/Registry.php');
 require_once(LIBRARY_PATH . '/Saf/Config/Exception/InvalidEnv.php');
+
+use Saf\Cast as Cast;
 
 class Saf_Config {
 
@@ -183,7 +186,7 @@ class Saf_Config {
 		} catch (Exception $e) {
 			$value = $default;
 		}
-		return !is_null($cast) ? $value : Saf_Kickstart::cast($value, $cast);
+		return !is_null($cast) ? $value : Cast::translate($value, $cast);
 	}
 	
 	public function peek()
@@ -198,7 +201,7 @@ class Saf_Config {
 			? $name
 			: explode(':', $name);
 		$value = self::_get($nameComponents, $source);
-		return !is_null($cast) ? $value : Saf_Kickstart::cast($value, $cast);
+		return !is_null($cast) ? $value : Cast::translate($value, $cast);
 	}
 	
 	public static function getFromOptional($name, $source, $default = NULL, $cast = NULL)
@@ -208,7 +211,7 @@ class Saf_Config {
 		} catch (Exception $e) {
 			$value = $default;
 		}
-		return !is_null($cast) ? $value : Saf_Kickstart::cast($value, $cast);
+		return !is_null($cast) ? $value : Cast::translate($value, $cast);
 	}
 
 	public function get($name, $cast = NULL)
@@ -222,7 +225,7 @@ class Saf_Config {
 			? $name 
 			: explode(':', $name);
 		$value = self::_get($nameComponents, $this->_configuration);
-		return !is_null($cast) ? $value : Saf_Kickstart::cast($value, $cast);
+		return !is_null($cast) ? $value : Cast::translate($value, $cast);
 	}
 
 	protected static function _get($name, $currentPosition)
