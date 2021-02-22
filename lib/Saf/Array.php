@@ -8,11 +8,8 @@ Utility class for array manipulation
 
 *******************************************************************************/
 
-use Saf\Exception\NotAnArray;
-use Saf\Exception\NoDefault;
-
-require_once(dirname(dirname(dirname(__FILE__))) . '/src/Exception/NotAnArray.php');
-require_once(dirname(dirname(dirname(__FILE__))) .  '/src/Exception/NoDefault.php');
+require_once(LIBRARY_PATH . '/Saf/Exception/NotAnArray.php');
+require_once(LIBRARY_PATH . '/Saf/Exception/NoDefault.php');
 
 /**
  * Utility functions for Arrays
@@ -46,10 +43,10 @@ class Saf_Array
 	public static function extract($key, $array, $default = NULL)
 	{
 		if(!is_array($array) && (!is_object($array) && !method_exists($array,'__toArray'))){
-			throw new NotAnArray();
+			throw new Saf_Exception_NotAnArray();
 		}
 		if(NULL === $default && !array_key_exists($key, $array)){
-			throw new NoDefault();
+			throw new Saf_Exception_NoDefault();
 		}
 		return(
 			array_key_exists($key, $array) 
@@ -76,7 +73,7 @@ class Saf_Array
 				? self::extract($key, $array)
 				: self::extract($key, $array, $default);
 		} else if (is_null($default)) {
-			throw new NoDefault();
+			throw new Saf_Exception_NoDefault();
 		} else {
 			return $default;
 		}
@@ -111,7 +108,7 @@ class Saf_Array
 	{
 		try {
 			return self::extract($key,$array);
-		} catch (NoDefault $e) { //#TODO #2.0.0 limit to specific exception
+		} catch (Saf_Exception_NoDefault $e) { //#TODO #2.0.0 limit to specific exception
 			return NULL;
 		}
 	}
