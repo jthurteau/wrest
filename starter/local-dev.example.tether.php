@@ -10,7 +10,7 @@
  */
 
 error_reporting(E_ALL | E_STRICT);
-ini_set('display_errors', TRUE);
+ini_set('display_errors', true);
 
 return [
     'forceDebug' => true,
