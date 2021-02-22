@@ -7,9 +7,9 @@
 Base class for application bootstrap
 
 *******************************************************************************/
-use Saf\Filter\Truthy;
 require_once(LIBRARY_PATH . '/Saf/Debug.php');
 require_once(LIBRARY_PATH . '/Saf/Exception/Assist.php');
+require_once(LIBRARY_PATH . '/Saf/Filter/Truthy.php');
 
 abstract class Saf_Bootstrap
 {
@@ -53,7 +53,7 @@ abstract class Saf_Bootstrap
     	//#TODO #2.0.0 testing isolation and profiling (e.g. time isolation)
     	if (!isset($_SESSION)) {
 	    	if (array_key_exists('autoSession', $this->_config)) {
-	    		$this->_autoSession = Truthy::filter($this->_config['autoSession']);
+	    		$this->_autoSession = Saf_Filter_Truthy::filter($this->_config['autoSession']);
 	    	}
 	    	if ($this->_autoSession) {
 	    		$this->_preSessionStart()->_sessionStart()->_postSessionStart();
