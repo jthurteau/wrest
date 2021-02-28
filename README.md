@@ -5,17 +5,18 @@ A framework agnostic foundation library for Structured Authoring Development.
 
 SAF provides wrapper funcionality for:
 
-
-- Framework agnostic and chainable application kickstarting
-- Debugging and Insulation
+- Flexible, framework agnostic application kickstarting (bootstrapping)
+- Development tools like: Testing, Profiling, Debugging, Insulation, Backending, etc.
 - Hooks for RESTFUL API development and consumption
 - Some of PHP's native function shortcomings, e.g. Array functions
 
-SAF introduces no global scope pollution and aims to provide mechanims to allow the transition from reliance of such practices. While it allows complete flexibility in coding practices, the recommended mechanism for "kickstart" is as follows:
+SAF introduces no global scope pollution and aims to provide mechanims to allow the transition from reliance of such practices. When used as a "bootstrap", it allows a high degree of flexibility in coding practices. Its components are designed to be leveraged even when it is not employed for bootstrapping.
 
-Encapsulate entry into the "application" as a "transaction". The web server hands off the transaction to a "gateway script", which identifies what to execute and provides a baseline response if the application fails.
+The bootstrapping facility for SAF is called "kickstart" because it is used to encapsulate existing bootstrapping processes. This allows projects to amphibiously employ multiple frameworks and support routes managed by different (or no) frameworks running in parallel.
 
-Most frameworks provide a "bootstrap" process that may include some functions of the gateway, and fill a similar role in executive function. Since SAF is framework agnostic, it provides an optional intermediary "kickstart" process. It is designed to be flexible such that SAF can manage the entire gateway-to-bootstrap process, or negotiate any portions of it.
+Kickstart models the "application's" excecution lifcycle as a "transaction". The web server hands off the transaction to a "gateway script", which identifies what application to execute and provides a baseline response if the application fails.
+
+Most frameworks provide a similar mechanism called "bootstrap" process that may include some functions of the gateway, and fill a similar role to Kickstart in executive function. Since SAF is framework agnostic, it provides Kickstart an optional intermediary bootstrap process that dovetails into (or replaces) existing framework bootstraps. It is designed to be flexible such that SAF can manage the entire gateway-to-shutdown application execution lifcycle, or negotiate any portion of it.
 
 ## Core Concepts ##
 
@@ -25,6 +26,16 @@ Every transaction enters through a "gateway script" regardless of the PHP_SAPI (
 
 SAF supports single gateway models (e.g. using URL Rewrites to tunnel all requests through one gateway), and multi-gateway models (e.g. using Multiviews to negotiate the mixture of static and dynamic content).
 
+SAF's Kickstart follows a general MVC (Model-View-Controller) like design pattern that leverages IoC. The basic components of SAF that map to "MVC" are:
+
+- Gateways and Tethers: Route and manage requests like a "Controller", providing the primary mechanisms for flow control. "Gateways" are the primary entry-and/or-exit points to applications, and they invoke "Tethers" to modularize flow control internally.
+- Workflows and Roots: SAF encapsulates all application execution and environment in the "Model". However you define the core "application(s)", SAF abstracts it as "Workflow". Application environment is abstracted as "Roots" which read or set environment; normalizing, or adapting it for the application(s). Roots also "insulate" the application from the environment which facilites testing and uplifting legacy code.
+- Vents and Meditations: Provide mechanisms for any output not delegated to or handled by the applicaiton. "Vents" can wrap APIs, catch exceptions, and generally suppliment or manage the "View" of applications. While Vents are outward focused, "Meditations" provide a similar facility for more inward I/O management.
+
+ <!-- of MiddlewareThe key work of any transaction ultimately gets delegated to some Application, Module, Service, or other similiar "Model" agent. SAF works well with code designed for Middleware frameworks, and "callables" in general. It also provides tools to "wetware" applications through APIs, framework bootstrapping, backending, etc. This can be Middleware Modules, bootstrapped framwork applications, out-sourced services, or anything that performs work immediately upon invocation and returns its results.-->
+
+SAF supports any "encapsulated executive code" as the Model, and it is the objects' invoked methods that constitute the Model from SAF's workflow oriented perspective. Aside from these traditional staples of program design, "Roots" provide a special facility in the model to encap
+
 A strong gateway completely encapulates the server environment from the application it delegates to, and traps any application errors. SAF provides many optional components towards these goals. These insulating tools have a wide variety of appliations, from testing to cloud deployment.
 
 Using "rooting" as Configuration Providers is one way SAF can helps insulate the application from environment. Through the kickstart process, relevant environment details are captured and passed on in towards building the application's "container" or "configuration"
@@ -32,6 +43,8 @@ Using "rooting" as Configuration Providers is one way SAF can helps insulate the
 SAF's flexible "tethering" method for routing from the gateway to any bootstrapping that needs to happen keeps the global scope clean and allows multiple applications leveraging different frameworks to dispatch each other over the course of a single transaction.
 
 ## Gateways, Kickstart, Bootstrapping ##
+
+https://lucid.app/lucidspark/invitations/accept/c2332b74-627d-4732-997b-43ee541f0bc1
 
 In trivial cases, the gateway script may perform all of the following functions of kickstart, but most often it will minimally delegate to another script outside of the server's public path.
 
@@ -104,6 +117,32 @@ The implementation of gateways is entirely up to the developer. The following ar
 - gateways may allow soft-wiring of root/canister data to pass forward, when this is parametarized it should be the last parameter.
 
 - gateways may have any return value. It is not recommended to use them as a tether script even when they happen conform to the single array param, callable return footprint. Tethers should not vet.
+
+## Pylon Scipts
+
+One special case of the gateway pattern can occur when you want multiple URIs at the root of your public path to gateway through index.php. Consider the following examples:
+
+\[uri]/ = index.php = controller/module "main"
+\[uri]/(modrewriterule) = index.php = controller/module + route path "main/(modrewriterule)"
+\[uri]/mobile(/\*) = modile.php via multiviews (includes) index.php = controller/module "main/mobile(/\*)"
+\[uri]/admin(/\*) = admin.php (includes) login.php = framework eventually maps this to the same controller/module as "main(/\*)"
+\[uri]/subdirectory(/\*) = index.php (somewhere other than docroot) = controller/module "main"
+
+In the first example, index.php is a gateway that maps the root of the public path to the root of an application's routes. Assuming a typical routing scheme the application might fairly easily define exceptions. It is important to note that if the public path does not match the document root of the server, anything attempting to generate non-relative URIs to various resources in the public path would need to know the mapping of document root to public path. The application would also need to know this discrepency in mapping. The web server also has to be configured to know what URL(s) to map to index.php. Assuming a typical setup, a PHP aware server would recognise the .php file extention and hand off such requests to a PHP interpreter. It may map index.php as an index file so public_path/index.php and public_path/ both resolve to index.php. Other URIs would require speific web server configuration.
+
+In the second example a typical mod-rewrite rule is used to map any /X URI to index.php and most application routers would be able to support internal configuration to map X to various routes. The web server has to be configured to properly handle requests for public path resources (like images and css) that are not handled by the PHP application. This approach alone does not solve public path to document root mapping needs. 
+
+The third example uses a different gateway script and multi-views (an Apache feature) to "pylon" all URIs under /mobile through the gateway at index.php. Some frameworks support URI piping (or similar features) to then map that URI though middleware or some special handler to some other route, or attach special signifigance to the extra /X portion of the path. SAF's pylon scripts can use the Saf/Resolver to help re-write the URI/routing for most frameworks.
+
+The fourth example illustrates an example of using gateways and tethers as "middleware". Suppose there is a case where authentication code doesn't integrate well with an application or the framework it is implemented in. "admin.php" may be a Gateway or Pylon (a public path script), there are a variety of reasons it might be best implemented as a Pylon, but URI rewriting is one case. SAF can route unauthenticated requests through one application/middleware to handle authentication and pass requests through to the "main" appliation once an authentication session has been established.
+
+The final exmaple explicitly addresses the case of public path to document root mapping. A lot of applications are written assuming the will be served from the root of the web server's hostname with varying degrees of support for being served from a subdirectory. SAF's Resolver provides mechanisms for mapping multiple public paths to different relative paths. This makes it very easy to change what URI an appliation is served from on the fly by configuration.
+
+Pylon Scripts allow for handling special cases such as URI Rewriting. While Root Scripts insulate the appliation from environment by encapsulating it (generally, environment should only be read through root scripts), Pylon Scripts allow writing environment (which would later be read by root scripts) because they are always evaluated before the gateway. Pylon scripts replace the entry (i.e. directly triggered from "outside") function of gateway scripts when they do this. Pylons may create a closure, but are not required to when they declare no variables or functions. Pylons may not invoke root scripts, and should primarily write to the enrionment, not read. Pylons should not execute any statements after invoking the gateway, they should not tether, and generally should not return.
+
+URI Rewriting is the most common case for Pylon Scripts, but they are a general mechanism for environment normalization and localization.
+
+Localizations are a special case that acts a both a Root Script and a Pylon Script. Rather than invoking the gateway, it is passed a the paramater's to the gateway's closure call. e.g. function($root=[]){})(...include('pylon.php'));
 
 ## Localization Scripts
 
@@ -205,12 +244,30 @@ LOCAL_TIMEZONE - timezone associated with START_TIME and calls to Saf\Time
 FOUNDATION_PATH - path to the foundation source code, i.e. where SAF is installed, defaults to VENDOR_PATH/Saf
 
 ## Common Environment Values 
-BASE_URI - root relative or absolute URI that maps to PUBLIC_PATH
+BASE_URI - root relative or absolute URI that maps to PUBLIC_PATH, useful for generating non-relative links. This can be provided, or auto-calculated.
 APPLICATION_PATH - path to the root of a signified application, mapping varies by project structure
 APPLICATION_ROOT - path to the root of managed applications, typically /opt/application, /opt, /var/www/application, /var/www, etc.
 VENDOR_PATH - path to the root of managed dependencies, typically INSTALL_PATH/vendor, but paths outside of INSTALL_PATH are suppored.
 
+RESOVLER_PYLON - a portion of URI_MIRROR, aka $_SERVER\['PHP_SELF'] to match for BASE_URI calculation and Resolver routing (auto-piping). Matching RESOLVER_PYLON helps map PUBLIC_PATH to the BASE, marking the position in the served URI to where BASE_URI ends. The rest of the URI, including the match an everything else in the path, is the route for the app. From the application's perspective everything before RESOVLER_PYLON is chopped of from the URI as if PUBLIC_PATH were directly under the root of the URI path. Processing for RESOVLER_PYLON will try to automatically negotiate the cases where the ".php" suffix is needed, and where it is not.
+
+RESOLVER_FORWARD - On occasion, you may need to handle request edge cases at a completely different route, RESOLVER_FORWARD is a tool that can be used with Resolver and RESOLVER_PYLON to handle a lot of such special cases. It is also a useful combination with more rigid routing schemes. After RESOLVER_PYLON is matched to the URI, RESOLVER_FORWARD replaces that match in the resulting route. RESOLVER_FORWARD often includes the value in RESOLVER_FORWARD, e.g. 
+login -> default/index/login, or 
+login -> index/login/form, or
+login -> login/sso
+
+RESOLVER_FORWARD does not have to be in RESOLVER_PYLON, however. It is a straightforward find-replace operation, so:
+
+login -> sso/auth
+
+also works. 
+
+Many uses for RESOLVER_FORWARD are targeted at older frameworks with more rigid routing schemes. If your routing infrastructure is flexible enough it is often more straightforward to implement the routes natively. RESOLVER_FORWARD can be useful as a pre-dispatch forwarding mechanism, but it is a mechanism more universally handled by modern frameworks. In contrast, many frameworks still rely on third-party extensions to handle the usecase for RESOLVER_PYLON.
+
 ## Other Environment Values (less common, or supported in a deprecated manner)
+
+URI_MIRROR - a value that can be provided in cases where PHP_SELF and SCRIPT_NAME are unavailable,inaccurate, or you don't want to access $_SERVER. It should be the gateway's \__FILE__ path relative to the web servers Document Root. Primarily used to calculate BASE_URI. (See BASE_URI and RESOLVER_ANCHOR)
+URI_MIRROR_SOURCE - a key in $_SERVER to look for the value that would normally be provided in $_SERVER\['PHP_SELF']
 
 LIBRARY_PATH - deprecated path to root of managed libraries, use VENDOR_PATH when possible. LIBRARY_PATH is often symlinked directly to the relevant portion of a complementary VENDOR_PATH (e.g. LIBRARY_PATH/Zend = VENDOR_PATH/Zend/library/Zend )
 APPLICATION_ID
@@ -221,7 +278,7 @@ LOCALIZE_TOKEN -
 ENABLE_LOCAL_DEV
 CANISTER_FIFO - determines if kickstart prefers earlier set canister values (defaults to true)
 
-
+APPLICATION_LEGACY_VECTOR - short-circuit the gateway to kickstart a pre PHP7 SAF app (value specifies a tether script)
 LIBRARY_PATH - an older form of VENDOR_PATH where each directory is source code (e.g. LIBRARY_PATH/library_name/ may simply be a symlink to VENDOR_PATH/project_name/src). Useful for including external code prior to modern autoloader methods.
 
 # PHAGENT
@@ -231,3 +288,7 @@ Phagent or PHP-Agent, is a IoC programming pattern involving a canister (array) 
 Phagents can wrap core php functions or control structures that might normally trigger a fatal error and attempt to mitigate them with a thrown exeception/error instead.
 
 Phagents can also be cached to create a sort of application state snapshot, which in combination with a stack-trace can be used to re-create that appliation state.
+
+# Recommended Exception Codes
+
+Code 127, used for errors loading scripts (e.g. file not found), sets a previous Exception where the message is the fine in question.

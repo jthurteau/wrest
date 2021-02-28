@@ -8,7 +8,8 @@ Utility class for data caching
 
 *******************************************************************************/
 
-class Saf_Cache {
+class Saf_Cache
+{
 
 	const DIR_MODE_DIRECT_ONLY = 0;
 	const DIR_MODE_RECURSIVE_FLAT = 1;

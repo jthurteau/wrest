@@ -8,7 +8,8 @@ Utility functions for altering URLs
 
 *******************************************************************************/
 
-class Saf_UrlRewrite{
+class Saf_UrlRewrite
+{
 
 	/**
 	 * formats a $url with provided query ($getArray) sanitized based on $config

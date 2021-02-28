@@ -7,7 +7,8 @@
 Utility class for authentication
 
 *******************************************************************************/
-class Saf_Auth{
+class Saf_Auth
+{
 
 	protected static $_loadedPlugins = array();
 	protected static $_defaultPlugins = array();

@@ -17,7 +17,8 @@ require_once(dirname(__FILE__) . '/Agent/Guru.php');
 require_once(dirname(__FILE__) . '/Agent/Identity.php');
 
 abstract class Agent {
-	use Guru, Identity;
+	use Guru;
+	use Identity;
 
 	public const OPTION_NAME = 'instanceName';
 	public const OPTION_MODE = 'kickstartMode';
@@ -209,7 +210,7 @@ abstract class Agent {
 		$applicationPath = 
 			defined('APPLICATION_PATH') 
 				? APPLICATION_PATH 
-				: (INSTALL_PATH . "/application");
+				: ($installPath . "/application");
 		$possibilities = [
 
 			"{$installPath}/error.php"

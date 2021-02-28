@@ -11,7 +11,8 @@ Utility class for generating Ical
 require_once(LIBRARY_PATH . '/Saf/Array.php');
 require_once(LIBRARY_PATH . '/Saf/Time.php');
 
-class Saf_Ical {
+class Saf_Ical
+{
 	
 	const METHOD_REQUEST = 'Request';
 	const METHOD_PUBLISH = 'Publish';

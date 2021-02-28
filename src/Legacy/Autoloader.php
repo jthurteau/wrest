@@ -10,7 +10,8 @@
 
 namespace Saf\Legacy;
 
-class Autoloader {
+class Autoloader 
+{
 
     /**
 	 * instructs an inserter to add the new item to the start of the list
@@ -57,6 +58,9 @@ class Autoloader {
 		'' => array(
 			'[[APPLICATION_PATH]]/models',
         ),
+		// 'App' => array(
+		// 	'[[INSTALL_PATH]]/App/src',
+        // ),
         // 'Saf_' => array(
 		// 	'[[LEGACY_SAF_PATH]]',
 		// )
@@ -68,7 +72,7 @@ class Autoloader {
 	 */
 	protected static $special = array(
 		'controller' => array(
-			'Saf\Legacy\Autoloader::resolveControllerPath' => 'Saf\Legacy\Autoloader::resolveControllerPath'
+			'SAF:Legacy:Controller' => 'Saf\Legacy\Autoloader::resolveControllerPath'
 		)
 	);
 
@@ -99,6 +103,8 @@ class Autoloader {
 
 	protected static $badFiles = [];
 
+	protected static $memory = [];
+
     /**
      * returns true if the legacy autoloader has been registered with the spl
      */
@@ -113,9 +119,11 @@ class Autoloader {
      * @param array $options injected from Environment, needed to handle previous engtablements
 	 * @param bool $takeover defaults to true
 	 */
-	public static function init(array $options, bool $takeover = true)
+	public static function init(array $options = [], bool $takeover = true)
 	{
-        self::initOptions($options);
+        if (!self::$initialized) { #TODO #2.0.0 clean this up..
+			self::initOptions($options);
+		}
 		if ($takeover && !self::$enabled) {
 			spl_autoload_register('Saf\Legacy\Autoloader::autoload');
 			self::$enabled = true;
@@ -179,8 +187,9 @@ class Autoloader {
 	 * @param string $specialLoader limits the search to a specific special loader
 	 *
 	 */
-	public static function autoload($className, $specialLoader = '')
+	public static function autoload(string $className, $specialLoader = '')
 	{
+		//print_r([__FILE__,__LINE__,$className]);
 		if (class_exists($className, false)) {
 			return;
 		} elseif ($specialLoader) {
@@ -192,7 +201,7 @@ class Autoloader {
 		) {
 			return self::fallbackAutoloader($className);
 		} elseif (!self::$initialized) {
-			self::init(false);
+			self::init([], false);
 		}
 		$result = 
 			self::autoloadLibrary($className) 
@@ -200,11 +209,11 @@ class Autoloader {
 			|| self::handle($className, null, 'Failed resolving file to autoload class{$className}.');
 	}
 
-	protected static function autoloadLibrary($className)
+	protected static function autoloadLibrary(string $className, $testOnly = false)
 	{
 		foreach(self::$libraries as $classPrefix => $callableList) {
 			if (strpos($className, $classPrefix) === 0) {
-				foreach ($callableList as $callableSet) {
+				foreach ($callableList as $name =>$callableSet) {
 					if(is_array($callableSet)) {
 						$callableInstance = $callableSet[0];
 						$callableReflector = $callableSet[1];
@@ -217,42 +226,71 @@ class Autoloader {
 // 						throw new \Exception('huh');
 // 					}
 					$classFile = $callableReflector->invoke($callableInstance, $className);
-					if (self::handle($className, $classFile, 'Failed to autoload class{$className}. Found a library, but no definition inside.')) {
-						return;
+					//print_r([__FILE__,__LINE__,$className,'lib',$name]);
+					$result =
+						$testOnly
+						? ($classFile ? self::test($className, $classFile) : false)
+						: self::handle(
+							$className, 
+							$classFile, 
+							'Failed to autoload class{$className}. Found a library, but no definition inside.'
+						);
+					if ($result) {
+						self::$memory["lib:{$className}"] = [$classFile];
+						return $testOnly ? ["library:{$name}" => $classFile] : null;
 					} elseif (self::fileExistsInPath($classFile)) { // #NOTE this is legacy behavior
-						return;
+						self::$memory["lib:badfile:{$className}"] = '';
+						return $testOnly ? ["library:{$name}:mismatched" => $classFile] : null;
+					} else {
+						self::$memory["lib:{$className}"] = '';
 					}
 				}
 			}
 		}
-		return false;
+		return null;
 	}
 
-	protected static function autoloadStandard($className)
+	protected static function autoloadStandard(string $className, $testOnly = false)
 	{
-		foreach (self::$autoloaders as $classPrefix => $pathList) {
+		foreach (self::$autoloaders as $classPrefix => $lookupList) {
 			if ('' == $classPrefix || strpos($className, $classPrefix) === 0) {
-				foreach($pathList as $path) {
-					$classFile = self::resolveClassPath($className, $path);
-					if (self::handle($className, $classFile, 'Failed to autoload class{$className}. Found a file, but no definition inside.')) {
-						return;
+				foreach($lookupList as $name => $lookup) {
+					$classFile =
+						is_callable($lookup)
+						? $lookup($className)
+						: self::resolveClassPath($className, $lookup);
+					//print_r([__FILE__,__LINE__,$className,'std',$classPrefix, $classFile,$lookup, self::$autoloaders]);
+					$result =
+						$testOnly
+						? ($classFile ? self::test($className, $classFile) : false)
+						: self::handle(
+							$className, 
+							$classFile, 
+							'Failed to autoload class{$className}. Found a file, but no definition inside.'
+						);
+					if ($result) {
+						self::$memory["std:{$className}"] = $classFile;
+						return $testOnly ? ["standard:{$name}" => $classFile] : null;
 					} elseif (self::fileExistsInPath($classFile)) { // #NOTE this is legacy behavior
-						return;
+						self::$memory["std:badfile:{$className}"] = '';
+						return $testOnly ? ["standard:{$name}" => $classFile] : null;
+					} else {
+						self::$memory["std:{$className}"] = '';
 					}
 				}
 			}
 		}
 	}
 
-	protected static function autoloadSpecial($className, $specialLoader)
+	protected static function autoloadSpecial(string $className, $specialLoader, $testOnly = false)
 	{
 		if (!is_array($specialLoader)) {
 			$specialLoader = array();
 		}
 		foreach($specialLoader as $loader) {
 			if (array_key_exists($specialLoader, self::$special)) {
-				foreach(self::$special[$specialLoader] as $callableList) {
-					foreach ($callableList as $callableSet) {
+				foreach(self::$special[$specialLoader] as $callableHandle => $callableList) {
+					foreach ($callableList as $name => $callableSet) {
 						if(is_array($callableSet)) {
 							$callableInstance = $callableSet[0];
 							$callableReflector = $callableSet[1];
@@ -261,8 +299,16 @@ class Autoloader {
 							$callableReflector = $callableSet;
 						}
 						$classFile = $callableReflector->invoke($callableInstance, $className);
-						if (self::handle($className, $classFile, $errorMessage)) {
-							return;
+						//print_r([__FILE__,__LINE__,$className, 'spc', $specialLoader,$name]);
+						$result =
+							$testOnly
+							? ($classFile ? self::test($className, $classFile) : false)
+							: self::handle(	$className, $classFile);
+						if ($result) {
+							self::$memory["spc:{$specialLoader}:{$className}"] = $classFile;
+							return $testOnly ? ["special:{$specialLoader}:{$name}" => $classFile] : null;
+						} else {
+							self::$memory["spc:{$specialLoader}:{$className}"] = '';
 						}
 					}
 				}
@@ -270,9 +316,10 @@ class Autoloader {
 				self::handle($className, null, "Failed to special autoload class{$className}.  Invalid loader ({$loader}) specified.");
 			}
 		}
+		return null;
 	}
 
-	protected static function handle($className, $classFile = null, $errorMessage = null)
+	protected static function handle(string $className, $classFile = null, $errorMessage = null)
 	{
 		if (!is_null($classFile)) {
 			try{
@@ -321,7 +368,7 @@ class Autoloader {
 	 */
 	public static function addLibrary($libraryPrefix, $resolutionCallable = null, $preposition = self::POSITION_AFTER)
 	{
-		self::init(false);
+		self::init([], false);
 		if ('' == $resolutionCallable || is_null($resolutionCallable)) {
 			$resolutionCallable = 'Saf\Legacy\Autoloader::resolveClassPath';
 		}
@@ -373,7 +420,7 @@ class Autoloader {
 	 */
 	public static function removeLibrary($libraryPrefix, $callable = null)
 	{ //#TODO #3.0.0 translate non-string callables
-		self::init(false);
+		self::init([], false);
 		if (!array_key_exists($libraryPrefix, self::$libraries)) {
 			return false;
 		}
@@ -393,14 +440,14 @@ class Autoloader {
 	 * string to match any class. Paths may be empty to match the path.
 	 *
 	 */
-	public static function addAutoloader($prefix, $path, $preposition = self::POSITION_AFTER)
+	public static function addAutoloader(string $prefix, $lookup, $preposition = self::POSITION_AFTER)
 	{
-		self::init(false);
-		$path = self::translatePath($path);
+		self::init([], false);
+		$path = is_callable($lookup) ? $lookup : self::translatePath($lookup);
 		if (array_key_exists($prefix, self::$autoloaders)) {
 			if ($preposition) {
 				self::$autoloaders[$prefix] = array_merge(
-					array($path),
+					[$path],
 					self::$autoloaders[$prefix]
 				);
 			} else {
@@ -409,21 +456,21 @@ class Autoloader {
 			return;
 		}
 		foreach(self::$autoloaders as $existingPrefix => $existingPaths){
-			 if (strpos($existingPrefix, $prefix) === 0) {
-				$newMap = array();
+			 if (!$existingPrefix ||strpos($prefix, $existingPrefix) === 0) {
+				$newMap = array(); //#NOTE ensure longer prefixes are always before shorter
 				foreach(self::$autoloaders as $currentPrefix => $currentSpec) {
 					if ($currentPrefix == $existingPrefix) {
-						$newMap[] = $path;
-						$newMap[] = $currentSpec;
+						$newMap[$prefix] = [$path];
+						$newMap[$currentPrefix] = $currentSpec;
 					} else {
-						$newMap[] = $currentSpec;
+						$newMap[$currentPrefix] = $currentSpec;
 					}
 				}
 				self::$autoloaders = $newMap;
 				return;
 			}
 		}
-		self::$autoloaders[$prefix] = array($path);
+		self::$autoloaders[$prefix] = [$path];
 	}
 
 	/**
@@ -433,7 +480,7 @@ class Autoloader {
 	 */
 	public static function removeAutoloader($prefix, $path = null)
 	{
-		self::init(false);
+		self::init([], false);
 		if (!array_key_exists($prefix, self::$autoloaders)) {
 			return false;
 		}
@@ -450,7 +497,7 @@ class Autoloader {
 
 	public static function getPathSpec()
 	{
-		self::init(false);
+		self::init([], false);
 		return self::$autoloaders;
 	}
 
@@ -462,7 +509,7 @@ class Autoloader {
 	 */
 	public static function addSpecialAutoloader($name, $resolutionCallable = null , $preposition = self::POSITION_AFTER)
 	{
-		self::init(false);
+		self::init([], false);
 		if ('' == $resolutionCallable || is_null($resolutionCallable)) {
 			$resolutionCallable = 'Saf\Legacy\Autoloader::resolveClassPath';
 		}
@@ -488,7 +535,7 @@ class Autoloader {
 
 	public static function removeSpecialAutoloader($name, $callable = false)
 	{ //#TODO #3.0.0 translate non-string callables
-		self::init(false);
+		self::init([], false);
 		if (!array_key_exists($name, self::$special)) {
 			return false;
 		}
@@ -540,7 +587,8 @@ class Autoloader {
 		if ('' == $basePath) {
 			$basePath = self::$envAdapter['LIBRARY_PATH'];
 		}
-		$classNameComponents = explode('_', $className);
+		$nameSpaceMode = strpos($className, '\\') !== false;
+		$classNameComponents = $nameSpaceMode ? explode('\\', $className) : explode('_', $className);
 		$classPath = $basePath;
 		foreach ($classNameComponents as $nameComponent) {
 			$classPath .= "/{$nameComponent}";
@@ -645,6 +693,72 @@ class Autoloader {
 			if (file_exists(realpath("{$path}/{$filepath}"))){
 				return true;
 			}
+		}
+		return false;
+	}
+
+	public static function match($class)
+	{
+		$matches = [];
+		$librayMatch = self::autoloadLibrary($class, true);
+		$librayMatch && ($matches[] = $librayMatch);
+		$match = self::autoloadStandard($class, true);
+		$match && ($matches[] = $match);
+		foreach(self::$special as $key => $value) {
+			$specialMatch = self::autoloadSpecial($class, $key, true);
+			$specialMatch && ($matches[] = $specialMatch);
+		}
+		return $matches;
+	}
+
+	public static function test(string $class, $file = null)
+	{
+		//print_r([__FILE__,__LINE__, $class, $file]);
+		if ($class == '') {
+			return false;
+		}
+		if (is_null($file)) {
+			$files = [];
+			$return = [
+				'exists' => class_exists($class, false),
+				'resolvers' => self::match($class),
+				'file' => null,
+				'tried' => [],
+			];
+			foreach(self::$memory as $token => $file){
+				if (substr($token, -(strlen($class))) === $class) {
+					$return['file'] 
+						|| !$file 
+						|| (strpos($token, ':bad:') !== false) 
+						|| ($return['file'] = $file);
+					$return['tried'][] = $token;
+				}
+			}
+			return $return;
+		} else if (self::fileExistsInPath($file)) {
+			$max = 1000;
+			$classDeclaration = file_get_contents($file, true, null, 0, $max);
+			$classDeclaration = str_replace(["\t", '  ', "\n"], ' ', $classDeclaration);
+			if (strpos($class, '\\') !== false) {
+				$namespace = explode('\\', $class);
+				$className = array_pop($namespace);
+				$namespace = implode('\\', $namespace);
+				//print_r([__FILE__,__LINE__,'namespace match', $class, $namespace, $className, $classDeclaration]);
+				$namespaceMatch =
+					(
+						strpos($classDeclaration, "namespace {$namespace};") !== false
+						|| strpos($classDeclaration, "namespace {$namespace};") !== false
+					) && (
+						strpos($classDeclaration, "class {$className}{") !== false
+						|| strpos($classDeclaration, "class {$className} {") !== false
+					);
+			} else {
+
+			}
+			return 
+				$namespaceMatch
+				|| strpos($classDeclaration, "class {$class}{") !== false
+				|| strpos($classDeclaration, "class {$class} {") !== false;
 		}
 		return false;
 	}

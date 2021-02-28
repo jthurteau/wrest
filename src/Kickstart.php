@@ -18,7 +18,8 @@ require_once(dirname(__FILE__) . '/Environment.php');
 require_once(dirname(__FILE__) . '/Preboot.php');
 require_once(dirname(__FILE__) . '/Agent.php');
 
-class Kickstart {
+class Kickstart
+{
 	/**
 	 * stores order and state of various preboot steps
 	 * false indicates that step will not be auto-attempted

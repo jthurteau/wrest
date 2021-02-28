@@ -10,7 +10,8 @@
 
 namespace Saf\Legacy;
 
-abstract class Adapter {
+abstract class Adapter
+{
 
     abstract public function __call($name, $args);
 

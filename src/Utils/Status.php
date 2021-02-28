@@ -9,7 +9,8 @@ Utility class for managing HTTP status headers
 
 *******************************************************************************/
 
-class Saf_Status{
+class Saf_Status
+{
 
 	const STATUS_200_OK = 200;
 	const STATUS_201_CREATED = 201;

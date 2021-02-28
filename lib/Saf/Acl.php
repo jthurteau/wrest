@@ -7,7 +7,8 @@
 Utility and Base class for access control
 
 *******************************************************************************/
-class Saf_Acl{
+class Saf_Acl
+{
 	
 	const ACL_WHO_ANYONE = 7;
 	const ACL_WHO_ANYUSER = 6;

@@ -10,7 +10,8 @@ Utility class for layout handling
 
 #TODO Array>Brray
 
-class Saf_Layout {
+class Saf_Layout
+{
 
 	const LAYOUT_DEFAULT_HTML_FORMAT = 'html+javascript:css';
 	const LAYOUT_BASE_HTML_FORMAT = 'html';

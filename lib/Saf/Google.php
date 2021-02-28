@@ -8,7 +8,8 @@ Utility class for Google APIs
 
  *******************************************************************************/
 
-class Saf_Google {
+class Saf_Google
+{
 
 	protected static $_autoloaderPath  = '/Google/vendor/autoload.php';
 

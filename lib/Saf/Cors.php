@@ -9,7 +9,8 @@ Utility class for managing HTTP status headers
 
 *******************************************************************************/
 
-class Saf_Cors{
+class Saf_Cors
+{
 
 	const HEADER_ORIGIN = 'origin';
 	const HEADER_HEADER = 'headers';

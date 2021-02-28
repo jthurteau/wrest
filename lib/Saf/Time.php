@@ -9,7 +9,8 @@ direct use of time() and microtime()
 
 *******************************************************************************/
 
-class Saf_Time {
+class Saf_Time
+{
 
 	const MODIFIER_NOW = NULL;
 	const MODIFIER_START_TODAY = 1; //#TODO #2.0.0 use native modifier string codes and refactor

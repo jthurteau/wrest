@@ -11,7 +11,8 @@
 namespace Saf;
 
 
-class Auto {
+class Auto
+{
 
 	const REGEX_CLASS =
 		'/class\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)[\s{]/';
@@ -37,17 +38,22 @@ class Auto {
 	 * @param string Fully qualified class name
 	 * @return string path for the internal $class in question
 	 */
-	public static function classPathLookup(string $class)
+	public static function classPathLookup(string $class, string $externalPath = null, $prefix = __NAMESPACE__)
 	{
 		$parts = explode('\\', $class);
-		$foundationPath = dirname(__FILE__);
-		if (array_shift($parts) != __NAMESPACE__) {
-			return false;
+		$path = $externalPath ?: dirname(__FILE__);
+		$head = array_shift($parts);
+		if (!$externalPath && $head != __NAMESPACE__) {
+			return false; #TODO, maybe re-head and default these to Modules?
 		} elseif (count($parts) < 1) {
-			return false;
+			return false; #TODO, also possible legit standard case?
 		}
 		$classPath = implode('/', $parts);
-		return "{$foundationPath}/{$classPath}.php";
+		if ($head != $prefix) {
+			$classPath .= "{$head}/";
+		}
+		//print_r([__FILE__,__LINE__, 'lookup',$class, $externalPath, $prefix,$path,$classPath,$head]);
+		return "{$path}/{$classPath}.php";
 	}
 
 	public static function meditate($meditationData, $depth = 0)

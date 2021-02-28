@@ -8,7 +8,8 @@ Utility class for process queuing
 
 *******************************************************************************/
 
-class Saf_Queue {
+class Saf_Queue
+{
 
 	protected static $_mode = 'db';
 	protected static $_path = NULL;

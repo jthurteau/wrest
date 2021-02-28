@@ -10,7 +10,8 @@ Utility class for managing paths.
 *******************************************************************************/
 
 //#TODO #1.0.0 update function header docs
-class Path {
+class Path
+{
 
 	const REGEX_VAR =
 		'/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$/';

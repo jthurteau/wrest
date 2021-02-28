@@ -8,7 +8,8 @@ Utility class for storing and retrieving globally accessible state
 
 *******************************************************************************/
 
-class Saf_Registry {
+class Saf_Registry
+{
     
 	protected static $_singleton = NULL;
     protected static $_configuration = NULL;

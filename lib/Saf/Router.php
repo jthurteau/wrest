@@ -7,7 +7,8 @@
 Application Router
 
 *******************************************************************************/
-abstract class Saf_Router{
+abstract class Saf_Router
+{
 	
 	public function __construct($config = array())
 	{

@@ -13,6 +13,8 @@ declare(strict_types=1);
 namespace Saf\Framework;
 
 use Saf\Framework\Manager;
+use Saf\Legacy\Autoloader;
+use Saf\Auto;
 
 require_once(dirname(dirname(__FILE__)) . '/Framework/Manager.php');
 
@@ -47,13 +49,51 @@ class Mezzio extends Manager{
     public static function autoload($instance, $options = null)
     {
         $installPath = self::installPath($options);
-        require("{$installPath}/vendor/autoload.php");
+        $usesExternalComposer = self::option('composerVendor', $options);
+        $path = $usesExternalComposer ?: "{$installPath}/vendor";
+        require("{$path}/autoload.php");
+        if (false) {
+            #TODO handle $options autoloading?
+        } else {
+            if (!array_key_exists('applicationRoot', $options)) {
+               $options['applicationRoot'] = '/var/www/application'; //#NOTE this is a copy of $options
+            }
+
+            if (!array_key_exists('libraryPath', $options)) {
+                $options['libraryPath'] = "{$options['applicationRoot']}/library"; //#NOTE this is a copy of $options
+            }
+
+            if (!array_key_exists('applicationPath', $options)) {
+               $options['applicationPath'] = "{$installPath}/src/App"; //#NOTE this is a copy of $options
+            }
+            if (!array_key_exists('controllerPath', $options)) {
+                $options['controllerPath'] = "{$installPath}/App/controller"; //#NOTE this is a copy of $options
+            }
+            Autoloader::init($options);
+            //Autoloader::addAutoloader('App\\', '[[APPLICATION_PATH]]/src');
+            $appLoaderGenerator = function($path){
+                return function($className) use ($path){
+                    return Auto::classPathLookup($className, "{$path}/src/", 'App');
+                };
+            };
+            Autoloader::addAutoloader(
+                'App\\', 
+                $appLoaderGenerator($options['applicationPath']), 
+                Autoloader::POSITION_BEFORE
+            );
+            //print_r([__FILE__,__LINE__,Autoloader::test('App\ConfigProvider')]); die;
+        }
+
     }
 
     public static function run($instance, $options = null)
     {
         $installPath = self::installPath($options);
-
+        foreach($options as $index => $option) {
+            if (is_callable($option)) { //#TODO swoole doesn't like the cyclical refrences in the canister?
+                unset($options[$index]);
+            }
+        }
         /** @var \Psr\Container\ContainerInterface $container */
         $container = require("{$installPath}/config/container.php");
 

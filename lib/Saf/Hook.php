@@ -8,7 +8,8 @@ Base class for spawning a process
 
 *******************************************************************************/
 
-class Saf_Hook {
+class Saf_Hook
+{
 
 	static function trigger($request)
 	{

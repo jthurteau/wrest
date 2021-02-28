@@ -53,6 +53,14 @@ abstract class Manager{
         return $mode;
     }
 
+    protected static function option($option, $config = null)
+    {
+        return 
+            is_null($config)
+            ? null
+            : (array_key_exists($option, $config) ? $config[$option] : null);
+    }
+
     /**
      * #TODO #2.0.0 fold this back to Environment?
      */

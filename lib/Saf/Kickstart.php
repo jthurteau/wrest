@@ -15,7 +15,8 @@ require_once(LIBRARY_PATH . '/Saf/Debug.php');
 require_once(LIBRARY_PATH . '/Saf/Layout.php');
 
 //#TODO #1.0.0 update function header docs
-class Saf_Kickstart {
+class Saf_Kickstart
+{
 
 	/**
 	 * instructs an inserter to add the new item to the start of the list

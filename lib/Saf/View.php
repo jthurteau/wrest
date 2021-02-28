@@ -7,7 +7,8 @@
 MVC View Factory
 
 *******************************************************************************/
-abstract class Saf_View{
+abstract class Saf_View
+{
 	
 	public function __construct($config = array())
 	{

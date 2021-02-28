@@ -312,7 +312,7 @@ class Saf_Debug
 			throw new Exception('debug');
 		} catch (Exception $e) {
 			$trace = $e->getTrace();
-			$traceString = $e->getTraceAsString();
+			//$traceString = $e->getTraceAsString();
 			array_shift($trace);
 			//array_shift($trace);
 			return

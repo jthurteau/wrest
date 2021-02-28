@@ -15,7 +15,8 @@ use Saf\Kickstart\Truthy;
 require_once(dirname(__FILE__) . '/Utils/Filter/Truthy.php');
 
 //#TODO #1.0.0 update function header docs
-class Cast {
+class Cast
+{
 
 	const TYPE_STRING = 0;
 	const TYPE_BOOL = 1;
