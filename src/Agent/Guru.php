@@ -16,7 +16,7 @@ use Saf\Agent\Meditation;
 require_once(dirname(dirname(__FILE__)) . '/Auto.php');
 require_once(dirname(__FILE__) . '/Meditation.php');
 
-trait Guru { #TODO #2.0.0 may want to split the mode/instance handling from meditation handling
+trait Guru {
     /**
 	 * specifies the path to the exception display view script
 	 * defaults to (set to) APPLICATION_PATH . '/views/scripts/error/error.php'
@@ -60,7 +60,7 @@ trait Guru { #TODO #2.0.0 may want to split the mode/instance handling from medi
     /**
      * returns a unique id for meditations
      */
-	abstract public static function idStrategy();
+	abstract public static function meditationIdStrategy();
 
    	/**
 	 * Outputs in the case of complete and total failure during the kickstart process.
@@ -101,7 +101,7 @@ trait Guru { #TODO #2.0.0 may want to split the mode/instance handling from medi
 			}
 			self::letGo();
 		} else {
-			$m = new Meditation($meditationText, self::idStrategy($e), $e);
+			$m = new Meditation($meditationText, self::meditationIdStrategy($e), $e);
 			self::$meditations[$m->getCode()] = $m;
 		}
 

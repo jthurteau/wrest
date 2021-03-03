@@ -105,19 +105,23 @@ class Kickstart
 		try {
 			$instance = Agent::parseInstance($instanceIdentifier);
 			self::instanceInitialize($instance);
-			$modeRequested = Agent::parseMode($instanceIdentifier);
+			$mode = Agent::parseMode($instanceIdentifier);
 			if (!self::$laced[$instance]) {
 				throw new \Exception('Requested instance has not been configured.');
 			} elseif (
-				$modeRequested != self::$laced[$instance]
-				&& $modeRequested != self::MODE_NONE 
+				$mode != self::$laced[$instance]
+				&& $mode != self::MODE_NONE 
 			) {
 				throw new \Exception('Instance has not been configured for the requested mode.');
 			}
-			return 
-				$modeRequested == Agent::MODE_NONE 
-				? self::main($instance) 
-				: self::run($instance, $modeRequested);
+			$options = &Environment::options($instance);
+			$agent = new Agent($instance, $options);
+			$modeClass = Environment::instanceOption($instance, self::OPTION_MANAGER);
+			if (!class_exists($modeClass, false)) {
+				$mode = array_key_exists($instance, self::$laced) ? self::$laced[$instance] : 'undefined';
+				throw new \Exception("Requested kickstart mode ({$mode}:{$modeClass}) is not loaded.");
+			}
+			return $agent->run($modeClass);
 	 		//#TODO #2.0.0 handle redirects and forwards, but maybe inside an agent method to simplify this class?
 			// } catch (Saf\Exception\Assist $e){
 			// } catch (Saf\Exception\Public $e){
@@ -284,40 +288,5 @@ class Kickstart
 		} else {
 			self::$prebootSteps[$step][] = Agent::instanceIdent($instance, $mode);
 		}
-	}
-
-	/**
-	 * runs the specified main script for an instance with no framework bootstrap
-	 * @param string instance to run
-	 * @return mixed application result
-	 */
-	protected static function main(string $instance)
-	{
-		$modeMain = Environment::instanceOption($instance, 'mainScript', 'main');
-		$installPath = Environment::path('install', $instance) ?: '.';
-		$mainScript = "{$installPath}/{$modeMain}.php";
-		#TODO provide a way to send parameters to main
-		if (!file_exists($mainScript)) {
-			throw new \Exception('No main application script to run.');
-		} elseif (!is_readable($mainScript)){
-			throw new \Exception('Unable to access main application script.');
-		}
-		return require_once($mainScript); //,$mainOptions);
-	}
-
-	/**
-	 * runs the specified instance with its identified mode manager's framework bootstrap
-	 * @param string instance to run
-	 * @return mixed application result
-	 */
-	protected static function run(string $instance)
-	{
-		$modeClass = Environment::instanceOption($instance, self::OPTION_MANAGER);
-		$options = &Environment::options($instance);
-		if (!$modeClass || !class_exists($modeClass, false)) {
-			$mode = array_key_exists($instance, self::$laced) ? self::$laced[$instance] : 'undefined';
-			throw new \Exception("Requested kickstart mode ({$mode}:{$modeClass}) is not loaded.");
-		}
-		return $modeClass::run($instance, $options);
 	}
 }

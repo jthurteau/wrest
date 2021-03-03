@@ -12,13 +12,16 @@ namespace Saf;
 
 use Saf\Agent\Guru;
 use Saf\Agent\Identity;
+use Saf\Environment\Access as Environment;
 
 require_once(dirname(__FILE__) . '/Agent/Guru.php');
 require_once(dirname(__FILE__) . '/Agent/Identity.php');
+require_once(dirname(__FILE__) . '/Environment/Access.php');
 
-abstract class Agent {
+class Agent implements \ArrayAccess {
 	use Guru;
 	use Identity;
+	use Environment; #NOTE this satisfies the ArrayAccess interface
 
 	public const OPTION_NAME = 'instanceName';
 	public const OPTION_MODE = 'kickstartMode';
@@ -70,12 +73,25 @@ abstract class Agent {
 		//self::MEDITATION_REMOTE,
 	];
 
+	/**
+	 * 
+	 */
 	protected static $idSeed = 0;
+
+	/**
+	 * Map of instantiated Agents by $id
+	 */
+	protected static $references = [];
 
 	/**
 	 * Instantiated agents are bound to an enviroment
 	 */
 	protected $environment = [];
+
+	/**
+	* Instantiated agents are bound to an enviroment
+	*/
+   protected $id = null;
 
     public static function detectableModes()
 	{
@@ -102,9 +118,36 @@ abstract class Agent {
 
 //-- instantiated methods
 
-	public function run()
-	{ //#TODO handle both run and main
+	public function __construct(string $instance, &$environment)
+	{
+		$this->instance = $instance;
+		$this->id = self::agentIdStrategy($instance) . "+{$instance}";
+		self::$references[$this->id] = &$this;
+		$this->enviornment = &$environment;
+	}
 
+	public function run($manager = null)
+	{ 
+		$options = self::duplicate($this->environment);
+		$options['agentId'] = $this->id;
+		if (is_null($manager)) {
+			$modeMain = $this['mainScript'] ?: 'main';
+			$installPath = $this['installPath'] ?: '.';
+			$mainScript = "{$installPath}/{$modeMain}.php";
+			#TODO #2.0.0 decide on a mechanism to send parameters to main
+			if (!file_exists($mainScript)) {
+				throw new \Exception('No main application script to run.');
+			} elseif (!is_readable($mainScript)){
+				throw new \Exception('Unable to access main application script.');
+			}
+			$main = require($mainScript);
+			if (is_callable($main) && key_exists('mainParams', $options)) {
+				return $main(...$params);
+			}
+			return is_callable($main) ? $main($params) : $main;
+		} else {
+			return $manager::run($this->instance, $options);
+		}
 	}
 
 //-- required Identity trait methods
@@ -168,6 +211,14 @@ abstract class Agent {
 		return self::MODE_DELIM;
 	}
 
+	/**
+	 * generates a unique id for passed meditation
+	 */
+	protected static function agentIdStrategy(string $instance)
+	{
+		return ++self::$idSeed;
+	}
+
 //-- required Guru trait methods
 
     /**
@@ -182,7 +233,7 @@ abstract class Agent {
 	/**
 	 * generates a unique id for passed meditation
 	 */
-	protected static function idStrategy($e)
+	protected static function meditationIdStrategy($e)
 	{
 		return ++self::$idSeed;
 	}

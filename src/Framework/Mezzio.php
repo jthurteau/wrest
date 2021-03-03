@@ -76,9 +76,20 @@ class Mezzio extends Manager{
                     return Auto::classPathLookup($className, "{$path}/src/", 'App');
                 };
             };
+            $moduleLoaderGenerator = function($path){
+                return function($className) use ($path){
+                    $moduleName = explode('\\', $className)[0];
+                    return Auto::classPathLookup($className, "{$path}/module/{$moduleName}/src/", $moduleName);
+                };
+            };
             Autoloader::addAutoloader(
                 'App\\', 
                 $appLoaderGenerator($options['applicationPath']), 
+                Autoloader::POSITION_BEFORE
+            );
+            Autoloader::addAutoloader(
+                '', 
+                $moduleLoaderGenerator($installPath), 
                 Autoloader::POSITION_BEFORE
             );
             //print_r([__FILE__,__LINE__,Autoloader::test('App\ConfigProvider')]); die;
@@ -89,10 +100,8 @@ class Mezzio extends Manager{
     public static function run($instance, $options = null)
     {
         $installPath = self::installPath($options);
-        foreach($options as $index => $option) {
-            if (is_callable($option)) { //#TODO swoole doesn't like the cyclical refrences in the canister?
-                unset($options[$index]);
-            }
+        if (key_exists('shell', $options)) {
+            $options = $options['shell']();
         }
         /** @var \Psr\Container\ContainerInterface $container */
         $container = require("{$installPath}/config/container.php");

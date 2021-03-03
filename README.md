@@ -281,13 +281,15 @@ CANISTER_FIFO - determines if kickstart prefers earlier set canister values (def
 APPLICATION_LEGACY_VECTOR - short-circuit the gateway to kickstart a pre PHP7 SAF app (value specifies a tether script)
 LIBRARY_PATH - an older form of VENDOR_PATH where each directory is source code (e.g. LIBRARY_PATH/library_name/ may simply be a symlink to VENDOR_PATH/project_name/src). Useful for including external code prior to modern autoloader methods.
 
-# PHAGENT
+# PHAgent
 
-Phagent or PHP-Agent, is a IoC programming pattern involving a canister (array) that includes self modifying callables (functions that accept an array reference). The Phagent is passed along using tethering, but it can effectively tether itself when IoC is desireable.
+Phagent or PHP-Agent, is a IoC programming pattern involving a canister (array) that includes self modifying callables (functions built closing around an array reference). The Phagent is passed along using tethering, and it can tether itself when IoC is desireable.
 
-Phagents can wrap core php functions or control structures that might normally trigger a fatal error and attempt to mitigate them with a thrown exeception/error instead.
+Phagents wrap core php functions or control structures that might normally trigger a fatal error and attempt to mitigate them with a thrown exeception/error instead. 
 
 Phagents can also be cached to create a sort of application state snapshot, which in combination with a stack-trace can be used to re-create that appliation state.
+
+PHAgents are designed to easily hybernate or mementize as arrays, and should generally be interchangable with arrays. They implment the ArrayAccess pattern and include methods to convert themselves from arrays to ArrayAccess objects as needed.
 
 # Recommended Exception Codes
 

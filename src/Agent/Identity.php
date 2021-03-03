@@ -47,6 +47,11 @@ trait Identity { #TODO #2.0.0 may want to split the mode/instance handling from 
     abstract public static function modeDelim();
 
     /**
+	 * generates a unique id for passed meditation
+	 */
+	abstract protected static function agentIdStrategy(string $instance);
+
+    /**
 	 * returns the mode name for a given instance specification
 	 * @param string $mode to parse for mode name
      * @param array $options #TODO #2.0.0
