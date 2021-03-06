@@ -131,7 +131,7 @@ class Kickstart
 			Agent::meditate($e, self::MEDITATION_LEVEL);
 			if (Environment::instanceOption($instance, self::OPTION_THROW_MEDITATIONS)) {
 				#TODO #2.0.0 get the correct deilm
-				throw new \Exception("Failed to kickstart instance {$instance}@{$modeRequested}", 0, Agent::getMeditation());
+				throw new \Exception("Failed to kickstart instance {$instance}@{$mode}", 0, Agent::getMeditation());
 			} elseif (Environment::instanceOption($instance, self::OPTION_RETURN_EXCEPTIONS)) {
 				return $e;
 			}

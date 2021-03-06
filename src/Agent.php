@@ -123,7 +123,7 @@ class Agent implements \ArrayAccess {
 		$this->instance = $instance;
 		$this->id = self::agentIdStrategy($instance) . "+{$instance}";
 		self::$references[$this->id] = &$this;
-		$this->enviornment = &$environment;
+		$this->environment = &$environment;
 	}
 
 	public function run($manager = null)

@@ -10,13 +10,13 @@ SAF provides wrapper funcionality for:
 - Hooks for RESTFUL API development and consumption
 - Some of PHP's native function shortcomings, e.g. Array functions
 
-SAF introduces no global scope pollution and aims to provide mechanims to allow the transition from reliance of such practices. When used as a "bootstrap", it allows a high degree of flexibility in coding practices. Its components are designed to be leveraged even when it is not employed for bootstrapping.
+SAF introduces minimal global scope pollution and aims to provide mechanims to allow the transition from reliance of such practices. When used as a "bootstrap", it allows a high degree of flexibility in coding practices. Its components are designed to be leveraged whether it is employed for bootstrapping or not.
 
-The bootstrapping facility for SAF is called "kickstart" because it is used to encapsulate existing bootstrapping processes. This allows projects to amphibiously employ multiple frameworks and support routes managed by different (or no) frameworks running in parallel.
+The bootstrapping facility for SAF is called "kickstart" because it is used to encapsulate existing framework bootstrapping processes. This allows projects to adroitly employ mutiple applications managed by multiple (including no) frameworks running in parallel.
 
-Kickstart models the "application's" excecution lifcycle as a "transaction". The web server hands off the transaction to a "gateway script", which identifies what application to execute and provides a baseline response if the application fails.
+Kickstart models an "application's" excecution lifcycle as a "transaction". The web server hands off the transaction to a "gateway script", which identifies what application to execute and provides a baseline response if the application fails.
 
-Most frameworks provide a similar mechanism called "bootstrap" process that may include some functions of the gateway, and fill a similar role to Kickstart in executive function. Since SAF is framework agnostic, it provides Kickstart an optional intermediary bootstrap process that dovetails into (or replaces) existing framework bootstraps. It is designed to be flexible such that SAF can manage the entire gateway-to-shutdown application execution lifcycle, or negotiate any portion of it.
+Most frameworks provide a similar mechanism called "bootstrap" process that include some functions of kickstart, and fill a similar role in executive function. Since SAF is framework agnostic, it provides Kickstart as an optional intermediary process that dovetails into (or replaces) existing framework bootstraps. It is designed to be flexible such that SAF can manage the entire gateway-to-shutdown application execution lifcycle, or negotiate any portion of it.
 
 ## Core Concepts ##
 
@@ -41,6 +41,35 @@ A strong gateway completely encapulates the server environment from the applicat
 Using "rooting" as Configuration Providers is one way SAF can helps insulate the application from environment. Through the kickstart process, relevant environment details are captured and passed on in towards building the application's "container" or "configuration"
 
 SAF's flexible "tethering" method for routing from the gateway to any bootstrapping that needs to happen keeps the global scope clean and allows multiple applications leveraging different frameworks to dispatch each other over the course of a single transaction.
+
+## PHP's Split Pipe Model
+
+Like the Unix scripting model, PHP has multiple routes for output:
+
+- PHP scripts "return" values, generally this is information not directly sent to an end-user
+- they also "emit" standard output that is traditionally directed at a web browser, but can be redirected in a variety of ways
+- additional streams can be opened to files, and other destinations, including the input to other scripts
+
+## Invokables
+
+All scripts are "invokables", what differentiates scripts is their utility. SAF employes an seconary file extension(e.g. #TODO) as a recommendation to clarify what a given file is intended for (and to disuade direct invocation).
+
+Invokables are "executive", "declarative", or "encapsulating" depending on whether, respectively, they:
+- take action along the transaction's execution lifecycle, 
+- set environmental state, or 
+- return a value.
+
+Invokables can be any combination of these classifications depending on what role the serve. Ideally scripts should only perform one or two.
+
+Executive scripts influence the flow of the application's execution directly, they react to the current local state and decide what other scripts to invoke and what to return (or emit).
+
+Declarative scripts change the execution environment of the current transaction. They "create" data some of which is inherently bound to the execution environment in a way that is persistent (though sometimes un-doable) and globally accessible. This includes traditional declarative scripts, like class definition files. Even declarations in namespaces introduce a small footprint into the global scope, and in PHP many named declarations are not un-doable: constants, functions, classes, traits, interfaces, etc.
+
+Changes to the execution environment are any changes specific the current transaction, that go away as soon as execution ends. As such outputing to a file or database would not be "execution environment" but "environment".
+
+Encapsulating scripts also "create" data, but in a way that does not "bind to the environment". Encapsulating scripts do something in a local scope, and may return it, but the results must be persisted by the invoking script. This construct allows local values, a return value, and anonymous functions and classes*. 
+
+*(technically anonymous classes are bound to the execution environment in PHP, but in a way that is suffciently "cloaked")
 
 ## Gateways, Kickstart, Bootstrapping ##
 
@@ -229,6 +258,19 @@ Some frameworks may be designed with the assumption they do all the lifting, oth
 The provided instance script injects no instance identity into the canister it tethers to the foundation script, but if the "mainScript" key in the canister had been set prior, it gets passed along, as is to the foundation script. The instance script does attempt to make educated guesses about where to find SAF's kickstart script using the canister's "appliationRoot" and "foundationPath" keys if present, or the instance scripts own path. It then uses the kickstart script "kick.php" as the foundation script.
 
 SAF's foundation script simply checks the canister for a "mainScript", which it will use to try and identify an instance of the application to run. Using that and the rest of the data in the canister, it then tries to auto-detect what framework the "mainScript" was written for and if it is a supported framework SAF will handle any bootstrapping that framework's default gateway script would have originally performed.
+
+## Workflow Pattern
+
+The workflow pattern is fairly vague, any invokable can be a workflow.
+
+## Cache and Short-Circuiting
+
+At any point in the rooting/tethering process, including a localization pylon, it is possible to:
+
+- Cache the current state of a canister
+- Short-Circuit the canister (aka fast-forwarding) to another gateway-tether
+
+
 
 # Environment and Options
 
