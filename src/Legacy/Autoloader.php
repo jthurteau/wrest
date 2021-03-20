@@ -321,6 +321,7 @@ class Autoloader
 
 	protected static function handle(string $className, $classFile = null, $errorMessage = null)
 	{
+		$badFiles = array();
 		if (!is_null($classFile)) {
 			try{
 				if (self::fileExistsInPath($classFile)) {
@@ -338,7 +339,7 @@ class Autoloader
 		if (self::$throws && !$classLoaded) {
 			$classOut = self::$debuggingEnabled ? " {$className}" : '';
 			$exceptionMessage = (
-				array_key_exists($classFile,$badFiles) 
+				array_key_exists($classFile, $badFiles) 
 					&& $badFiles[$classFile][0]
 				? "{$badFiles[$classFile][1]} "
 				: ''

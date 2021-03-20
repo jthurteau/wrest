@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<sample>
-<!-- #SCOPE_OS_PUBLIC -->
- 	[[$param]]
-	[[generatedtag = $param2]]
-	[[$optional = $param3]]
-	[[modelObject->method(`param`]]
-</sample>

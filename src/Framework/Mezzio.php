@@ -69,6 +69,7 @@ class Mezzio extends Manager{
             if (!array_key_exists('controllerPath', $options)) {
                 $options['controllerPath'] = "{$installPath}/App/controller"; //#NOTE this is a copy of $options
             }
+            $options['psrAutoloading'] = true; //#NOTE Mezzio really doesn't like non-psr autoloaders
             Autoloader::init($options);
             //Autoloader::addAutoloader('App\\', '[[APPLICATION_PATH]]/src');
             $appLoaderGenerator = function($path){
