@@ -14,15 +14,18 @@ return static function ($canister) {
 	try{
 		key_exists('installPath', $canister) || ($canister['installPath'] = '..');
 		key_exists('gatewayVent', $canister) || ($canister['gatewayVent'] = 'exception');
-		key_exists('gatewayVector', $canister) || ($canister['gatewayVector'] = 'local-instance');
-		(function (&$canister, string $path) {
-			$init = "{$path}/init.tether.php";
-			$initTether = file_exists($init) && is_readable($init) ? require($init) : null;
-			if (!is_callable($initTether)) {
-				throw new Exception('Initialization failed.', 127, new Exception($init));
-			}
-			$initTether($canister);
-		})($canister, $canister['installPath']);
+		$defaultVector = 
+			is_readable("{$canister['installPath']}/local-instance.tether.php") 
+			? 'local-instance' 
+			: 'instance';
+		key_exists('gatewayVector', $canister) || ($canister['gatewayVector'] = $defaultVector);
+
+		$init_path = dirname(__FILE__) . "/init.tether.php";
+		$initTether = is_readable($init_path) ? require($init_path) : null;
+		if (!is_callable($initTether)) {
+			throw new Exception('Initialization failed.', 127, new Exception($init_path));
+		}
+		$initTether($canister);
 		$vectorFail = 'Entry vector ({$}) unavailable.';
 		$vectorResult =	$canister['tether']("{$canister['gatewayVector']}.tether", $vectorFail);
 	} catch (Error | Exception $e) {
