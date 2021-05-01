@@ -13,15 +13,18 @@ namespace Saf;
 use Saf\Agent\Guru;
 use Saf\Agent\Identity;
 use Saf\Environment\Access as Environment;
+use Saf\Framework\Modes;
 
 require_once(dirname(__FILE__) . '/Agent/Guru.php');
 require_once(dirname(__FILE__) . '/Agent/Identity.php');
 require_once(dirname(__FILE__) . '/Environment/Access.php');
+require_once(dirname(__FILE__) . '/Framework/Modes.php');
 
 class Agent implements \ArrayAccess {
 	use Guru;
 	use Identity;
 	use Environment; #NOTE this satisfies the ArrayAccess interface
+	use Modes;
 
 	public const OPTION_NAME = 'instanceName';
 	public const OPTION_MODE = 'kickstartMode';
@@ -29,14 +32,6 @@ class Agent implements \ArrayAccess {
 	public const MODE_DELIM = '@';
     public const MODE_AUTODETECT = null;
 	public const MODE_NONE = 'none';
-	public const MODE_ZFMVC = 'zendmvc'; //NOTE deprecated in 2.0
-	public const MODE_ZFNONE = 'zendbare'; //NOTE deprecated in 2.0
-	public const MODE_SAF = 'saf';
-	public const MODE_SAF_LEGACY = 'saf-legacy';
-	public const MODE_MEZ = 'mezzio';
-	public const MODE_LAMMVC = 'laminas-mvc'; //#TODO #2.1.0 support Laravel
-	public const MODE_LF5 = 'laravel5'; //#TODO #2.1.0 support Laravel
-	public const MODE_SLIM = 'slim'; //#TODO #2.1.0 support Slim
 
 	public const MEDITATION_KICKSTART = 'KICKSTART_ERROR';
 	public const MEDITATION_BOOTSTRAP = 'BOOTSTRAP_ERROR';
@@ -91,29 +86,17 @@ class Agent implements \ArrayAccess {
 	/**
 	* Instantiated agents are bound to an enviroment
 	*/
-   protected $id = null;
+    protected $id = null;
 
-    public static function detectableModes()
-	{
-		return [
-			self::MODE_SAF,
-			self::MODE_SAF_LEGACY,
-			self::MODE_MEZ,
-			self::MODE_LAMMVC,
-			self::MODE_LF5,
-			self::MODE_SLIM,
-            self::MODE_ZFMVC, #NOTE this is supported under MODE_SAF_LEGACY
-		];
-	}
 
 	public static function availableModes()
 	{
 		return array_merge(
-            [
-                self::MODE_AUTODETECT,
-                self::MODE_ZFNONE,
-            ], self::detectableModes()
-        );
+			[
+				self::MODE_AUTODETECT,
+				self::MODE_ZFNONE,
+			], self::scanFrameworkModes()
+		);
 	}
 
 //-- instantiated methods
@@ -127,7 +110,7 @@ class Agent implements \ArrayAccess {
 	}
 
 	public function run($manager = null)
-	{ 
+	{
 		$options = self::duplicate($this->environment);
 		$options['agentId'] = $this->id;
 		if (is_null($manager)) {
@@ -141,10 +124,8 @@ class Agent implements \ArrayAccess {
 				throw new \Exception('Unable to access main application script.');
 			}
 			$main = require($mainScript);
-			if (is_callable($main) && key_exists('mainParams', $options)) {
-				return $main(...$params);
-			}
-			return is_callable($main) ? $main($params) : $main;
+			$params = key_exists('mainParams', $options) ? $options['mainParams'] : [];
+			return is_callable($main) ? $main(...$params) : $main;
 		} else {
 			return $manager::run($this->instance, $options);
 		}
@@ -187,7 +168,7 @@ class Agent implements \ArrayAccess {
 		if (is_null($instance)) {
 			return self::MODE_AUTODETECT;
 		}
-		foreach(self::detectableModes() as $mode) {
+		foreach(self::detectableFrameworkModes() as $mode) {
 			if(self::test($instance, $mode, $options)){ 
 				return $mode;
 			}
@@ -257,7 +238,7 @@ class Agent implements \ArrayAccess {
     */
 	protected static function initMeditation()
 	{
-		$installPath = defined('INSTALL_PATH') ? INSTALL_PATH : '.';
+		$installPath = defined('INSTALL_PATH') ? INSTALL_PATH : '.'; #TODO this seems old
 		$applicationPath = 
 			defined('APPLICATION_PATH') 
 				? APPLICATION_PATH 

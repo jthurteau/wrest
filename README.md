@@ -279,7 +279,7 @@ SAF assumes the source names from the environment will be in CONSTANT_FORMAT and
 ## Core Environment Values 
 PUBLIC_PATH - path to the root of public files, typically INSTALL_PATH/public
 INSTALL_PATH - path to the root of the project, typically the root of the project repo
-STORAGE_PATH - default write path for the application, sometimes INSTALL_PATH/data but better practice is outsite of INSTALL_PATH, e.g. somewhere in /var
+STORAGE_PATH - default write path for the application, sometimes INSTALL_PATH/data but better practice is outside of INSTALL_PATH, e.g. somewhere in /var
 START_TIME - timestamp of the transaction's start, typically aquired from the web server environment
 LOCAL_TIMEZONE - timezone associated with START_TIME and calls to Saf\Time
 
@@ -289,6 +289,7 @@ FOUNDATION_PATH - path to the foundation source code, i.e. where SAF is installe
 BASE_URI - root relative or absolute URI that maps to PUBLIC_PATH, useful for generating non-relative links. This can be provided, or auto-calculated.
 APPLICATION_PATH - path to the root of a signified application, mapping varies by project structure
 APPLICATION_ROOT - path to the root of managed applications, typically /opt/application, /opt, /var/www/application, /var/www, etc.
+SRC_PATH - path to the src for the project, defaults to INSTALL_PATH/src or INSTALL_PATH
 VENDOR_PATH - path to the root of managed dependencies, typically INSTALL_PATH/vendor, but paths outside of INSTALL_PATH are suppored.
 
 RESOVLER_PYLON - a portion of URI_MIRROR, aka $_SERVER\['PHP_SELF'] to match for BASE_URI calculation and Resolver routing (auto-piping). Matching RESOLVER_PYLON helps map PUBLIC_PATH to the BASE, marking the position in the served URI to where BASE_URI ends. The rest of the URI, including the match an everything else in the path, is the route for the app. From the application's perspective everything before RESOVLER_PYLON is chopped of from the URI as if PUBLIC_PATH were directly under the root of the URI path. Processing for RESOVLER_PYLON will try to automatically negotiate the cases where the ".php" suffix is needed, and where it is not.
@@ -306,15 +307,20 @@ also works.
 
 Many uses for RESOLVER_FORWARD are targeted at older frameworks with more rigid routing schemes. If your routing infrastructure is flexible enough it is often more straightforward to implement the routes natively. RESOLVER_FORWARD can be useful as a pre-dispatch forwarding mechanism, but it is a mechanism more universally handled by modern frameworks. In contrast, many frameworks still rely on third-party extensions to handle the usecase for RESOLVER_PYLON.
 
+Saf\URI_MIRROR_SOURCE source key for UriMirror in $_SERVER, defaults to PHP_SELF
+
+## Environment Values TBD (status of these is in flux)
+
+APPLICATION_ID
+APPLICATION_HANDLE
+APPLICATION_NAME
+
 ## Other Environment Values (less common, or supported in a deprecated manner)
 
 URI_MIRROR - a value that can be provided in cases where PHP_SELF and SCRIPT_NAME are unavailable,inaccurate, or you don't want to access $_SERVER. It should be the gateway's \__FILE__ path relative to the web servers Document Root. Primarily used to calculate BASE_URI. (See BASE_URI and RESOLVER_ANCHOR)
 URI_MIRROR_SOURCE - a key in $_SERVER to look for the value that would normally be provided in $_SERVER\['PHP_SELF']
 
 LIBRARY_PATH - deprecated path to root of managed libraries, use VENDOR_PATH when possible. LIBRARY_PATH is often symlinked directly to the relevant portion of a complementary VENDOR_PATH (e.g. LIBRARY_PATH/Zend = VENDOR_PATH/Zend/library/Zend )
-APPLICATION_ID
-APPLICATION_HANDLE
-APPLICATION_NAME
 
 LOCALIZE_TOKEN -
 ENABLE_LOCAL_DEV

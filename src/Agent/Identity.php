@@ -11,9 +11,10 @@
 namespace Saf\Agent;
 
 use Saf\Auto;
+
 require_once(dirname(dirname(__FILE__)) . '/Auto.php');
 
-trait Identity { #TODO #2.0.0 may want to split the mode/instance handling from meditation handling
+trait Identity {
 
     /**
      * returns the instance name option key
@@ -120,8 +121,17 @@ trait Identity { #TODO #2.0.0 may want to split the mode/instance handling from 
 		$namespaceString = __NAMESPACE__;
         $firstSub = strpos($namespaceString, '\\');
         $rootNamespaceString = substr($namespaceString, 0, $firstSub !== false ? $firstSub : null);
-		return "{$rootNamespaceString}\\Framework\\{$classString}";
+		return "{$rootNamespaceString}\\Framework\\Mode\\{$classString}";
 	}
+
+	/**
+	 * Scans for supported Framework modes
+	 * @return array list of modes
+	 */
+	public static function detectAvailableModes()
+	{
+		return [];
+	}	
 
     /**
      * Tests $mode for compatability with $instance
@@ -134,7 +144,7 @@ trait Identity { #TODO #2.0.0 may want to split the mode/instance handling from 
 	{
         #TODO  #2.0.0 look for cached answers (upstream, e.g. in trait implementers) to this question since it's intensive
 		$modeClass = self::getModeClass($mode);
-        return self::loadModeClass($mode, $modeClass) && $modeClass::detect($instance, $options);
+        return self::loadModeClass($modeClass) && $modeClass::detect($instance, $options);
 		#TODO  #2.0.0 cacheMode($mode, $instance); again upstream
 	}
 
@@ -150,17 +160,17 @@ trait Identity { #TODO #2.0.0 may want to split the mode/instance handling from 
 	{
 		$modeClass = self::getModeClass($mode);
 		return 
-            self::loadModeClass($mode, $modeClass) 
+            self::loadModeClass($modeClass) 
             ? $modeClass::negotiate($instance, $mode, $options)
             : false;
 	}
 
     /**
-     * 
+     * Instantiates a Framework mode manager
      */
-    protected static function loadModeClass($mode, $modeClass)
+    protected static function loadModeClass($modeClass)
     {
-        !class_exists($modeClass, false) && Auto::loadInternalClass($modeClass, false);
+        class_exists($modeClass, false) || Auto::loadInternalClass($modeClass, false);
         return class_exists($modeClass, false);
     }
 

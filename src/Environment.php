@@ -44,11 +44,9 @@ class Environment
 	public const SOURCE_FIRST_INSTANCE = 0;
 	public const SOURCE_DEFAULT = null;
 
-	protected const UNLIMITED = -1;
-
-	protected static $studlyDelim = "/([a-z\x80-\xbf\xd7\xdf-\xff][A-Z\xc0-\xd6\xd8-\xde])/";
-	protected static $constantMatch = "/^[A-Z\xc0-\xd6\xd8-\xde]+[_A-Z\xc0-\xd6\xd8-\xde]*$/";
-	protected static $environmentMatch = "/^[a-zA-Z\x80-\xff]*$/";
+	// #TODO these are not used?
+	// protected static $constantMatch = "/^[A-Z\xc0-\xd6\xd8-\xde]+[_A-Z\xc0-\xd6\xd8-\xde]*$/";
+	// protected static $environmentMatch = "/^[a-zA-Z\x80-\xff]*$/";
 
 	/**
 	 * allows (neglegible) JIT hits to performance
@@ -107,7 +105,7 @@ class Environment
 			self::detectPath('public', $options);
 			self::detectPath('install', $options);
 			if (array_key_exists(self::OPTION_STUDLY_DELIM, $options)) {
-				self::$studlyDelim = $options[self::OPTION_STUDLY_DELIM];
+				Auto::setStudlyDelim($options[self::OPTION_STUDLY_DELIM]);
 			}
 		}
 		if (!is_null($instance)){
@@ -165,7 +163,7 @@ class Environment
 	public static function lookup(string $name, int $source, ?string $path = null)
 	{
 		try {
-			$envName = self::envToOption($name);
+			$envName = Auto::envToOption($name);
 			switch ($source) {
 				case self::SOURCE_INSTANCE :
 				case self::SOURCE_FIRST_INSTANCE :
@@ -272,7 +270,7 @@ class Environment
 		foreach ($list as $option => $default){
 			if (is_null(self::instanceOption($instance, $option))) {
 				if (is_null($default)) {
-					$parsedDefault = self::find(self::optionToEnv($option));
+					$parsedDefault = self::find(Auto::optionToEnv($option));
 				} else {
 					$parsedDefault = 
 						strpos($default, self::INTERPOLATE_START) !== false
@@ -308,39 +306,6 @@ class Environment
 			}
 		}
 		return implode('', $result);
-	}
-
-	/**
-	 * converts standard camelCase/StudlyCase to CONSTANT_CASE
-	 * @param string $string camelCase/StudlyCase format
-	 * @return string CONSTANT_CASE format
-	 */
-	public static function optionToEnv(string $string)
-	{
-		$parts = preg_split(self::$studlyDelim, $string, self::UNLIMITED, \PREG_SPLIT_DELIM_CAPTURE);
-		for($i = 0; $i< count($parts); $i++){
-			if (
-				array_key_exists($i + 1, $parts) 
-				&& strlen($parts[$i + 1]) == 2
-				&& array_key_exists($i + 2, $parts) 
-			) {
-				$parts[$i] .= substr($parts[$i + 1], 0, 1);
-				$parts[$i + 2] = substr($parts[$i + 1], 1, 1) . $parts[$i + 2];
-				array_splice($parts, $i+1, 1);
-			}
-		}
-		return strtoupper(implode('_', $parts));
-	}
-
-	/**
-	 * converts CONSTANT_CASE to camelCase/StudlyCase
-	 * @param string $string CONSTANT_CASE format
-	 * @return string camelCase/StudlyCase format depending on $studly
-	 */
-	public static function envToOption(string $string, bool $studly = false)
-	{
-		$convertedString = str_replace(' ', '', ucwords(strtolower(str_replace('_', ' ', $string))));
-		return $studly ? $convertedString : lcfirst($convertedString);		
 	}
 
 	/**
@@ -491,7 +456,7 @@ class Environment
 				? $options[constant("self::{$source}")]
 				: $defaultValue;
 		defined(self::constant($target)) || define(self::constant($target),	$value);
-		self::$defaultOptions[self::envToOption($target)] = $value;
+		self::$defaultOptions[Auto::envToOption($target)] = $value;
 	}
 
 	/**

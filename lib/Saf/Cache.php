@@ -13,7 +13,7 @@ class Saf_Cache
 
 	const DIR_MODE_DIRECT_ONLY = 0;
 	const DIR_MODE_RECURSIVE_FLAT = 1;
-	const DIR_MODE_RECURSIZE_NESTED = 2;
+	const DIR_MODE_RECURSIZE_NESTED = 2; #TODO these are FileCache specific
 	
 	const STAMP_MODE_REPLACE = 0;
 	const STAMP_MODE_AVG = 1;

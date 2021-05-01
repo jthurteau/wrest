@@ -10,14 +10,23 @@
 
 namespace Saf;
 
-
 class Auto
 {
+	protected const UNLIMITED = -1;
+	protected const DEFAULT_SCAN_LINES = 50;
+	protected const LINE_LENGTH_AVG = 40;
 
-	const REGEX_CLASS =
+	public const REGEX_CLASS =
 		'/class\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)[\s{]/';
-	const REGEX_PARENT_CLASS =
+	public const REGEX_PARENT_CLASS =
 		'/class\s+[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\s+extends\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)+[\s{]/';
+
+	protected static $studlyDelim = "/([a-z\x80-\xbf\xd7\xdf-\xff][A-Z\xc0-\xd6\xd8-\xde])/";
+
+	public static function setStudlyDelim($delim)
+	{
+		self::$studlyDelim = $delim;
+	}
 
 	/**
 	 * Looks up class and requires it if the file exists
@@ -99,7 +108,6 @@ class Auto
 		ob_end_clean();
 		return gettype($meditationData) ."[<pre class=\"data\"{$style}>{$output}</pre>{$blockCap}]";
 	}
-
 
 	/**
 	 * scan a file for the first class definition and return the class name
@@ -199,5 +207,67 @@ class Auto
 		}
 		ini_set('include_path', implode(\PATH_SEPARATOR, $newPaths));
 		return true;
+	}
+
+	/**
+	 * converts standard camelCase/StudlyCase to CONSTANT_CASE
+	 * @param string $string camelCase/StudlyCase format
+	 * @return string CONSTANT_CASE format
+	 */
+	public static function optionToEnv(string $string)
+	{
+		$parts = preg_split(self::$studlyDelim, $string, self::UNLIMITED, \PREG_SPLIT_DELIM_CAPTURE);
+		for($i = 0; $i< count($parts); $i++){
+			if (
+				array_key_exists($i + 1, $parts) 
+				&& strlen($parts[$i + 1]) == 2
+				&& array_key_exists($i + 2, $parts) 
+			) {
+				$parts[$i] .= substr($parts[$i + 1], 0, 1);
+				$parts[$i + 2] = substr($parts[$i + 1], 1, 1) . $parts[$i + 2];
+				array_splice($parts, $i+1, 1);
+			}
+		}
+		return strtoupper(implode('_', $parts));
+	}
+
+	/**
+	 * converts CONSTANT_CASE to camelCase/StudlyCase
+	 * @param string $string CONSTANT_CASE format
+	 * @return string camelCase/StudlyCase format depending on $studly
+	 */
+	public static function envToOption(string $string, bool $studly = false)
+	{
+		$convertedString = str_replace(' ', '', ucwords(strtolower(str_replace('_', ' ', $string))));
+		return $studly ? $convertedString : lcfirst($convertedString);		
+	}
+
+	/**
+	 * @param string $path
+	 * @param array $matches
+	 * @return boolean
+	 */
+	public static function scan(string $path, array $matches)
+	{
+		foreach($matches as $file => $line) {
+            $maxLinesIndex = strpos($file, '<'); #TODO #2.0.0 right now this it just implemented as an estimate (40*lines chars)
+            $fileName = (
+				$maxLinesIndex === false
+				? substr($file, 0)
+				: substr($file, 0, $maxLinesIndex)
+			);
+            $filePath = "{$path}/{$fileName}";
+            if (file_exists($filePath) && is_readable($filePath)) {
+                $maxLines = 
+                    $maxLinesIndex 
+                    ? substr($file, $maxLinesIndex + 1) 
+                    : self::DEFAULT_SCAN_LINES;
+                $fileScan = file_get_contents($filePath, false, null, 0, $maxLines * self::LINE_LENGTH_AVG);
+                if (strpos($fileScan, $line) !== false) {
+                    return true;
+                }
+            }
+        }
+		return false;
 	}
 }

@@ -42,7 +42,7 @@ class Kickstart
 	public const OPTION_AUTOLOAD = 'autoload';
 	public const OPTION_MANAGER = 'managerClass';
 	public const OPTION_THROW_MEDITATIONS = 'throwMeditations';
-	public const OPTION_RETURN_EXCEPTIONS = 'returnExceptions';
+	public const OPTION_RETURN_MEDITATIONS = 'returnMeditations';
 	public const OPTION_RESOLVER = 'resolution';
 	public const INSTANCE_DEFAULTS = [
 		'applicationEnv' => 'production',
@@ -84,7 +84,7 @@ class Kickstart
 				self::preboot($instance, $mode);
 				self::$laced[$instance] = $mode;
 			}
-		} catch (\Exception $e) {
+		} catch (\Error|\Exception $e) {
 			Agent::meditate($e, self::MEDITATION_LEVEL, $instance); #TODO #2.0.0 staticMeditate
 			if (Environment::instanceOption($options, self::OPTION_THROW_MEDITATIONS)) {
 				#TODO #2.0.0 get the correct deilm
@@ -110,14 +110,14 @@ class Kickstart
 				throw new \Exception('Requested instance has not been configured.');
 			} elseif (
 				$mode != self::$laced[$instance]
-				&& $mode != self::MODE_NONE 
+				&& $mode != Agent::MODE_NONE 
 			) {
 				throw new \Exception('Instance has not been configured for the requested mode.');
 			}
-			$options = &Environment::options($instance);
+			$options = &Environment::options($instance); #TODO the copy returned by E::o() needs to be re-bound
 			$agent = new Agent($instance, $options);
 			$modeClass = Environment::instanceOption($instance, self::OPTION_MANAGER);
-			if (!class_exists($modeClass, false)) {
+			if ($mode != Agent::MODE_NONE && !class_exists($modeClass, false)) {
 				$mode = array_key_exists($instance, self::$laced) ? self::$laced[$instance] : 'undefined';
 				throw new \Exception("Requested kickstart mode ({$mode}:{$modeClass}) is not loaded.");
 			}
@@ -127,12 +127,12 @@ class Kickstart
 			// } catch (Saf\Exception\Public $e){
 			// } catch (Saf\Exception\Redirect $e){
 			// } catch (Saf\Exception\Workflow $e){
-		} catch (\Exception $e) { #TODO #2.0.0 handle redirects and forwards
+		} catch (\Error|\Exception $e) { #TODO #2.0.0 handle redirects and forwards
 			Agent::meditate($e, self::MEDITATION_LEVEL);
 			if (Environment::instanceOption($instance, self::OPTION_THROW_MEDITATIONS)) {
 				#TODO #2.0.0 get the correct deilm
 				throw new \Exception("Failed to kickstart instance {$instance}@{$mode}", 0, Agent::getMeditation());
-			} elseif (Environment::instanceOption($instance, self::OPTION_RETURN_EXCEPTIONS)) {
+			} elseif (Environment::instanceOption($instance, self::OPTION_RETURN_MEDITATIONS)) {
 				return $e;
 			}
 		}
@@ -167,7 +167,7 @@ class Kickstart
 	 */
 	public static function go(array $options = [])
 	{
-		self::kick(self::lace(null, $options));
+		return self::kick(self::lace(null, $options));
 	}
 
 	/**

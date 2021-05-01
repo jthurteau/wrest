@@ -26,6 +26,14 @@ abstract class Manager{
     abstract public static function detect(string $instance, array $options);
 
     /**
+     * returns true if the manager supports autodetect mode
+     */
+    public static function autodetectable()
+    {
+        return false;
+    }
+
+    /**
      * 
      */
     abstract public static function autoload(string $instance, array $options);
@@ -73,6 +81,28 @@ abstract class Manager{
     }
 
     /**
+     * #TODO #2.0.0 fold this back to Environment?
+     */
+    protected static function srcPath(array $config)
+    {
+        return
+            array_key_exists('srcPath', $config)
+            ? $config['srcPath']
+            : (self::installPath($config) . '/src');
+    }
+
+    /**
+     * #TODO #2.0.0 fold this back to Environment?
+     */
+    protected static function vendorPath(array $config)
+    {
+        return
+            array_key_exists('vendorPath', $config)
+            ? $config['vendorPath']
+            : (self::installPath($config) . '/vendor');
+    }
+
+    /**
      * Wrapper for Auto::insertPath
      */
     protected static function insertPath(string $new, $after = null)
@@ -105,6 +135,11 @@ abstract class Manager{
                 } 
             }
         }
+    }
+
+    protected static function scan($path, $match)
+    {
+        return Auto::scan($path, $match);
     }
 
 }

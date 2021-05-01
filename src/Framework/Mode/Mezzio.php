@@ -10,45 +10,30 @@
 
 declare(strict_types=1);
 
-namespace Saf\Framework;
+namespace Saf\Framework\Mode;
 
 use Saf\Framework\Manager;
 use Saf\Legacy\Autoloader;
 use Saf\Auto;
 
-require_once(dirname(dirname(__FILE__)) . '/Framework/Manager.php');
+require_once(dirname(dirname(__FILE__)) . '/Manager.php');
+require_once(dirname(dirname(dirname(__FILE__))) . '/Legacy/Autoloader.php');
 
 class Mezzio extends Manager{
 
-    protected const DEFAULT_SCAN_LINES = 50;
-
     public static function detect($instance, $options = null)
     {
-        $installPath = self::installPath($options);
+        $srcPath = self::srcPath($options);
         $lookFor = [
             'config/pipeline.php<20' => 'use Mezzio\Application;'
         ];
-        foreach($lookFor as $file => $line) {
-            $maxLinesIndex = strpos($file, '<'); #TODO #2.0.0 right now this it just implemented as an estimate (40*lines chars)
-            $fileName = substr($file, 0, $maxLinesIndex === false ? null : $maxLinesIndex);
-            $filePath = "{$installPath}/{$fileName}";
-            if (file_exists($filePath) && is_readable($filePath)) {
-                $maxLines = 
-                    $maxLinesIndex 
-                    ? substr($file, $maxLinesIndex + 1) 
-                    : self::DEFAULT_SCAN_LINES;
-                $fileScan = file_get_contents($filePath, false, null, 0, $maxLinesIndex * 40);
-                if (strpos($fileScan, $line) !== false) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return Auto::scan($srcPath, $lookFor);
     }
     
     public static function autoload($instance, $options = null)
     {
         $installPath = self::installPath($options);
+        $srcPath = self::srcPath($options);
         $usesExternalComposer = self::option('composerVendor', $options);
         $path = $usesExternalComposer ?: "{$installPath}/vendor";
         require("{$path}/autoload.php");
@@ -100,7 +85,7 @@ class Mezzio extends Manager{
 
     public static function run($instance, $options = null)
     {
-        $installPath = self::installPath($options);
+        $installPath = self::installPath($options); #TODO this is srcPath?
         if (key_exists('shell', $options)) {
             $options = $options['shell']();
         }

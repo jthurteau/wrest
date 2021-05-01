@@ -24,7 +24,7 @@ return function(string $root, ?string $fail = null) use (&$canister) {
         if (!is_null($fail)) {
             throw new Exception(str_replace('{$}', $root, $fail), 127, new Exception($rootFile));
         }
-        return null;
+        return [];
     }
     $root = require($rootFile);
     return is_array($root) ? $root : [];

@@ -8,13 +8,13 @@
  * Utility class for managing older SAF instances
  */
 
-namespace Saf\Framework;
+namespace Saf\Framework\Mode;
 
 use Saf\Framework\Manager;
 use Saf\Legacy\Autoloader;
 
-require_once(dirname(dirname(__FILE__)) . '/Framework/Manager.php');
-require_once(dirname(dirname(__FILE__)) . '/Legacy/Autoloader.php');
+require_once(dirname(dirname(__FILE__)) . '/Manager.php');
+require_once(dirname(dirname(dirname(__FILE__))) . '/Legacy/Autoloader.php');
 
 class SafLegacy extends Manager{
 

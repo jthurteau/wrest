@@ -8,11 +8,11 @@
  * Utility class for managing Mezzio instances
  */
 
-namespace Saf\Framework;
+namespace Saf\Framework\Mode;
 
 use Saf\Framework\Manager;
 
-require_once(dirname(dirname(__FILE__)) . '/Framework/Manager.php');
+require_once(dirname(dirname(__FILE__)) . '/Manager.php');
 
 class LaminasMvc extends Manager{
 

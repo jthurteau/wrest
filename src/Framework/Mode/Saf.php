@@ -8,12 +8,12 @@
  * Utility class for managing SAF instances
  */
 
-namespace Saf\Framework;
+namespace Saf\Framework\Mode;
 
 use Saf\Framework\Manager;
 use Saf\Auto;
 
-require_once(dirname(dirname(__FILE__)) . '/Framework/Manager.php');
+require_once(dirname(dirname(__FILE__)) . '/Manager.php');
 
 class Saf extends Manager{
 

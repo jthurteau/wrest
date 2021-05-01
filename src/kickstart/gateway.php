@@ -56,7 +56,6 @@ declare(strict_types=1);
 		return [];
 	} elseif (!is_readable($localizationScript)) {
 		return ['invalidSeed' => [$localDevBulb => 'Localization bulb inaccessible']];
-		die($e->getMessage());
 	}
 	$bulb = require($localizationScript);
 	return 
