@@ -8,15 +8,16 @@ SAF provides wrapper funcionality for:
 - Flexible, framework agnostic application kickstarting (bootstrapping)
 - Development tools like: Testing, Profiling, Debugging, Insulation, Backending, etc.
 - Hooks for RESTFUL API development and consumption
+- Powerful relational data management tools
 - Some of PHP's native function shortcomings, e.g. Array functions
 
-SAF introduces minimal global scope pollution and aims to provide mechanims to allow the transition from reliance of such practices. When used as a "bootstrap", it allows a high degree of flexibility in coding practices. Its components are designed to be leveraged whether it is employed for bootstrapping or not.
+SAF introduces minimal global scope pollution and aims to provide mechanims to allow the transition from reliance of such practices. When used as a "bootstrap", it allows a high degree of flexibility in coding practices. Its components are designed to be leveraged completely independently.
 
-The bootstrapping facility for SAF is called "kickstart" because it is used to encapsulate existing framework bootstrapping processes. This allows projects to adroitly employ mutiple applications managed by multiple (including no) frameworks running in parallel.
+The bootstrapping facility for SAF is called "kickstart" because it is used to encapsulate existing framework bootstrapping processes. This allows projects to adroitly employ mutiple applications managed by multiple (including no) frameworks running in parallel across enpoints.
 
-Kickstart models an "application's" excecution lifcycle as a "transaction". The web server hands off the transaction to a "gateway script", which identifies what application to execute and provides a baseline response if the application fails.
+Kickstart models the excecution lifecycle as a "transaction". The web server hands off the transaction to a "gateway script", which identifies what application to execute and provides a baseline response if the application fails.
 
-Most frameworks provide a similar mechanism called "bootstrap" process that include some functions of kickstart, and fill a similar role in executive function. Since SAF is framework agnostic, it provides Kickstart as an optional intermediary process that dovetails into (or replaces) existing framework bootstraps. It is designed to be flexible such that SAF can manage the entire gateway-to-shutdown application execution lifcycle, or negotiate any portion of it.
+Most frameworks provide a similar mechanism called the "bootstrap" process that include some functions of kickstart, and fill a similar role in executive function. Since SAF is framework agnostic, it provides Kickstart as an optional intermediary process that dovetails into (or replaces) existing framework bootstraps. It is designed to be flexible such that SAF can manage the entire gateway-to-shutdown application execution lifcycle, or negotiate any portion of it.
 
 ## Core Concepts ##
 
@@ -30,7 +31,7 @@ SAF's Kickstart follows a general MVC (Model-View-Controller) like design patter
 
 - Gateways and Tethers: Route and manage requests like a "Controller", providing the primary mechanisms for flow control. "Gateways" are the primary entry-and/or-exit points to applications, and they invoke "Tethers" to modularize flow control internally.
 - Workflows and Roots: SAF encapsulates all application execution and environment in the "Model". However you define the core "application(s)", SAF abstracts it as "Workflow". Application environment is abstracted as "Roots" which read or set environment; normalizing, or adapting it for the application(s). Roots also "insulate" the application from the environment which facilites testing and uplifting legacy code.
-- Vents and Meditations: Provide mechanisms for any output not delegated to or handled by the applicaiton. "Vents" can wrap APIs, catch exceptions, and generally suppliment or manage the "View" of applications. While Vents are outward focused, "Meditations" provide a similar facility for more inward I/O management.
+- Vents and Meditations: Provide mechanisms for any output not delegated to or handled by the applicaiton. "Vents" can wrap APIs, catch exceptions, and generally suppliment or manage the "View" of applications. While Vents are outward focused, "Meditations" provide a similar facility for more inward I/O management (such as logging).
 
  <!-- of MiddlewareThe key work of any transaction ultimately gets delegated to some Application, Module, Service, or other similiar "Model" agent. SAF works well with code designed for Middleware frameworks, and "callables" in general. It also provides tools to "wetware" applications through APIs, framework bootstrapping, backending, etc. This can be Middleware Modules, bootstrapped framwork applications, out-sourced services, or anything that performs work immediately upon invocation and returns its results.-->
 
@@ -52,24 +53,26 @@ Like the Unix scripting model, PHP has multiple routes for output:
 
 ## Invokables
 
-All scripts are "invokables", what differentiates scripts is their utility. SAF employes an seconary file extension(e.g. #TODO) as a recommendation to clarify what a given file is intended for (and to disuade direct invocation).
+All scripts are "invokables", what differentiates scripts is their utility. SAF employes a secondary file extension(e.g. ".tether.php", ".root.php", ".vent.php") as a recommendation to clarify what a given file is intended for.
 
 Invokables are "executive", "declarative", or "encapsulating" depending on whether, respectively, they:
 - take action along the transaction's execution lifecycle, 
 - set environmental state, or 
-- return a value.
+- get environmental state.
 
-Invokables can be any combination of these classifications depending on what role the serve. Ideally scripts should only perform one or two.
+Ideally invokable scripts should only perform operations related to one of these classifications whenever possible.
 
 Executive scripts influence the flow of the application's execution directly, they react to the current local state and decide what other scripts to invoke and what to return (or emit).
 
-Declarative scripts change the execution environment of the current transaction. They "create" data some of which is inherently bound to the execution environment in a way that is persistent (though sometimes un-doable) and globally accessible. This includes traditional declarative scripts, like class definition files. Even declarations in namespaces introduce a small footprint into the global scope, and in PHP many named declarations are not un-doable: constants, functions, classes, traits, interfaces, etc.
+Declarative scripts change the execution environment of the current transaction. They "create" or "set" data, some of which is inherently bound to the execution environment in a way that is persistent (though sometimes un-doable) and globally accessible. This includes traditional declarative scripts, like class definition files. Even declarations in namespaces introduce a small footprint into the global scope, and in PHP many named declarations are not un-doable: constants, functions, classes, traits, interfaces, etc.
 
 Changes to the execution environment are any changes specific the current transaction, that go away as soon as execution ends. As such outputing to a file or database would not be "execution environment" but "environment".
 
 Encapsulating scripts also "create" data, but in a way that does not "bind to the environment". Encapsulating scripts do something in a local scope, and may return it, but the results must be persisted by the invoking script. This construct allows local values, a return value, and anonymous functions and classes*. 
 
 *(technically anonymous classes are bound to the execution environment in PHP, but in a way that is suffciently "cloaked")
+
+#TODO execution environment vs. persistent environment
 
 ## Gateways, Kickstart, Bootstrapping ##
 
@@ -96,12 +99,14 @@ Gateways conform to the following criteria:
 - has intentionaly minimal direct contact with its executing environment, and
 - ideally in no way changes the local executing environment, and
 - it delegates reading environment to "rooting" scripts, and
+- does not read or accept parameters or data from mechanisms other than rooting, and
 - creates a canister (array) of data, and
 - it (typically) delegates execution to one or more "tether" scripts, and
-- passes the (or a) canister to tethered scripts, and
-- the script closes around all of the above activity, and
-- the script executes the closure (it does not just return it), and
-- the script handles all exceptions and non-fatal errors, and does not throw
+- passes the canister to tethered scripts, and
+- the script closes around all of the above activity, and 
+- it executes the closure (it does not just return it), and
+- the script handles all exceptions and non-fatal errors, and does not throw but
+- it may return a value
 
 ### Gateway Scripts
 
@@ -281,7 +286,7 @@ PUBLIC_PATH - path to the root of public files, typically INSTALL_PATH/public
 INSTALL_PATH - path to the root of the project, typically the root of the project repo
 STORAGE_PATH - default write path for the application, sometimes INSTALL_PATH/data but better practice is outside of INSTALL_PATH, e.g. somewhere in /var
 START_TIME - timestamp of the transaction's start, typically aquired from the web server environment
-LOCAL_TIMEZONE - timezone associated with START_TIME and calls to Saf\Time
+LOCAL_TIMEZONE - timezone associated with START_TIME and calls to Saf\Utils\Time
 
 FOUNDATION_PATH - path to the foundation source code, i.e. where SAF is installed, defaults to VENDOR_PATH/Saf
 
@@ -290,6 +295,8 @@ BASE_URI - root relative or absolute URI that maps to PUBLIC_PATH, useful for ge
 APPLICATION_PATH - path to the root of a signified application, mapping varies by project structure
 APPLICATION_ROOT - path to the root of managed applications, typically /opt/application, /opt, /var/www/application, /var/www, etc.
 SRC_PATH - path to the src for the project, defaults to INSTALL_PATH/src or INSTALL_PATH
+FOUNDATION_PATH -
+KICK_PATH -
 VENDOR_PATH - path to the root of managed dependencies, typically INSTALL_PATH/vendor, but paths outside of INSTALL_PATH are suppored.
 
 RESOVLER_PYLON - a portion of URI_MIRROR, aka $_SERVER\['PHP_SELF'] to match for BASE_URI calculation and Resolver routing (auto-piping). Matching RESOLVER_PYLON helps map PUBLIC_PATH to the BASE, marking the position in the served URI to where BASE_URI ends. The rest of the URI, including the match an everything else in the path, is the route for the app. From the application's perspective everything before RESOVLER_PYLON is chopped of from the URI as if PUBLIC_PATH were directly under the root of the URI path. Processing for RESOVLER_PYLON will try to automatically negotiate the cases where the ".php" suffix is needed, and where it is not.

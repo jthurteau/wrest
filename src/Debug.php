@@ -8,18 +8,20 @@
  * Utility class for debugging
  */
 
-print_r([__FILE__,__LINE__,'no']);
 namespace Saf;
 
 use Saf\Kickstart;
-use Saf\Brray;
-use Saf\Status;
+use Saf\Hash;
+use Saf\Utils\Status;
 use Saf\Layout;
 
-require_once(dirname(__FILE__) . '/Kickstart.php');
-require_once(dirname(__FILE__) . '/Brray.php');
-require_once(dirname(__FILE__) . '/Status.php');
-require_once(dirname(__FILE__) . '/Layout.php');
+// require_once(dirname(__FILE__) . '/Kickstart.php');
+
+// require_once(dirname(__FILE__) . '/UtilsStatus.php');
+// require_once(dirname(__FILE__) . '/Layout.php');
+
+
+use Saf\Utils\Debug\Mute;
 
 class Debug
 {
@@ -29,8 +31,6 @@ class Debug
 	protected static $_enabled = NULL;
 	protected static $_verbose = FALSE;
 	protected static $_buffered = TRUE;
-	protected static $_muted = array();
-	protected static $_muteIndex = 0;
 	protected static $_sessionReady = FALSE;
 	public static $buffer = '';
 	protected static $_maxBufferSize = 1000000;
@@ -102,7 +102,7 @@ class Debug
 			default:
 				$badMode = self::$_mode;
 				self::$_mode = $previousMode;
-				throw new Exception("Unknown Debug Mode: {$badMode}");
+				throw new \Exception("Unknown Debug Mode: {$badMode}");
 		}
 	}
 
@@ -320,8 +320,8 @@ class Debug
 	public static function getTrace()
 	{
 		try {
-			throw new Exception('debug');
-		} catch (Exception $e) {
+			throw new \Exception('debug');
+		} catch (\Exception $e) {
 			$trace = $e->getTrace();
 			$traceString = $e->getTraceAsString();
 			array_shift($trace);
@@ -390,21 +390,6 @@ class Debug
 		return $return;
 	}
 
-	public static function mute()
-	{
-		self::$_muted[self::$_muteIndex] = self::getTrace();
-		return self::$_muteIndex++;
-	}
-
-	public static function unmute($index = NULL)
-	{
-		if (!is_null($index)) {
-			unset(self::$_muted[$index]);
-		} else {
-			self::$_muted = array();
-		}
-	}
-
 	public static function getRequestString()
 	{
 		ob_start();
@@ -418,7 +403,7 @@ class Debug
 		print('<ul class="debugList">');
 		foreach($sanitizedRequest as $key=>$item) {
 			if (is_array($item)) {
-				$item = Brray::toString($item);
+				$item = Hash::toString($item);
 			}
 			print('<li class="noBullet">[' . htmlentities($key) . '] : ' . '<span class="literal">' . htmlentities($item) . '</span></li>');
 		}
@@ -471,8 +456,8 @@ class Debug
 		if (!self::$_alreadyPrintedDebugShutdown && Layout::formatIsHtml()) {
 			$loadTime = microtime(TRUE) - APPLICATION_START_TIME;
 			if (self::isVerbose()) {
-				if (self::$_muted) {
-					foreach (self::$_muted as $trace) {
+				if (Mute::active()) {
+					foreach (Mute::list() as $trace) {
 						$icon = ' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>';
 						print("\n<div class=\"debugStatus\"><pre>Data:{$icon}<br/>\n");
 						print(htmlentities($trace));
@@ -695,11 +680,11 @@ class Debug
 		if ($fatal) {
 			$caughtBy = self::$_shuttingDown ? 'SHUTDOWN' : 'DEBUG';
 			Status::set(Status::STATUS_500_ERROR);
-			$e = new Exception("{$description} {$in}");
+			$e = new \Exception("{$description} {$in}");
 			Kickstart::exceptionDisplay($e, $caughtBy, $errorString);
 		} else {
 			$show = self::$_enabledErrorLevel === -1 || $errorNo & self::$_enabledErrorLevel;
-			if ($show && !self::$_muted) {
+			if ($show && !Mute::active()) {
 				$message = "<span class=\"phpErrorWhat\">{$description} - </span>"
 					. "<span class=\"phpErrorMessage\">{$errorString}</span>"
 					. "<span slass=\"phpErrorWhere\">{$in}</span> ";

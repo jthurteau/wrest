@@ -264,9 +264,42 @@ class Agent implements \ArrayAccess {
 	{
 		if (!is_null($id) && array_key_exists($id, self::$meditations)) {
 			return self::$meditations[$id];
-		} elseif (is_null($id)) {
+		} elseif (is_null($id) && count(self::$meditations) > 0) {
 			return self::$meditations[array_key_last(self::$meditations)];
 		}
 		return null;
+	}
+
+	/**
+	 * returns the last reference id
+	 */
+	public static function last()
+	{
+		return 
+			count(self::$references) > 0 
+			? array_keys(self::$references)[count(self::$references) - 1] 
+			: null;
+	}
+
+	/**
+	 * returns instance by reference id
+	 */
+	public static function lookup($id = null)
+	{
+		if (is_null($id)) {
+			$id = self::last();
+		}
+		return
+			!is_null($id) && key_exists($id, self::$references)
+			? self::$references[$id]
+			: null;
+	}
+
+	/**
+	 * 
+	 */
+	public function env()
+	{
+		return self::duplicate($this->environment);
 	}
 }

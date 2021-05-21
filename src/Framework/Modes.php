@@ -5,7 +5,7 @@
  * 
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  *
- * Traits for for Framework Modes
+ * Traits for Framework Modes
  */
 
 namespace Saf\Framework;

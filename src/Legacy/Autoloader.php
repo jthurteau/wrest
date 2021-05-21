@@ -327,7 +327,7 @@ class Autoloader
 				if (self::fileExistsInPath($classFile)) {
 					require_once($classFile);
 				}
-			} catch ( \ParseError $e) {
+			} catch (\ParseError $e) {
 				$badFiles[$classFile] = [
 					$className, 
 					'Parse Exception in ' . $e->getFile() . ' on line ' . $e->getLine() . ': ' 
@@ -627,7 +627,7 @@ class Autoloader
     {
         $map = [
             'libraryPath' => 'LIBRARY_PATH',
-            'applicationPath' => 'APPLICATION_PATH',
+            'applicationPath' => 'APPLICATION_PATH', #TODO this is used? applicationRoot?
             'controllerPath' => 'CONTROLLER_PATH',
             'publicPath' => 'PUBLIC_PATH',
             'installPath' => 'INSTALL_PATH',

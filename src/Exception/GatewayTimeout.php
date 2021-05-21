@@ -1,12 +1,15 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Exception when upstream services don't respond in a timely fashion
+ */
 
-Exception when upstream services don't respond in a timely fashion
+namespace Saf\Exception;
 
-*******************************************************************************/
-class Saf_Exception_GatewayTimeout extends Exception {
+class GatewayTimeout extends \Exception {
 
 }

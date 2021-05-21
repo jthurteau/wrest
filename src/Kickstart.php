@@ -84,7 +84,7 @@ class Kickstart
 				self::preboot($instance, $mode);
 				self::$laced[$instance] = $mode;
 			}
-		} catch (\Error|\Exception $e) {
+		} catch (\Error | \Exception $e) {
 			Agent::meditate($e, self::MEDITATION_LEVEL, $instance); #TODO #2.0.0 staticMeditate
 			if (Environment::instanceOption($options, self::OPTION_THROW_MEDITATIONS)) {
 				#TODO #2.0.0 get the correct deilm
@@ -127,7 +127,7 @@ class Kickstart
 			// } catch (Saf\Exception\Public $e){
 			// } catch (Saf\Exception\Redirect $e){
 			// } catch (Saf\Exception\Workflow $e){
-		} catch (\Error|\Exception $e) { #TODO #2.0.0 handle redirects and forwards
+		} catch (\Error | \Exception $e) { #TODO #2.0.0 handle redirects and forwards
 			Agent::meditate($e, self::MEDITATION_LEVEL);
 			if (Environment::instanceOption($instance, self::OPTION_THROW_MEDITATIONS)) {
 				#TODO #2.0.0 get the correct deilm
@@ -249,12 +249,12 @@ class Kickstart
 		}
 		$modeClass = Environment::instanceOption($instance, self::OPTION_MANAGER);
 		if ($modeClass && class_exists($modeClass, false)) { #TODO #2.0.0 change autoload to a step for custom ordering
-			Environment::autoload($modeClass);
 			if (Environment::instanceOption($instance, self::OPTION_AUTOLOAD)){
 				$modeClass::autoload($instance, $options);
 			}
 			$modeClass::preboot($instance, $options, self::$prebootSteps);
 		} elseif ($modeClass) {
+			//Environment::autoload($modeClass);
 			//#TODO #2.0.0 warn about invalid mode class?
 		}
 	}

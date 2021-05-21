@@ -1,13 +1,15 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Exception class for when upstream services fail
+ */
 
-Exception class for when upstream services fail
+namespace Saf\Exception;
 
-*******************************************************************************/
-
-class Saf_Exception_Upstream extends Exception {
+class Upstream extends \Exception {
 
 }

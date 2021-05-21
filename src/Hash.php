@@ -5,23 +5,22 @@
  * 
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  *
- * Utility class for array manipulation
+ * Utility class for expanded array manipulation
  */
 
 namespace Saf;
 
-#use Saf\Debug;
 use Saf\Exception\NotAnArray;
 use Saf\Exception\NoDefault;
+use Saf\Utils\Filter\Truthy;
 
-#require_once(dirname(__FILE__) . '/Debug.php');
-require_once(dirname(dirname(__FILE__)) . '/Exception/NotAnArray.php');
-require_once(dirname(dirname(__FILE__)) . '/Exception/NoDefault.php');
+require_once(dirname(__FILE__) . '/Exception/NotAnArray.php');
+require_once(dirname(__FILE__) . '/Exception/NoDefault.php');
 
 /**
  * Utility functions for Arrays
  */
-class Brray #TODO deprecate in favor of Hash::
+class Hash
 {
 
 	const TYPE_NONE = 0;
@@ -656,5 +655,108 @@ class Brray #TODO deprecate in favor of Hash::
 		$output = ob_get_contents();
 		ob_end_clean();
 		return $output;
+	}
+
+    public static function match($ids, $data)
+    {
+        if (is_null($ids)) {
+            return $data;
+        }
+        $returnArray = is_array($ids);
+        $ids = is_array($ids) ? $ids : array($ids);
+        $results = array();
+        foreach($ids as $id) {
+            if (array_key_exists($id, $data)) {
+                $results[$id] = $data[$id];
+            }
+        }
+        return $returnArray ? $results : current($results);
+    }
+
+    public static function toTags($tagName, $values)
+    {
+        $return = '';
+        if (!is_array($values)) {
+            $values = array($values);
+        }
+        if (count($values) > 0) {
+            $return =
+                "<{$tagName}>"
+                . implode("</{$tagName}><{$tagName}>",$values)
+                . "</{$tagName}>";
+        }
+        return $return;
+    }
+
+	public static function arrayMap($data, $flatten = false)
+	{
+		$return = array();
+		$increment = 1;
+		if(is_array($data)) { 
+			foreach ($data as $key=>$value) {
+				if(array_key_exists($key, $return)) {
+					$return[$key . ($increment++)] = self::valueMap($value);
+				} else {
+					$return[$key] = self::valueMap($value);
+				}
+			}
+		} else if (is_object($data) && method_exists($data, 'toArray')) {
+			$return = self::arrayMap($data->toArray());
+		} else if (is_object($data) && method_exists($data, '__toArray')) {
+			$return = self::arrayMap($data->__toArray());
+		} else if (is_object($data) && in_array('Traversable', class_implements($data))) {
+			if(0 ==count($data)) {
+				$return = (string)$data;
+			} else {
+				foreach ($data as $key=>$value) {
+					if(array_key_exists($key, $return)) {
+						$return[$key . ($increment++)] = self::valueMap($value);
+					} else {
+						$return[$key] = self::valueMap($value);
+					}
+				}
+			}
+		} else {
+			$return[] = $data;
+		}
+		if ($flatten && is_array($return)) {
+			$flattenedReturn = array();
+			foreach($return as $value) {
+				if(is_array($value)) {
+					foreach($value as $subKey=>$subValue) {
+						$flattenedReturn[$subKey] = $subValue;
+					}
+				} else {
+					$flattenedReturn[] = $value;
+				}
+			}
+			$return = $flattenedReturn;
+		}
+		return $return;
+	}
+
+	public static function valueMap($data, $cast = 'auto'){
+		switch($cast)
+		{
+			case 'boolean' :
+			case 'bool' :
+				return (boolean) $data;
+				break;
+			case 'truthy' :
+				return Truthy::filter($data);
+			case 'string' :
+				return (string) $data;
+			case 'int' :
+			case 'integer' :
+				return (int) $data;
+			case 'float' :
+			case 'double' :
+			case 'real' :
+				return (float) $data;
+			default:
+				return is_array($data) || is_object($data)
+				? self::arrayMap($data)
+				: $data;
+		}
 	}
 }

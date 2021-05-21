@@ -28,7 +28,7 @@ return function ( #TODO #PHP8 allows throw as an expression
     $startPad = 17;
     $rando = str_pad(dechex(rand(0,255)), 2, '0', STR_PAD_LEFT);
 
-    $canister['doctorOut'] = function($message = '') use (&$canister, $snoopLogPath, &$precision, &$startPad, &$rando) {
+    $canister['doctorOut'] = function($message = '', $indent = 0) use (&$canister, $snoopLogPath, &$precision, &$startPad, &$rando) {
         static $firstTime = null;
         static $lastTime = null;
         static $lastMemory = null;
@@ -44,6 +44,7 @@ return function ( #TODO #PHP8 allows throw as an expression
             //     ? ((strlen($timeString) - strpos($timeString, '.')) - 1)  
             //     : 0;
         }
+        $identString = str_repeat('  ', $indent);
         $currentTime = microtime(true);
         $currentMemory = memory_get_usage();
         $outdent = str_repeat(' ', 51);
@@ -63,14 +64,16 @@ return function ( #TODO #PHP8 allows throw as an expression
                 '{$d}',
                 '{$c}',
                 '{$f}',
+                "\n"
             ], [
                 $duration,
                 $currentTimeString,
                 $firstTimeString,
+                "\n{$identString}"
             ], $message
         );
         if ($snoopLogPath && is_writable(dirname($snoopLogPath))) {
-            file_put_contents($snoopLogPath, "\n{$message}", FILE_APPEND | LOCK_EX);
+            file_put_contents($snoopLogPath, "\n{$identString}{$message}", FILE_APPEND | LOCK_EX);
         } //#TODO else?
         $lastTime = $currentTime;
         $lastMemory = $currentMemory;
@@ -174,6 +177,7 @@ return function ( #TODO #PHP8 allows throw as an expression
     $errorHandler = function(int $errno , string $errstr , ?string $errfile, ?int $errline 
         //, ?array $errcontext
     ) use (&$canister, $formatter, $rando, $errorLookup) {
+        //print_r([__FILE__,__LINE__,'dr error handler', $errno, $errstr, $errfile, $errline]);
         $canister['doctorOut']("{$rando}- error handler");
         $canister['doctorOut']();
         
@@ -181,27 +185,65 @@ return function ( #TODO #PHP8 allows throw as an expression
         $trace = '';
         $indent = str_repeat(' ', 8);
         try {
-			throw new Exception('debug');
-		} catch (Exception $e) {
-            $traceArray = $e->getTrace();
-			//array_shift($traceArray);
-			$trace =  str_replace("\n","\n{$indent}", "\n" . $formatter($traceArray));
-		}
+            throw new Exception('debug');
+        } catch (Exception $d) {
+            $traceArray = $d->getTrace();
+            $trace =  str_replace("\n","\n{$indent}", "\n" . $formatter($traceArray));
+        }
 
-        $canister['doctorOut'](var_export([$errorLookup($errno), $errstr, $errfile, $errline, $trace], true));
+        //print_r([__FILE__,__LINE__,'dr error handler trace', $trace]);
+        $canister['doctorOut'](var_export(
+            [
+                $errorLookup($errno), 
+                $errstr, 
+                $errfile, 
+                $errline, 
+                $trace
+            ], true
+        ));
         return true;
     };
 
     // Throwable $e 
     $exceptionHandler = function($e) use (&$canister, $formatter, $rando) {
+        $traceIndentString = str_repeat(' ', 8);
         $canister['doctorOut']("{$rando}- exception handler");
         $canister['doctorOut']();
-        $canister['doctorOut']($formatter($e->getTrace()));
+        $stack = [var_export([
+            get_class($e),
+            $e->getMessage(),
+            str_replace("\n","\n{$traceIndentString}", "\n" . $formatter($e->getTrace()))
+        ], true)];
+        $previous = $e->getPrevious();
+        while(!is_null($previous)) {
+            $trace = str_replace("\n","\n{$traceIndentString}", "\n" . $formatter($previous->getTrace()));
+            $stack[] = var_export([
+                get_class($previous), 
+                $previous->getMessage(),
+                $trace
+            ], true);
+            $previous = $previous->getPrevious();
+        }
+        $indent = 0;
+        foreach($stack as $exceptionData){
+            $canister['doctorOut']($exceptionData, $indent++);
+        }        
     };
 
     // no standard params, whatever is set in shutdownParams
-    $shutdownHandler = function() use (&$canister, $precision, $startPad, $rando) {
+    $shutdownHandler = function() use (&$canister, $startPad, $rando, $errorLookup) { /* $precision,*/
         $canister['doctorOut']("{$rando}- shutdown handler --- ");
+        $e = error_get_last();
+        if ($e) { //#NOTE traces here won't work since it's an "internal" function
+            $canister['doctorOut'](var_export(
+                [
+                    $errorLookup($e['type']), 
+                    $e['message'],
+                    $e['file'],
+                    $e['line']
+                ], true
+            ));
+        }
         $endTime = microtime(true);
         $timeString = (string)$endTime;
         $pad = $startPad;
@@ -214,6 +256,7 @@ return function ( #TODO #PHP8 allows throw as an expression
     };
 
     if (!key_exists('errorHandler', $canister) || !is_null($canister['errorHandler']) ) {
+        //print_r([__FILE__,__LINE__,'dr error handler set']);
         set_error_handler(
             (
                 key_exists('errorHandler', $canister) && is_callable($canister['errorHandler'])

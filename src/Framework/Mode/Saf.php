@@ -11,7 +11,7 @@
 namespace Saf\Framework\Mode;
 
 use Saf\Framework\Manager;
-use Saf\Auto;
+use Saf\Auto; #Saf\Framework\Manager requires Saf\Auto
 
 require_once(dirname(dirname(__FILE__)) . '/Manager.php');
 

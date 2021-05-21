@@ -14,20 +14,21 @@ namespace Saf\Framework\Mode;
 
 use Saf\Framework\Manager;
 use Saf\Legacy\Autoloader;
-use Saf\Auto;
+use Saf\Auto; #Saf\Framework\Manager requires Saf\Auto
 
 require_once(dirname(dirname(__FILE__)) . '/Manager.php');
 require_once(dirname(dirname(dirname(__FILE__))) . '/Legacy/Autoloader.php');
+
 
 class Mezzio extends Manager{
 
     public static function detect($instance, $options = null)
     {
-        $srcPath = self::srcPath($options);
+        $installPath = self::installPath($options);
         $lookFor = [
             'config/pipeline.php<20' => 'use Mezzio\Application;'
         ];
-        return Auto::scan($srcPath, $lookFor);
+        return Auto::scan($installPath, $lookFor);
     }
     
     public static function autoload($instance, $options = null)
@@ -36,6 +37,9 @@ class Mezzio extends Manager{
         $srcPath = self::srcPath($options);
         $usesExternalComposer = self::option('composerVendor', $options);
         $path = $usesExternalComposer ?: "{$installPath}/vendor";
+        if (!file_exists("{$path}/autoload.php")) { #NOTE PHP doesn't throw for require() errors
+            throw new \Exception('Autoloading Unavailable', 127, new \Exception("{$path}/autoload.php"));
+        }
         require("{$path}/autoload.php");
         if (false) {
             #TODO handle $options autoloading?
@@ -51,6 +55,7 @@ class Mezzio extends Manager{
             if (!array_key_exists('applicationPath', $options)) {
                $options['applicationPath'] = "{$installPath}/src/App"; //#NOTE this is a copy of $options
             }
+            defined('Saf\APPLICATION_PATH') || define('Saf\APPLICATION_PATH', $options['applicationPath']);
             if (!array_key_exists('controllerPath', $options)) {
                 $options['controllerPath'] = "{$installPath}/App/controller"; //#NOTE this is a copy of $options
             }
@@ -86,9 +91,7 @@ class Mezzio extends Manager{
     public static function run($instance, $options = null)
     {
         $installPath = self::installPath($options); #TODO this is srcPath?
-        if (key_exists('shell', $options)) {
-            $options = $options['shell']();
-        }
+
         /** @var \Psr\Container\ContainerInterface $container */
         $container = require("{$installPath}/config/container.php");
 

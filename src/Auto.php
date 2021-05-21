@@ -10,16 +10,22 @@
 
 namespace Saf;
 
+use Saf\Legacy\Autoloader;
+require_once(dirname(__FILE__) . '/Legacy/Autoloader.php');
+
 class Auto
 {
-	protected const UNLIMITED = -1;
-	protected const DEFAULT_SCAN_LINES = 50;
-	protected const LINE_LENGTH_AVG = 40;
+	public const ADD_PREPEND = Autoloader::POSITION_BEFORE;
+	public const ADD_APPEND = Autoloader::POSITION_AFTER;
 
 	public const REGEX_CLASS =
 		'/class\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)[\s{]/';
 	public const REGEX_PARENT_CLASS =
 		'/class\s+[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\s+extends\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)+[\s{]/';
+			
+	protected const UNLIMITED = -1;
+	protected const DEFAULT_SCAN_LINES = 50;
+	protected const LINE_LENGTH_AVG = 40;
 
 	protected static $studlyDelim = "/([a-z\x80-\xbf\xd7\xdf-\xff][A-Z\xc0-\xd6\xd8-\xde])/";
 
@@ -269,5 +275,22 @@ class Auto
             }
         }
 		return false;
+	}
+
+	/**
+	 * 
+	 */
+	public static function add(string $prefix, callable $loader, $order = Autoloader::POSITION_BEFORE)
+	{
+		Autoloader::addAutoloader( $prefix, $loader, $order);
+	}
+
+	/**
+	 * 
+	 */
+	public static function initLegacy($canister)
+	{
+		$canister['psrAutoloading'] = true;
+		Autoloader::init($canister);
 	}
 }

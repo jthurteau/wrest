@@ -23,8 +23,8 @@ return function ( #TODO #PHP8 allows throw as an expression
                 throw new Exception('Application agent installer misconfigured.');
             }
             foreach ($util as $u) {
-                $file = is_string($u) ? "{$canister['installPath']}/src/kickstart/installable/{$u}.php" : null;
-                if($file && !file_exists($file) || !is_readable($file)) {
+                $file = is_string($u) ? realpath("{$canister['installPath']}/src/kickstart/installable/{$u}.php") : null;
+                if($file && !is_readable($file)) {
                     throw new Exception("Application agent installer:{$u} missing.", 127, new Exception($file));
                 } else {
                     $result = 
