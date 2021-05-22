@@ -71,6 +71,11 @@ class Auto
 		return "{$path}/{$classPath}.php";
 	}
 
+	public static function classNameToPath(string $class)
+	{
+		return str_replace(['_', '\\'], DIRECTORY_SEPARATOR, $class);
+	}
+
 	public static function meditate($meditationData, $depth = 0)
 	{ #TODO this is also in debug, so consolidate/improve
 		$tab = str_repeat('  ', $depth + 1);

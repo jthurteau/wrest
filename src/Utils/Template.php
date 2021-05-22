@@ -32,5 +32,18 @@ class Template
             ? $this->rawMessage
             : Reflector::dereference($this->rawMessage, $params);
     }
+
+    public static function render($phpPath, $canister){
+        $output = '';
+        try{
+            ob_start();
+            //var_export($context);
+            require($phpPath);
+            $output .= ob_get_clean();
+            return $output;
+        } catch (\Error | \Exception $e) {
+            throw new \Exception("Emmiter Exception while rendering {$phpPath}", 500 , $e);
+        }
+    }
 }
 
