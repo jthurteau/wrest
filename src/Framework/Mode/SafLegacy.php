@@ -13,8 +13,8 @@ namespace Saf\Framework\Mode;
 use Saf\Framework\Manager;
 use Saf\Legacy\Autoloader;
 
-require_once(dirname(dirname(__FILE__)) . '/Manager.php');
-require_once(dirname(dirname(dirname(__FILE__))) . '/Legacy/Autoloader.php');
+require_once(dirname(__DIR__) . '/Manager.php');
+require_once(dirname(dirname(__DIR__)) . '/Legacy/Autoloader.php');
 
 class SafLegacy extends Manager{
 

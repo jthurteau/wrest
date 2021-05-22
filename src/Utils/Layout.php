@@ -8,8 +8,6 @@ Utility class for layout handling
 
 *******************************************************************************/
 
-#TODO Array>Brray
-
 class Saf_Layout
 {
 
@@ -284,8 +282,8 @@ $(document).ready(function() {
 					is_array($info) && array_key_exists('status', $info)
 					? " class=\"{$info['status']}\""
 					: '';
-				if (is_array($info) && Saf_Array::keyExistsAndIsArray('options', $info)) {
-					$prefix = Saf_Array::keyExistsAndNotBlank('prefix', $info['options'])
+				if (is_array($info) && Hash::keyExistsAndIsArray('options', $info)) {
+					$prefix = Hash::keyExistsAndNotBlank('prefix', $info['options'])
 						? $info['options']['prefix']
 						:'';
 				} else {

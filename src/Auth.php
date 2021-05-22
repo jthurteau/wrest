@@ -10,6 +10,7 @@
 
 namespace Saf;
 
+use Psr\Http\Message\ServerRequestInterface;
 use Saf\Utils\Filter\Truthy;
 use Saf\Hash;
 use Saf\Auto;
@@ -36,6 +37,7 @@ class Auth
     protected static $initialized = false;
     protected static $classMap = [];
     protected static $autocreate = false;
+    protected static $autoGuest = false;
     protected static $authenticated = false;
     protected static $credentialMissmatch = false;
     protected static $activePlugin = null;
@@ -206,6 +208,11 @@ class Auth
             self::$activePlugin = $originalActivePlugin;
         }
         return false;
+    }
+
+    public static function authenticate(ServerRequestInterface $request) : string
+    {
+        return '';
     }
 
     protected static function _login($username = self::USER_AUTODETECT, $logInDb = false)

@@ -12,7 +12,7 @@ namespace Saf\Agent;
 
 use Saf\Auto;
 
-require_once(dirname(dirname(__FILE__)) . '/Auto.php');
+require_once(dirname(__DIR__) . '/Auto.php');
 
 trait Identity {
 

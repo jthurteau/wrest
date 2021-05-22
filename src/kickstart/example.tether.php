@@ -14,7 +14,7 @@ declare(strict_types=1);
 return function ( #TODO #PHP8 allows throw as an expression
     array &$canister = []
 ){
-    key_exists('installPath', $canister) || ($canister['installPath'] = dirname(__FILE__));
+    key_exists('installPath', $canister) || ($canister['installPath'] = __DIR__);
     $tools = ['log'];//,'doctor']; //#NOTE enables /src/tools/[ToolName].tether.php
     $canister['install']('modulate'); //#NOTE enables /module/[ModuleName]/src/tether.php
 

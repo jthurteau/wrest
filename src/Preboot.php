@@ -14,8 +14,8 @@ namespace Saf;
 
 use Saf\Resolver;
 
-#require_once(dirname(__FILE__) . '/Auto.php');
-require_once(dirname(__FILE__) . '/Resolver.php');
+#require_once(__DIR__ . '/Auto.php');
+require_once(__DIR__ . '/Resolver.php');
 
 class Preboot
 {

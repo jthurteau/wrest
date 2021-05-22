@@ -669,7 +669,7 @@ class Autoloader
 				self::$envAdapter['LIBRARY_PATH'],
 				self::$envAdapter['PUBLIC_PATH'],
 				self::$envAdapter['INSTALL_PATH'],
-				realpath(dirname(dirname(dirname(__FILE__))).'/lib' ),
+				realpath(dirname(dirname(__DIR__)).'/lib' ),
 			], $path
 		);
 	}

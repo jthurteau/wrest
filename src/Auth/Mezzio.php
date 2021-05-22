@@ -16,16 +16,18 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Response\HtmlResponse;
+use Saf\Auth as Front;
 use Saf\Agent;
 use Saf\Psr\Request;
 use Saf\Utils\Template;
+use Saf\Auth\User\Mezzio as User;
 
 class Mezzio implements AuthenticationInterface
 {
 
     public function authenticate(ServerRequestInterface $request): ?UserInterface
     {
-        return null;
+        return new User(Front::authenticate($request));
     }
 
     public function unauthorizedResponse(ServerRequestInterface $request): ResponseInterface

@@ -8,7 +8,7 @@
  * Class for adapting Mezzio User Management
  */
 
-namespace Saf\User;
+namespace Saf\Auth\User;
 
 use Mezzio\Authentication\UserRepositoryInterface;
 use Mezzio\Authentication\UserInterface;

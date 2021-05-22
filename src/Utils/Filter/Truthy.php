@@ -8,11 +8,11 @@
  * Filter for boolean like strings
  */
 
-namespace Saf\Filter;
+namespace Saf\Utils\Filter;
 
 use Saf\Filter;
 
-require_once(dirname(__FILE__) . '/Filter.php');
+require_once(__DIR__ . '/Filter.php');
 
 class Truthy extends Filter
 {

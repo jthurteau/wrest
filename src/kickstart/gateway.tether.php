@@ -20,7 +20,7 @@ return static function ($canister) {
 			: 'instance';
 		key_exists('gatewayVector', $canister) || ($canister['gatewayVector'] = $defaultVector);
 
-		$init_path = dirname(__FILE__) . "/init.tether.php";
+		$init_path = __DIR__ . "/init.tether.php";
 		$initTether = is_readable($init_path) ? require($init_path) : null;
 		if (!is_callable($initTether)) {
 			throw new Exception('Initialization failed.', 127, new Exception($init_path));

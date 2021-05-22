@@ -12,7 +12,7 @@ namespace Saf;
 
 use Saf\Environment\Define;
 
-require_once(dirname(__FILE__) . '/Environment/Define.php');
+require_once(__DIR__ . '/Environment/Define.php');
 
 class Resolver
 {

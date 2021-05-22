@@ -14,8 +14,8 @@ use Saf\Exception\NotAnArray;
 use Saf\Exception\NoDefault;
 use Saf\Utils\Filter\Truthy;
 
-require_once(dirname(__FILE__) . '/Exception/NotAnArray.php');
-require_once(dirname(__FILE__) . '/Exception/NoDefault.php');
+require_once(__DIR__ . '/Exception/NotAnArray.php');
+require_once(__DIR__ . '/Exception/NoDefault.php');
 
 /**
  * Utility functions for Arrays
@@ -375,7 +375,7 @@ class Hash
 	public static function keyExistsAndNotBlank($key, $array, $allowedBlankTypes = self::TYPE_NONE)
 	{
 		if (!is_array($array)) {
-			throw new NotAnArray('Brray::keyExistsAndNotBlank got a non-array operand.');
+			throw new NotAnArray('Hash::keyExistsAndNotBlank got a non-array operand.');
 			// Debug::out();
 			// return FALSE;
 		}
@@ -419,7 +419,7 @@ class Hash
 	 * @param int $matchType bitwise integer of match type to be performed
 	 * @return bool key exists and value is not blank
 	 */	
-	public static function keyExistsAndEquals($key, $array, $value, $matchType = Brray::MATCH_EQUAL)
+	public static function keyExistsAndEquals($key, $array, $value, $matchType = self::MATCH_EQUAL)
 	{
 		if (!is_array($key)) {
 			$key = array($key);
@@ -429,18 +429,18 @@ class Hash
 				return FALSE;
 			} else {
 				switch ($matchType) {
-					case Brray::MATCH_EXACT:
+					case self::MATCH_EXACT:
 						if ($value !== $array[$arrayKey]) {
 							return FALSE;
 						}
 						break;
-					case Brray::MATCH_LOOSE:
+					case self::MATCH_LOOSE:
 						if(is_string($value)) {
 							$value = strtolower(trim($value));
 							$array[$arrayKey] = strtolower(trim($array[$arrayKey]));
 						}
 						//no break intentional
-					case  Brray::MATCH_EQUAL:
+					case  self::MATCH_EQUAL:
 					default:
 						if ($value != $array[$arrayKey]) {
 							return FALSE;
@@ -479,7 +479,7 @@ class Hash
 	 * @param int $allowedBlankTypes bitwise integer of blank types that are allowed
 	 * @return bool key exists and value is not blank
 	 */	
-	public static function keyExistsAndInArray($key, $array, $list, $matchType = Brray::MATCH_EQUAL)
+	public static function keyExistsAndInArray($key, $array, $list, $matchType = self::MATCH_EQUAL)
 	{
 		if (!is_array($key)) {
 			$key = array($key);
@@ -487,10 +487,10 @@ class Hash
 		foreach ($key as $arrayKey) {
 			if( !array_key_exists($arrayKey, $array)) {
 				return FALSE;
-			} else if (in_array($array[$arrayKey], $list, $matchType == Brray::MATCH_EXACT)) {
+			} else if (in_array($array[$arrayKey], $list, $matchType == self::MATCH_EXACT)) {
 
 				continue;
-			} else if ($matchType == Brray::MATCH_LOOSE) {
+			} else if ($matchType == self::MATCH_LOOSE) {
 				foreach($list as $listValue) {
 					if(strtolower($listValue) == strtolower($array[$arrayKey])) {
 						continue 2;
@@ -539,25 +539,25 @@ class Hash
 	 * @param int $matchType bitwise integer of match type to be performed
 	 * @return bool key exists and value is not blank
 	 */
-	public static function inArray($value, $array, $matchType = Brray::MATCH_LOOSE)
+	public static function inArray($value, $array, $matchType = self::MATCH_LOOSE)
 	{
 		if (!is_array($array)) {
 			return FALSE;
 		}
 		foreach ($array as $arrayKey=>$arrayValue) {
 			switch ($matchType) {
-				case Brray::MATCH_EXACT:
+				case self::MATCH_EXACT:
 					if ($value === $arrayValue) {
 						return TRUE;
 					}
 					break;
-				case Brray::MATCH_LOOSE:
+				case self::MATCH_LOOSE:
 					if(is_string($value)) {
 						$value = strtolower(trim($value));
 						$arrayValue = strtolower(trim($arrayValue));
 					}
 				//#NOTE no break intentional
-				case  Brray::MATCH_EQUAL:
+				case  self::MATCH_EQUAL:
 				default:
 					if ($value == $arrayValue) {
 						return TRUE;

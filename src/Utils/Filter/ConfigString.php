@@ -12,7 +12,7 @@ namespace Saf\Filter;
 
 use Saf\Filter;
 
-require_once(dirname(dirname(__FILE__)) . 'Filter.php');
+require_once(dirname(__DIR__) . 'Filter.php');
 
 class ConfigString extends Filter
 {

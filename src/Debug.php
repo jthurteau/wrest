@@ -15,10 +15,10 @@ use Saf\Hash;
 use Saf\Utils\Status;
 use Saf\Layout;
 
-// require_once(dirname(__FILE__) . '/Kickstart.php');
+// require_once(__DIR__ . '/Kickstart.php');
 
-// require_once(dirname(__FILE__) . '/UtilsStatus.php');
-// require_once(dirname(__FILE__) . '/Layout.php');
+// require_once(__DIR__ . '/UtilsStatus.php');
+// require_once(__DIR__ . '/Layout.php');
 
 
 use Saf\Utils\Debug\Mute;

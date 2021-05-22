@@ -11,7 +11,7 @@
 namespace Saf;
 
 use Saf\Legacy\Autoloader;
-require_once(dirname(__FILE__) . '/Legacy/Autoloader.php');
+require_once(__DIR__ . '/Legacy/Autoloader.php');
 
 class Auto
 {
@@ -56,7 +56,7 @@ class Auto
 	public static function classPathLookup(string $class, string $externalPath = null, $prefix = __NAMESPACE__)
 	{
 		$parts = explode('\\', $class);
-		$path = $externalPath ?: dirname(__FILE__);
+		$path = $externalPath ?: __DIR__;
 		$head = array_shift($parts);
 		if (!$externalPath && $head != __NAMESPACE__) {
 			return false; #TODO, maybe re-head and default these to Modules?

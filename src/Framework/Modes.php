@@ -13,8 +13,8 @@ namespace Saf\Framework;
 use Saf\Auto;
 use Saf\Cache;
 
-require_once(dirname(dirname(__FILE__)) . '/Auto.php');
-require_once(dirname(dirname(__FILE__)) . '/Cache.php');
+require_once(dirname(__DIR__) . '/Auto.php');
+require_once(dirname(__DIR__) . '/Cache.php');
 
 trait Modes {
 
@@ -35,7 +35,7 @@ trait Modes {
             return Cache::get("::{$cacheTag}", $useCache);
         }
         $modes = [];
-        $modePath = dirname(__FILE__) . '/Mode';
+        $modePath = __DIR__ . '/Mode';
         foreach(scandir($modePath) as $filePath) {
             if (
                 !in_array($filePath, array('.', '..'))
@@ -58,7 +58,7 @@ trait Modes {
         }
         $modes = self::scanFrameworkModes($useCache);
         $detectable = [];
-        $modePath = dirname(__FILE__) . '/Mode';
+        $modePath = __DIR__ . '/Mode';
         foreach($modes as $modeFile => $mode) {
             $detectable[] = $mode; #TODO reflect on the static autodetectable method
         }

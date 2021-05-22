@@ -6,7 +6,7 @@ namespace Saf\Framework\Mode\Mezzio;
 
 use Saf\Agent;
 
-require_once(dirname(dirname(dirname(dirname(__FILE__)))) . '/Agent.php');
+require_once(dirname(dirname(dirname(__DIR__))) . '/Agent.php');
 
 /**
  * The configuration provider for an Saf managed Application Instance

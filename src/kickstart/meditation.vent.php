@@ -17,7 +17,7 @@ return function (
         key_exists('viewPath', $canister) 
         ? $canister['viewPath'] 
         : (
-            dirname(dirname(__FILE__)) . '/views'
+            dirname(__DIR__) . '/views'
         );
     if (!file_exists("{$viewPath}/gateway.php") || !is_readable("{$viewPath}/gateway.php")) {
         #TODO #2.0.0 meditate on missing view

@@ -15,10 +15,10 @@ use Saf\Agent\Identity;
 use Saf\Environment\Access as Environment;
 use Saf\Framework\Modes;
 
-require_once(dirname(__FILE__) . '/Agent/Guru.php');
-require_once(dirname(__FILE__) . '/Agent/Identity.php');
-require_once(dirname(__FILE__) . '/Environment/Access.php');
-require_once(dirname(__FILE__) . '/Framework/Modes.php');
+require_once(__DIR__ . '/Agent/Guru.php');
+require_once(__DIR__ . '/Agent/Identity.php');
+require_once(__DIR__ . '/Environment/Access.php');
+require_once(__DIR__ . '/Framework/Modes.php');
 
 class Agent implements \ArrayAccess {
 	use Guru;

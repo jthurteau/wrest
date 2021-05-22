@@ -12,16 +12,16 @@ namespace Saf\Environment;
 
 use Saf\Exception\NoResource;
 use Saf\Cast;
-use Saf\Brray;
+use Saf\Hash;
 // use Saf\File\Dot;
 // use Saf\File\Env;
 
 
-require_once(dirname(dirname(__FILE__)) . '/Exception/NoResource.php');
-require_once(dirname(dirname(__FILE__)) . '/Cast.php');
-require_once(dirname(dirname(__FILE__)) . '/Utils/Brray.php');
-// require_once(dirname(dirname(__FILE__)) . '/File/Dot.php');
-// require_once(dirname(dirname(__FILE__)) . '/File/Env.php');
+require_once(dirname(__DIR__) . '/Exception/NoResource.php');
+require_once(dirname(__DIR__) . '/Cast.php');
+require_once(dirname(__DIR__) . '/Hash.php');
+// require_once(dirname(__DIR__) . '/File/Dot.php');
+// require_once(dirname(__DIR__) . '/File/Env.php');
 
 //#TODO #2.0.0 update function header docs
 class Define {
