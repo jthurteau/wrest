@@ -16,11 +16,11 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Response\HtmlResponse;
-use Saf\Auth as Front;
-use Saf\Agent;
 use Saf\Psr\Request;
-use Saf\Utils\Template;
+use Saf\Auth as Front;
 use Saf\Auth\User\Mezzio as User;
+use Saf\Agent;
+use Saf\Utils\Template;
 
 class Mezzio implements AuthenticationInterface
 {
@@ -39,6 +39,7 @@ class Mezzio implements AuthenticationInterface
         $canister += [
             'title' => 'Application Error',
             'helpText' => $message,
+            'fatalError' => new \Exception('Unable to authenticate request.')
         ];     
         $response = 
             Request::isJson($request) 
