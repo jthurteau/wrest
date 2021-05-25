@@ -18,7 +18,7 @@ class Mezzio implements UserInterface, UserRepositoryInterface
 
     public function __construct($options)
     {
-        
+
     }
 
     public function authenticate(string $credential, string $password = null) : ?UserInterface

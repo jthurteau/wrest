@@ -24,10 +24,15 @@ use Saf\Utils\Template;
 
 class Mezzio implements AuthenticationInterface
 {
+    protected static $singleton = null;
 
     public function authenticate(ServerRequestInterface $request): ?UserInterface
     {
-        return new User(Front::authenticate($request));
+        $authenticatedUsername = Front::authenticate($request);
+        if (!$authenticatedUsername && !Front::allowGuest()) {
+            return null;
+        }
+        return new User($authenticatedUsername);
     }
 
     public function unauthorizedResponse(ServerRequestInterface $request): ResponseInterface

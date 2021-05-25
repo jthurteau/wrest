@@ -11,8 +11,14 @@
 
 namespace Saf\Utils;
 
+use Psr\Container\ContainerInterface;
+use Saf\Psr\Container;
+use Saf\Hash;
+
 class Time
 {
+
+	const DEFAULT_TIME_ZONE = 'Europe/London';
 
 	const MODIFIER_NOW = null;
 	const MODIFIER_START_TODAY = 1; //#TODO #2.0.0 use native modifier string codes and refactor
@@ -70,7 +76,11 @@ class Time
 	const FORMAT_MONTH_SHORT = 'F';
 	const FORMAT_MONTH_FULL = 'M';
 
-	
+	/**
+	 * @var string
+	 */
+	protected static $_timezone = DEFAULT_TIME_ZONE;
+
 	/**
 	 * How many seconds off real time we are testing against
 	 * @var int
@@ -82,6 +92,29 @@ class Time
 	 * @var int
 	 */
 	protected static $_microDiff = 0;
+
+    public function __invoke(ContainerInterface $container, string $name, callable $callback) : Object
+    {
+		$default = 
+			defined('\\Saf\\DEFAULT_TIME_ZONE') 
+			? \Saf\DEFAULT_TIME_ZONE 
+			: self::DEFAULT_TIME_ZONE;
+		$containerConfig = Container::getOptional($container, 'config', []);
+		$defaultConfig = ['defaultTimeZone' => $default];
+		$config = 
+			is_array($containerConfig)
+			? ($containerConfig + $defaultConfig)
+			: $defaultConfig;
+        self::init($config);
+        return $callback();
+	}
+
+	public static function init($config)
+	{
+		if (key_exists('defaultTimeZone', $config)) {
+			date_default_timezone_set($config['defaultTimeZone']);
+		}
+	}
 
 	public static function set($seconds, $micro = 0)
 	{

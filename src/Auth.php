@@ -11,8 +11,10 @@
 namespace Saf;
 
 use Psr\Http\Message\ServerRequestInterface;
-use Saf\Utils\Filter\Truthy;
+use Psr\Container\ContainerInterface;
+use Saf\Psr\Container;
 use Saf\Hash;
+use Saf\Utils\Filter\Truthy;
 use Saf\Auto;
 use Saf\Auth\Plugin\Local;
 use Saf\Layout;
@@ -37,7 +39,7 @@ class Auth
     protected static $initialized = false;
     protected static $classMap = [];
     protected static $autocreate = false;
-    protected static $autoGuest = false;
+    protected static $allowGuest = false;
     protected static $authenticated = false;
     protected static $credentialMissmatch = false;
     protected static $activePlugin = null;
@@ -51,6 +53,17 @@ class Auth
     const USER_AUTODETECT = NULL;
 
     const MODE_SIMULATED = 1;
+
+    public function __invoke(ContainerInterface $container, string $name, callable $callback) : Object
+    {
+		$containerConfig = Container::getOptional($container, 'config', []);
+        $authConfig = Hash::extractIfArray('auth', $containerConfig, []);
+        self::init($authConfig);
+        // $created = $callback();
+        // // $created-> ...
+        // return $created;
+        return $callback();
+    }
 
     public static function init($config = [])
     {
@@ -76,6 +89,10 @@ class Auth
         self::$autocreate = 
             key_exists('autocreateUsers', $config)
             ? $config['autocreateUsers']
+            : false;
+        self::$allowGuest = 
+            key_exists('allowGuest', $config)
+            ? $config['allowGuest']
             : false;
         $firstPass = true;
         foreach($plugins as $pluginConfig) {
@@ -487,5 +504,10 @@ class Auth
             }
         }
         return false;
+    }
+
+    public static function allowGuest()
+    {
+        return self::$allowGuest;
     }
 }
