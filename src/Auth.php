@@ -20,7 +20,7 @@ use Saf\Auth\Plugin\Local;
 use Saf\Layout;
 use Saf\Audit;
 use Saf\Session;
-use Saf\Environment\Define;
+// use Saf\Environment\Define;
 
 class Auth
 {
@@ -59,6 +59,7 @@ class Auth
 		$containerConfig = Container::getOptional($container, 'config', []);
         $authConfig = Hash::extractIfArray('auth', $containerConfig, []);
         self::init($authConfig);
+        self::autodetect();
         // $created = $callback();
         // // $created-> ...
         // return $created;
@@ -109,26 +110,27 @@ class Auth
             if ($firstPass) {
                 self::$defaultPlugins[] = $pluginName;
                 self::$defaultPluginName = $pluginName;
+                $firstPass = false;
             } else if (key_exists('default', $pluginConfig) && $pluginConfig['default']) {
                 self::$defaultPlugins[] = $pluginName;
             }
             if (!in_array($pluginName, self::$loadedPlugins)) {
                 self::$loadedPlugins[] = $pluginName;
-                $className = '\\Saf\\Auth\\Plugin\\' . $pluginName;
-                $internalPluginPath = __DIR__ . '/Plugin/' . Auto::classNameToPath($className) . '.php';
+                $className = 'Saf\\Auth\\Plugin\\' . $pluginName;
+                $internalPluginPath = __DIR__ . '/Auth/Plugin/' . Auto::classNameToPath($pluginName) . '.php';
                 if (!file_exists($internalPluginPath)) {
                     $className = $pluginName;
                 }
                 if (!class_exists($className)) {
                     throw new \Exception("Failed to load configured plugin {$pluginName}");
                 }
+                $rootClassName = Auto::rootClass($className);
                 if ($pluginConfig) {
-                    self::$classMap[$pluginName] = array($className => $pluginConfig);
+                    self::$classMap[$pluginName] = array($rootClassName => $pluginConfig);
                 } else {
-                    self::$classMap[$pluginName] = $className;
+                    self::$classMap[$pluginName] = $rootClassName;
                 }
             }
-            $firstPass = false;
         }
         $hooks = key_exists('postProcess', $config)
             ? (
@@ -144,7 +146,9 @@ class Auth
 
     public static function autodetect($mode = null)
     {
+        Session::on();
         $originalActivePlugin = self::$activePlugin;
+        //throw new \Saf\Exception\Inspectable($mode,$originalActivePlugin,self::$supportsInternal,self::$activePlugin);
         if (self::$supportsInternal && self::$activePlugin) {
             $simulatedLockOn =
                 isset($_SESSION)
@@ -155,10 +159,8 @@ class Auth
                 : '';
             if ($simulatedLockOn) {
                 $mode = self::MODE_SIMULATED;
-                Define::load( #TODO update this
-                    '\\Saf\\AUTH_SIMULATED_USER',
-                    $currentSimulatedUser
-                );
+                $simulatedAuthConst = '\\Saf\\AUTH_SIMULATED_USER';
+                defined($simulatedAuthConst) || define($simulatedAuthConst, $currentSimulatedUser);
             }
             $userToLogin =
                 $mode == self::MODE_SIMULATED
@@ -232,38 +234,6 @@ class Auth
         return '';
     }
 
-    protected static function _login($username = self::USER_AUTODETECT, $logInDb = false)
-    {
-        $wasLoggedIn = self::isInternallyLoggedIn();
-        if (
-            $username !== self::USER_AUTODETECT
-            && '' != trim($username)
-        ){
-            $_SESSION['username'] = $username;
-        } else if (
-            array_key_exists('username', $_SESSION)
-            && '' != $_SESSION['username']
-        ) {
-            $username = $_SESSION['username'];
-        }  else {
-            return false;
-        }
-        if (self::$activePlugin) {
-            self::$activePlugin->postLogin();
-        }
-        //#TODO #1.5.0 log if requested
-        if (!$wasLoggedIn && self::isInternallyLoggedIn()) {
-            foreach(self::$postLoginHooks as $hookName) {
-                try {
-                    $hookName::trigger(array('username' => $username));
-                } catch (\Exception $e) {
-                    Audit::add('problem', $e->getMessage());
-                }
-            }
-        }
-        return true;
-    }
-
     public static function isLoggedIn()
     {
         self::init();
@@ -303,14 +273,14 @@ class Auth
     public static function logoutExternally($realm = '*')
     {
         if('*' != $realm) {
-            if (in_array(trim($realm),self::$_loadedPlugins)) {
+            if (in_array(trim($realm),self::$loadedPlugins)) {
                 $realms = [$realm];
             }
             else {
                 $realms = [];
             }
         } else {
-            $realms = self::$_loadedPlugins;
+            $realms = self::$loadedPlugins;
         }
         foreach($realms as $pluginName){
             $plugin = self::getPlugin($pluginName);
@@ -321,11 +291,11 @@ class Auth
     private static function getPlugin($pluginName = null)
     {
         if (is_null($pluginName) || '' == $pluginName) {
-            $pluginName = self::$_defaultPlugins[0];
+            $pluginName = self::$defaultPlugins[0];
         }
         $pluginClass =
-            array_key_exists($pluginName, self::$_classMap)
-            ? self::$_classMap[$pluginName]
+            array_key_exists($pluginName, self::$classMap)
+            ? self::$classMap[$pluginName]
             : null;
         if ($pluginClass) {
             if (is_object($pluginClass)) {
@@ -413,9 +383,9 @@ class Auth
 
     public static function setStatus($success, $userObject = null, $errorCode = '')
     {
-        self::$_authenticated = $success;
-        self::$_userObject = $userObject;
-        self::$_activePlugin->setPluginStatus($success, $errorCode);
+        self::$authenticated = $success;
+        self::$userObject = $userObject;
+        self::$activePlugin->setPluginStatus($success, $errorCode);
         if ('' != $errorCode) {
             throw new Exception("Login Error, error code: {$errorCode}");
         }
@@ -495,7 +465,7 @@ class Auth
     {
         $keyValue = trim((string)$keyValue);
         if (!is_null($name)) {
-            return key_exists($name,self::$_serviceKeys)
+            return key_exists($name,self::$serviceKeys)
                 && trim(self::$serviceKeys[$name]) === $keyValue;
         }
         foreach(self::$serviceKeys as $key) {
@@ -509,5 +479,37 @@ class Auth
     public static function allowGuest()
     {
         return self::$allowGuest;
+    }
+
+    protected static function login($username = self::USER_AUTODETECT, $logInDb = false)
+    {
+        $wasLoggedIn = self::isInternallyLoggedIn();
+        if (
+            $username !== self::USER_AUTODETECT
+            && '' != trim($username)
+        ){
+            $_SESSION['username'] = $username;
+        } else if (
+            array_key_exists('username', $_SESSION)
+            && '' != $_SESSION['username']
+        ) {
+            $username = $_SESSION['username'];
+        }  else {
+            return false;
+        }
+        if (self::$activePlugin) {
+            self::$activePlugin->postLogin();
+        }
+        //#TODO #1.5.0 log if requested
+        if (!$wasLoggedIn && self::isInternallyLoggedIn()) {
+            foreach(self::$postLoginHooks as $hookName) {
+                try {
+                    $hookName::trigger(array('username' => $username));
+                } catch (\Exception $e) {
+                    Audit::add('problem', $e->getMessage());
+                }
+            }
+        }
+        return true;
     }
 }

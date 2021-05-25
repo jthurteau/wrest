@@ -76,6 +76,14 @@ class Auto
 		return str_replace(['_', '\\'], DIRECTORY_SEPARATOR, $class);
 	}
 
+	public static function rootClass(string $class)
+	{
+		return 
+			strpos($class, '\\') === 0
+			? $class
+			: "\\{$class}";
+	}
+
 	public static function meditate($meditationData, $depth = 0)
 	{ #TODO this is also in debug, so consolidate/improve
 		$tab = str_repeat('  ', $depth + 1);

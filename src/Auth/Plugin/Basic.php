@@ -10,6 +10,8 @@
 
 namespace Saf\Auth\Plugin;
 
+use Saf\Auth;
+
 class Basic extends Base {
 
 	protected $pluginName = 'Apache Basic Auth';
@@ -27,7 +29,8 @@ class Basic extends Base {
 			: null;
 	}
 
-	public function getUserInfo($what = null){
+	public function getUserInfo($what = null)
+	{
 		if (is_null($what)) {
 			return array(
 				Auth::PLUGIN_INFO_USERNAME => $this->getProvidedUsername(),

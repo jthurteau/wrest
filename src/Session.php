@@ -16,6 +16,16 @@ class Session
 
     protected static $configuredKeepers = self::DEFAULT_KEEPERS;
 
+	/**
+	 * starts a session only if none exists
+	 */
+	public static function on()
+	{
+		if ('' == session_id()) {
+			session_start();
+		}
+	}
+
     /**
 	 * clears all but select values from the session
 	 * @param array $keepers values to preserve
@@ -25,9 +35,7 @@ class Session
         if (is_null($keepers)) {
             $keepers = self::$configuredKeepers;
         }
-        if ('' == session_id()) {
-			session_start();
-		}
+        self::on();
 		$keeperValues = array();
 		foreach($keepers as $keeperName){
 			if (array_key_exists($keeperName, $_SESSION)) {
