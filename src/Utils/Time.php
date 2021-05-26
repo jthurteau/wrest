@@ -79,7 +79,7 @@ class Time
 	/**
 	 * @var string
 	 */
-	protected static $_timezone = DEFAULT_TIME_ZONE;
+	protected static $_timezone = self::DEFAULT_TIME_ZONE;
 
 	/**
 	 * How many seconds off real time we are testing against

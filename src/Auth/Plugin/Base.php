@@ -94,11 +94,6 @@ abstract class Base {
 		}
 	}
 
-    protected function succeed()
-	{
-		return true;
-	}
-
 	public function setPluginStatus($success, $errorCode)
 	{
 		//#NOTE only some plugins will need to do this.
@@ -113,6 +108,11 @@ abstract class Base {
      * actions the plugin will execute after login
      */
 	public function postLogin()
+	{
+		return true;
+	}
+
+    protected function succeed()
 	{
 		return true;
 	}

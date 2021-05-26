@@ -10,26 +10,31 @@
 
 namespace Saf;
 
-use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ServerRequestInterface; #TODO currently still uses bare access
 use Psr\Container\ContainerInterface;
 use Saf\Psr\Container;
 use Saf\Hash;
 use Saf\Utils\Filter\Truthy;
 use Saf\Auto;
 use Saf\Auth\Plugin\Local;
+use Saf\Session;
+use Saf\Keys;
 use Saf\Layout;
 use Saf\Audit;
-use Saf\Session;
-// use Saf\Environment\Define;
+#TODO split out plugin functionality
 
 class Auth
 {
     public const PLUGIN_INFO_USERNAME = 'username';
+    public const PLUGIN_INFO_USERID = 'userid';
     public const PLUGIN_INFO_REALM = 'realm';
     public const PLUGIN_INFO_FIRSTNAME = 'firstName';
     public const PLUGIN_INFO_LASTNAME = 'lastName';
+    public const PLUGIN_INFO_PREFNAME = 'preferredName';
     public const PLUGIN_INFO_FULLNAME = 'fullName';
     public const PLUGIN_INFO_EMAIL = 'email';
+
+    public const REALM_FIELD = 'loginRealm';
 
     protected const STATUS_CANNOT_CREATE_USER = '009';
 
@@ -40,6 +45,7 @@ class Auth
     protected static $classMap = [];
     protected static $autocreate = false;
     protected static $allowGuest = false;
+    protected static $autoKey = true;
     protected static $authenticated = false;
     protected static $credentialMissmatch = false;
     protected static $activePlugin = null;
@@ -47,19 +53,35 @@ class Auth
     protected static $errorMessages = [];
     protected static $loadedConfig = null;
     protected static $supportsInternal = false;
-    protected static $serviceKeys = [];
     protected static $postLoginHooks = [];
     
-    const USER_AUTODETECT = NULL;
-
+    const USER_AUTODETECT = null;
     const MODE_SIMULATED = 1;
+    //const MODE_SESSIONLESS = 2; //#TODO
+    //const MODE_KEYONLY = 4; //#TODO
 
     public function __invoke(ContainerInterface $container, string $name, callable $callback) : Object
     {
 		$containerConfig = Container::getOptional($container, 'config', []);
         $authConfig = Hash::extractIfArray('auth', $containerConfig, []);
         self::init($authConfig);
+        $keys = Hash::extractIfArray('keys', $containerConfig, null);
+        if ($keys) {
+            Keys::setServiceKeys($keys);
+        }
         self::autodetect();
+        if (
+            self::$autoKey
+            && (
+                in_array('Key', self::$loadedPlugins)
+                || in_array('\\Saf\\Auth\\Plugin\\Key', self::$loadedPlugins)
+            )
+            && (
+                self::$activePlugin != self::getPlugin('Key')
+            )
+        ) {
+            self::getPlugin('Key')->auth(false);
+        }
         // $created = $callback();
         // // $created-> ...
         // return $created;
@@ -79,7 +101,6 @@ class Auth
             self::$activePlugin = new Local();
             self::$supportsInternal = true;
         }
-
         $plugins =
             key_exists('plugin', $config)
             ? (
@@ -87,14 +108,8 @@ class Auth
                 ? $config['plugin']
                 : [$config['plugin']]
             ) : [];
-        self::$autocreate = 
-            key_exists('autocreateUsers', $config)
-            ? $config['autocreateUsers']
-            : false;
-        self::$allowGuest = 
-            key_exists('allowGuest', $config)
-            ? $config['allowGuest']
-            : false;
+        self::$autocreate = Hash::extract('autocreateUsers', $config, false);
+        self::$allowGuest = Hash::extract('allowGuest', $config, false);
         $firstPass = true;
         foreach($plugins as $pluginConfig) {
             if (
@@ -114,40 +129,32 @@ class Auth
             } else if (key_exists('default', $pluginConfig) && $pluginConfig['default']) {
                 self::$defaultPlugins[] = $pluginName;
             }
-            if (!in_array($pluginName, self::$loadedPlugins)) {
-                self::$loadedPlugins[] = $pluginName;
-                $className = 'Saf\\Auth\\Plugin\\' . $pluginName;
-                $internalPluginPath = __DIR__ . '/Auth/Plugin/' . Auto::classNameToPath($pluginName) . '.php';
-                if (!file_exists($internalPluginPath)) {
-                    $className = $pluginName;
-                }
-                if (!class_exists($className)) {
-                    throw new \Exception("Failed to load configured plugin {$pluginName}");
-                }
-                $rootClassName = Auto::rootClass($className);
-                if ($pluginConfig) {
-                    self::$classMap[$pluginName] = array($rootClassName => $pluginConfig);
-                } else {
-                    self::$classMap[$pluginName] = $rootClassName;
-                }
-            }
+            self::registerPlugin($pluginName, $pluginConfig);
         }
         $hooks = key_exists('postProcess', $config)
             ? (
                 Hash::isNumericArray($config['postProcess'])
                 ? $config['postProcess']
-                : array($config['postProcess'])
-            ) : array();
+                : [$config['postProcess']]
+            ) : [];
         foreach($hooks as $hook) {
-            self::$postLoginHooks[$hook] = 'Hook\\' . $hook;
+            self::$postLoginHooks[$hook] = (
+                strpos($hook,'Hook\\') !== false
+                ? $hook
+                : 'Hook\\' . $hook
+            );
         }
         self::$initialized = true;
     }
 
     public static function autodetect($mode = null)
     {
+        if (!self::$initialized) {
+            throw new \Exception('Attempting to authenticate before initialization.');
+        }
         Session::on();
         $originalActivePlugin = self::$activePlugin;
+        $simulatedAuthConst = '\\Saf\\AUTH_SIMULATED_USER';
         //throw new \Saf\Exception\Inspectable($mode,$originalActivePlugin,self::$supportsInternal,self::$activePlugin);
         if (self::$supportsInternal && self::$activePlugin) {
             $simulatedLockOn =
@@ -159,14 +166,17 @@ class Auth
                 : '';
             if ($simulatedLockOn) {
                 $mode = self::MODE_SIMULATED;
-                $simulatedAuthConst = '\\Saf\\AUTH_SIMULATED_USER';
                 defined($simulatedAuthConst) || define($simulatedAuthConst, $currentSimulatedUser);
             }
             $userToLogin =
                 $mode == self::MODE_SIMULATED
-                    && \Saf\AUTH_SIMULATED_USER
+                    && defined($simulatedAuthConst)
+                    && constant($simulatedAuthConst)
                 ? \Saf\AUTH_SIMULATED_USER
                 : self::USER_AUTODETECT;
+            // throw new \Saf\Exception\Inspectable(
+            //     $userToLogin, self::$activePlugin, constant($simulatedAuthConst), self::MODE_SIMULATED, $mode
+            // );
             if (
                 self::login($userToLogin) && self::$activePlugin->auth()
             ){
@@ -175,29 +185,29 @@ class Auth
                     && $mode == self::MODE_SIMULATED
                 ) {
                     $_SESSION['simulated_login_lock'] = true;
-                    $_SESSION['simulated_user'] = \Saf\AUTH_SIMULATED_USER;
+                    $_SESSION['simulated_user'] = constant($simulatedAuthConst);
                 }
                 return self::$authenticated;
             }
         }
-        self::init();
+        // self::init();
         $plugins = (
-            !key_exists('loginRealm', $_GET)
-            || !in_array(trim($_GET['loginRealm']),self::$loadedPlugins)
+            !key_exists(self::REALM_FIELD, $_GET)
+                || !in_array(trim($_GET[self::REALM_FIELD]),self::$loadedPlugins)
             ? self::$defaultPlugins
-            : array(trim($_GET['loginRealm']))
+            : array(trim($_GET[self::REALM_FIELD]))
         );
         foreach($plugins as $pluginName){
             try {
                 $plugin = self::getPlugin($pluginName);
                 self::$activePlugin = $plugin;
                 if($plugin->auth()) {
-                    return self::_login($plugin->getProvidedUsername(), TRUE);
+                    return self::login($plugin->getProvidedUsername());
                 } else {
-                    self::$activePlugin = NULL;
+                    self::$activePlugin = null;
                 }
             } catch (\Exception $e) {
-                self::$activePlugin = NULL;
+                self::$activePlugin = null;
                 if (Debug::isEnabled()) {
                     self::$errorMessages[] =
                     "Exception in auth plugin {$pluginName} : " . $e->getMessage();
@@ -231,7 +241,7 @@ class Auth
 
     public static function authenticate(ServerRequestInterface $request) : string
     {
-        return '';
+        return self::getPluginProvidedUsername();
     }
 
     public static function isLoggedIn()
@@ -292,7 +302,7 @@ class Auth
     {
         if (is_null($pluginName) || '' == $pluginName) {
             $pluginName = self::$defaultPlugins[0];
-        }
+        } #TODO handle prepending \Saf\Auth\Plugin in case the class is added fully qualified
         $pluginClass =
             array_key_exists($pluginName, self::$classMap)
             ? self::$classMap[$pluginName]
@@ -338,7 +348,7 @@ class Auth
     public static function getExternalLogoutUrl($pluginName = null)
     {
         try {
-            return self::_getPlugin($pluginName)->getExternalLogoutUrl();
+            return self::getPlugin($pluginName)->getExternalLogoutUrl();
         } catch (\Exception $e) {
             $safeName = htmlentities($pluginName);
             throw new \Exception("ERROR: Attempted to get property \"externalLogoutUrl\" of non-existant plugin \"{$safeName}\".", $e->getCode(), $e);
@@ -453,35 +463,12 @@ class Auth
         return self::$loadedConfig;
     }
 
-    public static function setServiceKeys($keyArray)
-    {
-        if (!is_array($keyArray)) {
-            $keyArray = array($keyArray);
-        }
-        self::$serviceKeys = $keyArray;
-    }
-
-    public static function validKey($keyValue, $name = null)
-    {
-        $keyValue = trim((string)$keyValue);
-        if (!is_null($name)) {
-            return key_exists($name,self::$serviceKeys)
-                && trim(self::$serviceKeys[$name]) === $keyValue;
-        }
-        foreach(self::$serviceKeys as $key) {
-            if ($keyValue === trim($key)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static function allowGuest()
     {
         return self::$allowGuest;
     }
 
-    protected static function login($username = self::USER_AUTODETECT, $logInDb = false)
+    protected static function login($username = self::USER_AUTODETECT)
     {
         $wasLoggedIn = self::isInternallyLoggedIn();
         if (
@@ -490,7 +477,8 @@ class Auth
         ){
             $_SESSION['username'] = $username;
         } else if (
-            array_key_exists('username', $_SESSION)
+            $username === self::USER_AUTODETECT
+            && key_exists('username', $_SESSION)
             && '' != $_SESSION['username']
         ) {
             $username = $_SESSION['username'];
@@ -500,7 +488,6 @@ class Auth
         if (self::$activePlugin) {
             self::$activePlugin->postLogin();
         }
-        //#TODO #1.5.0 log if requested
         if (!$wasLoggedIn && self::isInternallyLoggedIn()) {
             foreach(self::$postLoginHooks as $hookName) {
                 try {
@@ -511,5 +498,25 @@ class Auth
             }
         }
         return true;
+    }
+
+    protected static function registerPlugin($pluginName, $pluginConfig = null){
+        if (!in_array($pluginName, self::$loadedPlugins)) {
+            self::$loadedPlugins[] = $pluginName;
+            $className = 'Saf\\Auth\\Plugin\\' . $pluginName;
+            $internalPluginPath = __DIR__ . '/Auth/Plugin/' . Auto::classNameToPath($pluginName) . '.php';
+            if (!file_exists($internalPluginPath)) {
+                $className = $pluginName;
+            }
+            if (!class_exists($className)) {
+                throw new \Exception("Failed to load configured plugin {$pluginName}");
+            }
+            $rootClassName = Auto::rootClass($className);
+            if ($pluginConfig) {
+                self::$classMap[$pluginName] = array($rootClassName => $pluginConfig);
+            } else {
+                self::$classMap[$pluginName] = $rootClassName;
+            }
+        }
     }
 }

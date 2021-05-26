@@ -12,13 +12,20 @@ namespace Saf\Auth\User;
 
 use Mezzio\Authentication\UserRepositoryInterface;
 use Mezzio\Authentication\UserInterface;
+use Saf\Hash;
 
 class Mezzio implements UserInterface, UserRepositoryInterface
 {
 
+    protected $username = null;
+    protected $details = [];
+
     public function __construct($options)
     {
-
+        $this->username = Hash::extract('username', $options, '');
+        if (key_exists('keys', $options)) {
+            $this->details['keys'] = Hash::extract('keys', $options, '');
+        }
     }
 
     public function authenticate(string $credential, string $password = null) : ?UserInterface
@@ -31,7 +38,7 @@ class Mezzio implements UserInterface, UserRepositoryInterface
      */
     public function getIdentity() : string
     {
-        return '';
+        return $this->username;
     }
 
     /**
@@ -49,7 +56,7 @@ class Mezzio implements UserInterface, UserRepositoryInterface
      */
     public function getDetail(string $name, $default = null)
     {
-        return $default;
+        return key_exists($name,$this->details) ? $this->details[$name] : $default;
     }
 
     /**
@@ -57,6 +64,6 @@ class Mezzio implements UserInterface, UserRepositoryInterface
      */
     public function getDetails() : array
     {
-        return [];
+        return $this->details;
     }
 }

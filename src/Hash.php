@@ -17,9 +17,6 @@ use Saf\Utils\Filter\Truthy;
 require_once(__DIR__ . '/Exception/NotAnArray.php');
 require_once(__DIR__ . '/Exception/NoDefault.php');
 
-/**
- * Utility functions for Arrays
- */
 class Hash
 {
 

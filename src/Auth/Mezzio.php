@@ -18,6 +18,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Response\HtmlResponse;
 use Saf\Psr\Request;
 use Saf\Auth as Front;
+use Saf\Keys;
 use Saf\Auth\User\Mezzio as User;
 use Saf\Agent;
 use Saf\Utils\Template;
@@ -32,7 +33,10 @@ class Mezzio implements AuthenticationInterface
         if (!$authenticatedUsername && !Front::allowGuest()) {
             return null;
         }
-        return new User($authenticatedUsername);
+        return new User([
+            'username' => $authenticatedUsername,
+            'keys' => Keys::getKeyring(),
+        ]);
     }
 
     public function unauthorizedResponse(ServerRequestInterface $request): ResponseInterface

@@ -5,58 +5,68 @@
  * 
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  *
- * Local Auth Plugin Class and handler for key based authentication
+ * Key based Auth Plugin Class and handler
  */
 
 namespace Saf\Auth\Plugin;
 
 use Saf\Auth;
+use Saf\Keys;
 
-class Local extends Base{
+class Key extends Base {
 
 	protected $pluginName = 'Application Key Auth';
+    protected $usernamePrefix = 'key:';
+    protected $keyField = Keys::DEFAULT_KEY_FIELD;
+    protected $persistKeys = false;
 
-	public static function auth()
+    public function __constructor($config)
+    {
+        if (key_exists('keyField', $config)) {
+            Keys::setKeyField($config['keyField']);
+        }
+        if (key_exists('persistKeys', $config)) {
+            $this->persistKeys = $config['persistKeys'];
+        }
+        parent::__constructor($config);
+    }
+
+	public function auth($setStatus = true)
 	{
-		$username = self::getProvidedUsername();
+        $key = Keys::detect();
+		$username = 
+            Keys::validKey($key) 
+            ? ($this->usernamePrefix . Keys::keyName($key)) 
+            : null;
 		if ($username) {
-			Saf_Auth::setStatus(true);
+            Keys::storeKey($key, $this->persistKeys);
+			if ($setStatus) {
+                Auth::setStatus(true);
+            }
 			return true;
 		}
-		return FALSE;
+		return false;
 	}
 
-	public static function isLoggedIn()
+	public function logout()
 	{
-		return self::getProvidedUsername();
+        if (key_exists('keys', $_SESSION)) {
+            unset($_SESSION['keys']);
+        }
+		return true;
 	}
 
-	public static function logout()
+	public function getPublicName()
 	{
-		return TRUE;
+		return $this->$pluginName;
 	}
 
-	public static function getPublicName()
-	{
-		return 'Internal Auth';
-	}
-
-	public static function getExternalLoginUrl()
-	{
-		return '';
-	}
-
-	public static function getExternalLogoutUrl()
-	{
-		return '';
-	}
-
-	public static function getProvidedUsername()
+	public function getProvidedUsername()
 	{
 		return 
-			array_key_exists('username', $_SESSION)
-			? trim($_SESSION['username'])
-			: NULL;
+			key_exists('username', $_SESSION)
+			? ($this->usernamePrefix . trim($_SESSION['username']))
+			: null;
 	}
 
 	public function setUsername($username)
@@ -64,54 +74,26 @@ class Local extends Base{
 		$_SESSION['username'] = $username;
 	}
 
-	public static function getProvidedPassword()
-	{
-		return '';
-	}
+	// public function getProvidedPassword()
+	// {
+	// 	return '';
+	// }
 
-	public static function getUserInfo($what = NULL){
+	public function getUserInfo($what = null){
 		if (is_null($what)) {
 			return array(
-				Saf_Auth::PLUGIN_INFO_USERNAME => self::getProvidedUsername(),
-				Saf_Auth::PLUGIN_INFO_REALM => 'internal'
+				Auth::PLUGIN_INFO_USERNAME => $this->getProvidedUsername(),
+				Auth::PLUGIN_INFO_REALM => 'key'
 			);
 		} else {
 			switch($what){
-				case Saf_Auth::PLUGIN_INFO_USERNAME :
-					return self::getProvidedUsername();
-				case Saf_Auth::PLUGIN_INFO_REALM :
-					return 'apache';
+				case Auth::PLUGIN_INFO_USERNAME :
+					return $this->getProvidedUsername();
+				case Auth::PLUGIN_INFO_REALM :
+					return 'key';
 				default:
-					return NULL;
+					return null;
 			}
 		}
 	}
-
-	public static function fail()
-	{
-		if (Saf_Debug::isEnabled()) {
-			Saf_Debug::out('Authentication Declined.');
-		}
-	}
-
-	protected static function _succeed()
-	{
-		parent::_succeed();
-	}
-
-	public static function setPluginStatus($success, $errorCode)
-	{
-		//only some plugins will need to do this.
-	}
-
-	public static function promptsForInfo()
-	{
-		return TRUE;
-	}
-
-	public function postLogin()
-	{
-		return TRUE;
-	}
-
 }

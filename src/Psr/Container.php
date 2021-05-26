@@ -18,6 +18,16 @@ class Container {
 
     public static function getOptional($container, $name, $default = null)
     {
+        if (is_array($name)) {
+            $trunk = array_shift($name);
+            $branch = self::getOptional($container, $trunk, $default);
+            foreach($name as $next) {
+                if(is_array($branch) && key_exists($next, $branch)){
+                    $branch = $branch[$next];
+                }
+            }
+            return $branch;
+        }
         if ($container && $container->has($name)) {
             return self::filter($container->get($name));
         }
