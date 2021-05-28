@@ -306,4 +306,9 @@ class Auto
 		$canister['psrAutoloading'] = true;
 		Autoloader::init($canister);
 	}
+
+	public static function validMethodName($name){
+		//#TODO
+		return strpos($name, ' ') == false;
+	}
 }

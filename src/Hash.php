@@ -182,7 +182,7 @@ class Hash
 	/**
 	 * always returns an array or traversable object
 	 * if neither of the above are provided, will return an array containing the param $maybeArray
-	 * the returned value is always passed through Saf_Array::clean first using $mode
+	 * the returned value is always passed through Hash::clean first using $mode
 	 * @param mixed $maybeArray
 	 * @param int $mode
 	 * @return array
@@ -192,14 +192,14 @@ class Hash
 		return
 			self::traversable($maybeArray)
 			? self::clean($maybeArray, $mode)
-			: self::clean(array($maybeArray), $mode);
+			: self::clean([$maybeArray], $mode);
 	}
 
 	public static function traversable($maybeArray)
 	{
 		return
 			is_array($maybeArray)
-				|| (is_object($maybeArray) && is_a('Traversable'));
+			|| (is_object($maybeArray) && is_a('Traversable'));
 	}
 
 	/**

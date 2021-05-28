@@ -13,6 +13,7 @@ namespace Saf\Auth\User;
 use Mezzio\Authentication\UserRepositoryInterface;
 use Mezzio\Authentication\UserInterface;
 use Saf\Hash;
+use Saf\Auth\Roles;
 
 class Mezzio implements UserInterface, UserRepositoryInterface
 {
@@ -48,7 +49,10 @@ class Mezzio implements UserInterface, UserRepositoryInterface
      */
     public function getRoles() : array
     {
-        return [];
+        if (is_null($this->username)) {
+            return [];
+        }
+        return Roles::getRoles($this->username, Roles::DEREFERENCE);
     }
 
     /**

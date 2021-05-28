@@ -24,6 +24,8 @@ class Container {
             foreach($name as $next) {
                 if(is_array($branch) && key_exists($next, $branch)){
                     $branch = $branch[$next];
+                } else {
+                    return $default;
                 }
             }
             return $branch;
