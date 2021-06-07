@@ -18,9 +18,9 @@ class Xml extends Backend
 	// public const PARSE_PATTERN_NONE = 0;
 	// public const PARSE_PATTERN_SINGLETON = 1;
 	
-	// public const KEY_DEFAULT = 'ID';
-	// public const KEY_INTERATIVE = 0;
-	// public const KEY_SINGLETON = -1;
+	public const KEY_DEFAULT = 'ID'; #TODO consilidate with Ems\Api\Client
+	public const KEY_INTERATIVE = 0; #TODO consilidate with Ems\Api\Client
+	public const KEY_SINGLETON = -1; #TODO consilidate with Ems\Api\Client
 
 	public const MIMETYPE_SOAP = 'application/soap+xml; charset=utf-8';
 	public const MIMETYPE_XML = 'text/xml; charset=utf-8';

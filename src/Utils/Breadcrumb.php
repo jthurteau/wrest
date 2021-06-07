@@ -107,4 +107,11 @@ class Breadcrumb
         return self::$crumbs;
     }
 
+    public static function link()
+    {
+        return function() {
+            return self::get();
+        };
+    }
+
 }

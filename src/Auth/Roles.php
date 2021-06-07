@@ -79,6 +79,25 @@ class Roles
         return $dereference ? self::dereferenceRole($rootRoles) : $rootRoles; 
     }
 
+    public static function getUsers($role = '', $dereference = true)
+    {
+        if ($role == self::ALL) {
+            return array_keys(self::$registry['users']);
+        } elseif (key_exists($role, self::$registry['roles'])) {
+            $searchRoles = $dereference ? self::dereferenceRole($role) : [$role];
+        } else {
+            return [];
+        }
+        $users = [];
+        foreach($searchRoles as $r) {
+            $members = key_exists($r, self::$registry['roles']) ? self::$registry['roles'][$r] : [];
+            if (key_exists('users', $members)) {
+                $users = array_merge($users, $members['users']);
+            }
+        }
+        return array_unique($users);
+    }
+
     public static function dereferenceRole($role)
     {
         if (!is_array($role)) {
@@ -89,7 +108,7 @@ class Roles
                 $childRoles = 
                     key_exists($parentRole, self::$registry['roles'])
                         && is_array(self::$registry['roles'][$parentRole])
-                        && key_exists('roles', $registry['roles'][$parentRole])
+                        && key_exists('roles', self::$registry['roles'][$parentRole])
                     ? Hash::coerce(self::$registry['roles'][$parentRole]['roles'])
                     : [];
                 $list += self::dereferenceRole($childRoles);
