@@ -41,7 +41,6 @@ trait RequestHandlerCommon {
         if (in_array('sysAdmin', $user->getRoles())) {
             return 'sysAdmin-role-access';
         }
-        print_r([__FILE__,__LINE__,$user->getRoles()]); die;
         foreach($user->getRoles() as $role) {
             $keyName = "{$role}-role";
             if (

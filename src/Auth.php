@@ -10,17 +10,17 @@
 
 namespace Saf;
 
+use Saf\Auth\Plugin\Local;
 use Psr\Http\Message\ServerRequestInterface; #TODO currently still uses bare access
 use Psr\Container\ContainerInterface;
 use Saf\Psr\Container;
-use Saf\Hash;
 use Saf\Utils\Filter\Truthy;
 use Saf\Auto;
-use Saf\Auth\Plugin\Local;
+use Saf\Hash;
 use Saf\Session;
-use Saf\Keys;
-use Saf\Layout;
-use Saf\Audit;
+use Saf\Keys; //#TODO improve this integration (maybe switch to direct Plugin\Key dependency)
+use Saf\Layout; //#TODO clean up this integration
+use Saf\Audit; //#TODO clean up this integration
 #TODO split out plugin functionality
 
 class Auth

@@ -36,8 +36,20 @@ class Container {
         return $default;
     }
 
+    public static function getOptionalService($container, $name)
+    {
+        return
+            $container && $container->has($name)
+            ? $container->get($name)
+            : null;
+    }
+
     public static function filter($returnValue)
     {
-        return self::$returnObject ? $returnValue : $returnValue->getArrayCopy();
+        return 
+            !is_object($returnValue)
+                || self::$returnObject 
+            ? $returnValue 
+            : $returnValue->getArrayCopy();
     }
 }

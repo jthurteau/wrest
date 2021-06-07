@@ -483,15 +483,6 @@ $(document).ready(function() {
 		print("<script type=\"text/javascript\">saf.endBody();</script>");
 	}
 
-	public static function fontAwesomeCdn($version)
-	{
-		if (version_compare($version,'5.0.0', '>=')) {
-			print("<link rel=\"stylesheet\" href=\"//use.fontawesome.com/releases/v5.7.2/css/all.css\" integrity=\"sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr\" crossorigin=\"anonymous\"/>");
-		} else {
-			print("<link rel=\"stylesheet\" href=\"//maxcdn.bootstrapcdn.com/font-awesome/{$version}/css/font-awesome.min.css\"/>");
-		}
-	}
-
 	
 	public static function bootStrapCdn($version)
 	{
