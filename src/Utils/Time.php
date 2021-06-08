@@ -13,7 +13,7 @@ namespace Saf\Utils;
 
 use Psr\Container\ContainerInterface;
 use Saf\Psr\Container;
-use Saf\Hash;
+#use Saf\Hash;
 
 class Time
 {
@@ -215,13 +215,13 @@ class Time
 		$modMonth = $month;
 		$modYear = $year;
 		switch($modifier){ //#TODO #2.0.0 build out in long form and then refactor once testing framework is in place
-			case Saf_Time::MODIFIER_START_HALFHOUR :
+			case self::MODIFIER_START_HALFHOUR :
 				$modMin =
 					$min < 30
 					? 0
 					: 30;
 				break;
-			case Saf_Time::MODIFIER_START_NEXT_HALFHOUR :
+			case self::MODIFIER_START_NEXT_HALFHOUR :
 				$modMin = 
 					$min < 30
 					? 30
@@ -243,7 +243,7 @@ class Time
 					? $year
 					: $nextYear;
 				break;
-			case Saf_Time::MODIFIER_ADD_HALFHOUR :
+			case self::MODIFIER_ADD_HALFHOUR :
 				$modMin = 
 					$min < 30
 					? $min + 30
@@ -265,7 +265,7 @@ class Time
 					? $year
 					: $nextYear;
 				break;
-			case Saf_Time::MODIFIER_START_TOMORROW :
+			case self::MODIFIER_START_TOMORROW :
 				$modMin = 0;
 				$modHour = 0;		
 				$modDay = $nextDay;
@@ -278,7 +278,7 @@ class Time
 					? $year
 					: $nextYear;
 				break;
-			case Saf_Time::MODIFIER_ADD_DAY:
+			case self::MODIFIER_ADD_DAY:
 				$modDay = $nextDay;
 				$modMonth =
 					$modDay > $day
@@ -289,7 +289,7 @@ class Time
 					? $year
 					: $nextYear;
 				break;
-			case Saf_Time::MODIFIER_SUB_DAY:
+			case self::MODIFIER_SUB_DAY:
 				$modDay = $prevDay;
 				$modMonth =
 					$modDay < $day
@@ -300,32 +300,32 @@ class Time
 					? $year
 					: $prevYear;
 				break;
-			case Saf_Time::MODIFIER_START_DAY :
-			case Saf_Time::MODIFIER_START_TODAY :
+			case self::MODIFIER_START_DAY :
+			case self::MODIFIER_START_TODAY :
 				$modMin = 0;
 				$modHour = 0;
 				break;
-			case Saf_Time::MODIFIER_END_DAY:
-			case Saf_Time::MODIFIER_END_TODAY:
+			case self::MODIFIER_END_DAY:
+			case self::MODIFIER_END_TODAY:
 				$modSec = 59;
 				$modMin = 59;
 				$modHour = 23;
 				break;
-			case Saf_Time::MODIFIER_ADD_WEEK:
+			case self::MODIFIER_ADD_WEEK:
 				$return = $timestamp;
 				for ($i = 0; $i < 7; $i++) {
 					$return = self::modify($return, self::MODIFIER_ADD_DAY);
 				}
 				return $return;
 				break;
-			case Saf_Time::MODIFIER_SUB_WEEK:
+			case self::MODIFIER_SUB_WEEK:
 				$return = $timestamp;
 				for ($i = 0; $i < 7; $i++) {
 					$return = self::modify($return, self::MODIFIER_SUB_DAY);
 				}
 				return $return;
 				break;
-			case Saf_Time::MODIFIER_ADD_YEAR :
+			case self::MODIFIER_ADD_YEAR :
 				$modYear = $nextYear;
 				break;
 			case null:
@@ -426,7 +426,7 @@ class Time
 	public static function hourStampToString($hourStamp, $dateStamp = null, $format = 'g:i A')
 	{
 		if (is_null($dateStamp)) {
-			$dateStamp = self::modify(Saf_Time::MODIFIER_START_TODAY);
+			$dateStamp = self::modify(self::MODIFIER_START_TODAY);
 		}
 		return date($format, $hourStamp + $dateStamp);
 	}

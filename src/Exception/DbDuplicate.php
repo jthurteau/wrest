@@ -1,14 +1,16 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php 
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Exception class when an action would create a duplicate DB record
+ */
 
-Exception class when an action would create a duplicate DB record
+namespace Saf\Exception;
 
-*******************************************************************************/
-
-class Saf_Exception_DbDuplicate extends Exception
+class DbDuplicate extends \Exception
 {
 
 }
