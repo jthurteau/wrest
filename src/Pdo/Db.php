@@ -47,22 +47,23 @@ class Db
     {
         //throw new \Saf\Exception\Inspectable($config);
         $this->config = $config;
-        if (
-            key_exists('storePasswords', $config)
-            && $config['storePasswords']
-            && key_exists('dsn', $config)
-            && key_exists('password', $config['dsn'])
-        ) {
-            $this->vaultId = Vault::register();
-            $this->vaultKey = Vault::noise();
-            Vault::store($this->vaultId, $this->vaultKey, $config['dsn']['password']);
-        }
-        if (
-            key_exists('autoConnect', $config)
-            && $config['autoConnect']
-            && key_exists('dsn', $config)
-        ) {
-            $this->connect($config['dsn']);
+        if ( key_exists('dsn', $config) && is_array($config['dsn'])) {
+            $this->configure($config['dsn']);
+            if (
+                key_exists('storePasswords', $config)
+                && $config['storePasswords']
+                && key_exists('password', $config['dsn'])
+            ) {
+                $this->vaultId = Vault::register();
+                $this->vaultKey = Vault::noise();
+                Vault::store($this->vaultId, $this->vaultKey, $config['dsn']['password']);
+            }
+            if (
+                key_exists('autoConnect', $config)
+                && $config['autoConnect']
+            ) {
+                $this->connect($config['dsn']);
+            }
         }
         return $this;
     }
@@ -78,20 +79,15 @@ class Db
         }
         is_null($dsn) && (
             $dsn = 
-            !is_null($this->vaultId) && !is_null($this->vaultKey)
-            ? Vault::retrieve($this->vaultId, $this->vaultKey)
-            : ''
+                !is_null($this->vaultId) && !is_null($this->vaultKey)
+                ? Vault::retrieve($this->vaultId, $this->vaultKey)
+                : ''
         ); 
         is_string($dsn) && ($dsn = ['password' => $dsn]);
-        key_exists('pdodriver', $dsn) && ($this->driverName = $dsn['pdodriver']);
-        key_exists('hostspec', $dsn) && ($this->hostName = $dsn['hostspec']);
-        key_exists('hostport', $dsn) && ($this->hostPort = $dsn['hostport']);
-        key_exists('username', $dsn) && ($this->userName = $dsn['username']);
-        key_exists('database', $dsn) && ($this->schemaName = $dsn['database']);
-        key_exists('password', $dsn) && ($password = $dsn['password']);
-        key_exists('additional', $dsn) && ($this->additionalDsn = $dsn['additional']);
+        $this->configure($dsn);
         $dsnString = Pdo::dsnString($this);
-        $options = array();
+        $password = key_exists('password', $dsn) ? $dsn['password'] : '';
+        $options = [];
         try{
             $this->connection = new \PDO($dsnString, $this->getUser(), $password, $options);
             $this->connection && ($this->connectionFailure = !is_null($this->connection->errorCode()));
@@ -103,6 +99,20 @@ class Db
             return false;
         }
         return true;
+    }
+
+    protected function configure($dsn)
+    {
+        if (!is_array($dsn)) {
+            return;
+        }
+        key_exists('pdodriver', $dsn) && ($this->driverName = $dsn['pdodriver']);
+        key_exists('hostspec', $dsn) && ($this->hostName = $dsn['hostspec']);
+        key_exists('hostport', $dsn) && ($this->hostPort = $dsn['hostport']);
+        key_exists('username', $dsn) && ($this->userName = $dsn['username']);
+        key_exists('database', $dsn) && ($this->schemaName = $dsn['database']);
+        key_exists('password', $dsn) && ($password = $dsn['password']);
+        key_exists('additional', $dsn) && ($this->additionalDsn = $dsn['additional']);
     }
 
     public function disconnect()
@@ -119,7 +129,7 @@ class Db
 
 //     public function reconnectAs($user, $password, $dbName = '')
 //     {
-//         if (!is_null($this->_connection)) {
+//         if (!is_null($this->connection)) {
 //             $this->disconnect();
 //         }
 //         return $this->_connectAs($user, $password, $dbName);
@@ -161,7 +171,7 @@ class Db
 //         $statement = $this->_prepStatement($query, $args);
 //         return
 //             $statement //#NOTE lastInsertId only works for autoincrement, so -1 indicates explicit id insert
-//             ? ($this->_connection->lastInsertId() ? $this->_connection->lastInsertId() : -1)
+//             ? ($this->connection->lastInsertId() ? $this->connection->lastInsertId() : -1)
 //             : NULL;
 //     }
 
@@ -258,7 +268,7 @@ class Db
         if (!$result || !method_exists($result, 'fetch')) {
             $this->addError('Unable to fetch, no result to pull from.');
         }
-        return ($result ? $result->fetch(PDO::FETCH_ASSOC) : null);
+        return ($result ? $result->fetch(\PDO::FETCH_ASSOC) : null);
     }
 
 //     public function one($result = NULL)
@@ -291,12 +301,12 @@ class Db
 
 //     public function getVersion()
 //     {
-//         return $tihs->_connection->getAttribute(PDO::ATTR_SERVER_VERSION);
+//         return $tihs->connection->getAttribute(PDO::ATTR_SERVER_VERSION);
 //     }
 
 //     public function hasTable($tableName)
 //     {//#TODO #1.0.0 this isn't driver agnostic yet.
-//         $result = $this->_connection->query('SHOW TABLES;', PDO::FETCH_NUM);
+//         $result = $this->connection->query('SHOW TABLES;', PDO::FETCH_NUM);
 //         $tables =  $result->fetchAll();
 //         foreach($tables as $table) {
 //             if($table[0] == $tableName) {
@@ -308,8 +318,8 @@ class Db
 
 //     public function getError()
 //     {
-//         if ($this->_connection) {
-//             return $this->_connection->errorInfo();
+//         if ($this->connection) {
+//             return $this->connection->errorInfo();
 //         }
 //         return array(0, NULL, 'Not Connected');
 //     }
@@ -331,10 +341,10 @@ class Db
 //     }
 
 //     public function hasError(){
-//         if (!$this->_connection) {
+//         if (!$this->connection) {
 //             return $this->hasInternalError();
 //         }
-//         $error =  $this->_connection->errorInfo();
+//         $error =  $this->connection->errorInfo();
 //         return $error && is_array($error) && array_key_exists(1, $error) ? $error[1] : $this->hasInternalError();
 //     }
 
@@ -369,7 +379,7 @@ class Db
     public function pullErrorCallback()
     {
         return function(){
-            $errorInfo = $this->_connection->errorInfo();
+            $errorInfo = $this->connection->errorInfo();
             return 
                 is_array($errorInfo)
                 ? $errorInfo[2]
@@ -403,24 +413,24 @@ class Db
 
 //     public function beginTransaction()
 //     {
-//         if (!$this->_connection) {
+//         if (!$this->connection) {
 //             return -2; //#TODO #1.0.0 constants?
 //         }
-//         return $this->_connection->beginTransaction();
+//         return $this->connection->beginTransaction();
 //     }
 
 //     public function inTransaction()
 //     {
-//         return $this->_connection->inTransaction();
+//         return $this->connection->inTransaction();
 //     }
 
 //     public function rollback()
 //     {
-//         if (!$this->_connection) {
+//         if (!$this->connection) {
 //             return -2;  //#TODO #1.0.0 constants?
 //         }
-//         if ($this->_connection->inTransaction()) {
-//             return $this->_connection->rollback();
+//         if ($this->connection->inTransaction()) {
+//             return $this->connection->rollback();
 //         } else {
 //             return -1;  //#TODO #1.0.0 constants?
 //         }
@@ -428,11 +438,11 @@ class Db
 
 //     public function commit()
 //     {
-//         if (!$this->_connection) {
+//         if (!$this->connection) {
 //             return -2;  //#TODO #1.0.0 constants?
 //         }
-//         if ($this->_connection->inTransaction()) {
-//             return $this->_connection->commit();
+//         if ($this->connection->inTransaction()) {
+//             return $this->connection->commit();
 //         } else {
 //             return -1;  //#TODO #1.0.0 constants?
 //         }
@@ -555,10 +565,10 @@ class Db
 //         return $id[0];
 //     }
 
-//     public function isConnected()
-//     {
-//         return !is_null($this->_connection) && !$this->_connectionFailure;
-//     }
+    public function isConnected()
+    {
+        return !is_null($this->connection) && !$this->connectionFailure;
+    }
 
 //     public static function simpleResult($result)
 //     {
