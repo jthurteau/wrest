@@ -78,6 +78,6 @@ trait RequestHandlerCommon {
 
     public function getResourceStack(ServerRequestInterface $request)
     {
-        return explode('/', $request->getAttribute('apiMessage', ''));
+        return explode('/', $request->getAttribute(self::STACK_ATTRIBUTE, ''));
     }
 }

@@ -20,6 +20,7 @@ class Breadcrumb
 
     public static function init($config = [], $baseUri = '/')
     {
+        self::$baseUri = $baseUri;
         if (is_null($config)) {
             $config = [];
         } else if (is_object($config) && method_exists($config, 'toArray')) {
@@ -63,6 +64,9 @@ class Breadcrumb
         } else if (is_object($crumbs) && method_exists($crumbs, 'toArray')) {
             $crumbs = $crumbs->toArray();
         }
+        foreach($crumbs as $label => $crumb) {
+            $crumbs[$label] = self::translateCrumb($crumb);
+        }
         self::$crumbs = $crumbs;
     }
     
@@ -71,7 +75,7 @@ class Breadcrumb
         if (!$crumb) {
             $crumb == ['status' => 'current'];
         }
-        self::$crumbs[$label] = $crumb;
+        self::$crumbs[$label] = self::translateCrumb($crumb);
     }
     
     public static function removeCrumb($label)
@@ -83,14 +87,14 @@ class Breadcrumb
     
     public static function updateCrumb($label, $crumb = ['status' => 'current'], $newLabel = '')
     {
-        if (array_key_exists($label, self::$crumbs)) {
+        if (key_exists($label, self::$crumbs)) {
             if ($newLabel == '' ) {
                 self::$crumbs[$label] = $crumb;
             } else {
                 $newCrumbs = [];
                 foreach(self::$crumbs as $oldLabel => $oldCrumb) {
                     if ($oldLabel == $label) {
-                        $newCrumbs[$newLabel] = $crumb;
+                        $newCrumbs[$newLabel] = self::translateCrumb($crumb);
                     } else {
                         $newCrumbs[$oldLabel] = $oldCrumb;
                     }
@@ -98,7 +102,7 @@ class Breadcrumb
                 self::$crumbs = $newCrumbs;
             }
         } else {
-            self::pushCrumb($newLabel !== '' ? $newLabel : $label , $crumb);
+            self::pushCrumb($newLabel !== '' ? $newLabel : $label , self::translateCrumb($crumb));
         }
     }
     
@@ -112,6 +116,18 @@ class Breadcrumb
         return function() {
             return self::get();
         };
+    }
+
+    public static function translateCrumb($crumb)
+    {
+        if (is_array($crumb)) {
+            if (key_exists('url', $crumb)) {
+                $crumb['url'] = self::translateCrumb($crumb['url']);
+            }
+            return $crumb;
+        } else {
+            return str_replace('{$baseUri}', self::$baseUri, $crumb);
+        }
     }
 
 }
