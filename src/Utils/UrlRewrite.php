@@ -8,7 +8,7 @@
  * Utility functions for altering URLs
  */
 
-namespace Saf\Util;
+namespace Saf\Utils;
 
 class UrlRewrite
 {
@@ -71,7 +71,7 @@ class UrlRewrite
 	 * @param string $string to evaluate and alter
 	 * @return string safe string
 	 */
-	public static function makeUrlSafe($string)
+	public static function makeUrlSafe(string $cleanQuery)
 	{
 		return self::isUrlUnsafe($cleanQuery) ? self::urlEncode($cleanQuery) : $cleanQuery;
 	}

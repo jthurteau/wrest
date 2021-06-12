@@ -251,10 +251,11 @@ class Debug
 	}
 
 	public static function out($message, $level = 'ERROR')
-	{
+	{ //#TODO clean this up template/view
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
-		$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+		//$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+		$icon = '<span class="debugExpand">[B]</span>';
 		$output = "<div class=\"debug{$level}\"><p>{$message}{$icon}</p>{$trace}</div>\n";
 		self::_out($output, $level != 'Status' && $level != 'Other');
 	}
@@ -263,7 +264,8 @@ class Debug
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
-		$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+		//$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+		$icon = '<span class="debugExpand">[B]</span>';
 		$output = "<div class=\"debug{$level}\">{$message}{$icon}{$trace}</div>\n";
 		self::_out($output);
 	}
@@ -272,7 +274,8 @@ class Debug
 	{
 		$trace = self::getTrace();
 		$level = htmlentities(ucfirst(strtolower($level)));
-		$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+		//$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+		$icon = '<span class="debugExpand">[B]</span>';
 		ob_start();
 		print("\n<div class=\"debug{$level}\"><pre>Data:{$icon}<br/>\n");
 		print($trace);
@@ -372,7 +375,8 @@ class Debug
 
 	public static function cleanBuffer()
 	{
-		if (self::$_verbose && Layout::formatIsHtml()) {
+		if (false) {
+		//if (self::$_verbose && Layout::formatIsHtml()) {
 			print('<!-- debug buffer cleared -->');
 		}
 		self::$buffer = '';
@@ -427,7 +431,8 @@ class Debug
 	public static function printDebugExit($force = FALSE)
 	{
 		if (!self::$_alreadyPrintedDebugExit || $force) {
-			if (Layout::formatIsHtml()) {
+			if (false) {
+			//if (Layout::formatIsHtml()) {
 				if (!self::isForced()) {
 					print("\n<p class=\"debugOther\"><a href=\"?nodebug=true\">Disable debugging for this session.</a></p>\n");
 				} else {
@@ -443,7 +448,8 @@ class Debug
 		if (self::isAvailable() && !self::isVerbose()) {
 			if (!self::$_alreadyPrintedDebugEntry || $force) {
 				$mode = self::$_mode;
-				if (Layout::formatIsHtml()) {
+				if (false) {
+				//if (Layout::formatIsHtml()) {
 					print("\n<p class=\"debugEntry\"><a href=\"?debug=true\">Enable debugging for this session. Debug mode: {$mode}</a></p>\n");
 				} //#TODO #2.0.0 figure out what to do for other formats...
 			}
@@ -453,12 +459,14 @@ class Debug
 
 	public static function printDebugShutdown()
 	{
-		if (!self::$_alreadyPrintedDebugShutdown && Layout::formatIsHtml()) {
+		if (false) {
+		//if (!self::$_alreadyPrintedDebugShutdown && Layout::formatIsHtml()) {
 			$loadTime = microtime(TRUE) - APPLICATION_START_TIME;
 			if (self::isVerbose()) {
 				if (Mute::active()) {
 					foreach (Mute::list() as $trace) {
-						$icon = ' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>';
+						//$icon = ' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>';
+						$icon = '<span class="debugExpand">[B]</span>';
 						print("\n<div class=\"debugStatus\"><pre>Data:{$icon}<br/>\n");
 						print(htmlentities($trace));
 						print('Unclosed Mute');
@@ -484,8 +492,10 @@ class Debug
 
 	public static function printDebugReveal()
 	{
-		if (Layout::isReady()) {
-			$icon = Layout::getIcon('bug');
+		if (false) {
+		//if (Layout::isReady()) {
+			//$icon = Layout::getIcon('bug');
+			$icon = '[b]';
 			$accessible = ' class="accessibleHidden"';
 		} else {
 			$icon = '';
@@ -498,8 +508,10 @@ class Debug
 
 	public static function printProfileReveal()
 	{
-		if (Layout::isReady()) {
-			$icon = Layout::getIcon(self::LAYOUT_PROFILE_INFO_ICON);
+		if (false) {
+		//if (Layout::isReady()) {
+			//$icon = Layout::getIcon(self::LAYOUT_PROFILE_INFO_ICON);
+			$icon = '[p]';
 			$accessible = ' class="accessibleHidden"';
 		} else {
 			$icon = '';
@@ -513,7 +525,8 @@ class Debug
 	public static function dieSafe($message = '')
 	{
 		if (self::isEnabled()) {
-			if (self::$_notifyConsole && Layout::formatIsHtml()) {
+			if (false) {
+			//if (self::$_notifyConsole && Layout::formatIsHtml()) {
 				print('<script type="text/javascript">throw new Error("' . APPLICATION_DEBUG_NOTIFICATION . '");</script>');
 			}
 			self::printDebugShutdown();
@@ -694,7 +707,8 @@ class Debug
 						? $simplifyTable[$description]
 						: 'error';
 				$level = htmlentities(ucfirst(strtolower($level)));
-				$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+				//$icon = $trace ? (' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>') : '';
+				$icon = '<span class="debugExpand">[B]</span>';
 				$output = "{$message}{$icon}{$trace}\n";
 				self::_out(
 					"<div class=\"debug{$level}\">"

@@ -88,5 +88,108 @@ class Pdo
         return $newArgs;
     }
 
+    public static function isValidIdentifier($id)
+    {
+        return(
+            !is_null($id)
+            && !is_array($id)
+            && '' != trim($id)
+            && intval($id) > 0
+        );
+    }
+
+    public static function escapeString($string, $quote = true)
+    {
+        return
+            $quote
+            ? "'" . addslashes((string)$string) . "'"
+            : addslashes((string)$string);
+    }
+
+    public static function escapeSpecialString($string)
+    {
+        return "'" . addcslashes(stripslashes((string)$string), "\0'") . "'";
+    }
+
+    public static function unquoteString($string)
+    {
+        $length = strlen($string);
+        return
+            (strpos($string,"'") == 0 && strrpos($string, "'") == $length - 1) //#TODO string utility for starts and ends with
+                || (strpos($string,'"') == 0 && strrpos($string, '"') == $length - 1)
+            ? substr($string, 1, $length - 2)
+            : $string
+        ;
+    }
+
+    public static function escapeBool($bool)
+    {
+        return $bool ? 'TRUE' : 'FALSE';
+    }
+
+    public static function escapeInt($int)
+    {
+        return intval($int);
+    }
+
+    public static function escapeNumber($number)
+    {
+        $stringNumber = (string)$number;
+        return
+            strpos($stringNumber,'.') !== false
+            ? floatval($number)
+            : intval($number);
+    }
+
+    public static function escapeDate($date, $quote = false)
+    {
+        //#TODO #1.0.0 there is a lot of functionality we could add here with PHP's date functions...
+        $wrapper = is_string($quote) ? $quote : "'";
+        $cleanDate = preg_replace('/[^0-9\- :]/', '', $date);
+        $return =
+            strpos($cleanDate,':') === false
+            ? trim($cleanDate) . ' 00:00:00'
+            : trim($cleanDate);
+        return
+            $quote
+            ? "{$wrapper}{$return}{$wrapper}"
+            : $return;
+    }
+
+    public static function escapeAuto($param)
+    {
+        return is_numeric($param) ? self::escapeNumber($param): self::escapeString($param);
+    }
+
+    public static function escapeArray($array, $delimiter = ',', $cast = 'auto')
+    {
+        if (!is_array($array)) {
+            $array = explode($delimiter, $array);
+        }
+        foreach($array as $key=>$param) {
+            switch(strtolower($cast)) {
+                case 'int':
+                case 'integer':
+                    $array[$key] = self::escapeInt($param);
+                    break;
+                case 'string':
+                case 'str':
+                    $array[$key] = self::escapeString($param);
+                    break;
+                case 'date':
+                    $array[$key] = self::escapeDate($param);
+                    break;
+                case 'auto':
+                default:
+                    $array[$key] = self::escapeAuto($param);
+            }
+        }
+        return $array;
+    }
+
+    public static function escapeList($array, $delimiter = ',', $cast = 'auto'){
+        $return = self::escapeArray($array,$delimiter,$cast);
+        return (implode(', ', $return));
+    }
 
 }

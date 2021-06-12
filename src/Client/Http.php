@@ -229,7 +229,7 @@ class Http{
 			$this->actionUrl .= $url;
 			$result = $this->go($get, $post, $postContentType);
 			return $result;
-		} catch (Exception $e) {
+		} catch (\Exception $e) {
 			throw $e;
 		} finally {
 			$this->actionUrl = $currentURL;
@@ -249,7 +249,7 @@ class Http{
 			$query = $this->buildQuery($get);
 		} else if (!is_null($get) && '' != trim($get)) {
 			$cleanQuery = ltrim($get,'?');
-			$query = '?' . Saf\Utils\UrlRewrite::makeUrlSafe($cleanQuery);
+			$query = '?' . \Saf\Utils\UrlRewrite::makeUrlSafe($cleanQuery);
 		} else { #TODO implement $this->query
 			$query = '';
 		}
@@ -278,10 +278,10 @@ class Http{
 			#TODO #2.0.0 make sure switching back to GET mode when persisting works properly
 			#TODO implement $this->postData
 			if (!key_exists(CURLOPT_POST, $options)) {
-Saf_Debug::out('switching back to get mode');
+#Saf_Debug::out('switching back to get mode');
 				$options[CURLOPT_POST] = FALSE; //or unset?
 			} else {
-Saf_Debug::out('not switching');
+#Saf_Debug::out('not switching');
 			}
 
 		}
@@ -358,7 +358,7 @@ Saf_Debug::out('not switching');
 				'error' => $this->lastError
 			);
 			$this->lastStatus = $resultInfo['http_code'];
-		} catch (Exception $e){
+		} catch (\Exception $e){
 			$this->lastError = $e->getMessage();
 			$this->lastStatus = 'EXCEPTION';
 			$return = array(

@@ -11,12 +11,13 @@
 namespace Saf\Psr;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Saf\Keys;
 
 trait RequestHandlerCommon {
 
-    protected function rootRequest(ServerRequestInterface $request){
+    // protected function rootRequest(ServerRequestInterface $request){
         
-    }
+    // }
 
     protected function allowed($resource, $user)
     {
@@ -71,12 +72,12 @@ trait RequestHandlerCommon {
         return false;
     }
 
-    protected function matchToken($string, $match)
+    protected static function matchToken($string, $match)
     {
         return false; //#TODO
     }
 
-    public function getResourceStack(ServerRequestInterface $request)
+    public static function getResourceStack(ServerRequestInterface $request)
     {
         return explode('/', $request->getAttribute(self::STACK_ATTRIBUTE, ''));
     }
