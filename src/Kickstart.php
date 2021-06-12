@@ -31,7 +31,7 @@ class Kickstart
 		self::PREBOOT_STEP_TZ => null,
 	];
 	public const PREBOOT_STEP_LIBXML = 'LibXml';
-	public const PREBOOT_STEP_TZ = 'Timezone';
+	public const PREBOOT_STEP_TZ = 'TimeZone';
 
 	public const OPTION_NAME = Agent::OPTION_NAME;
 	public const OPTION_MODE = Agent::OPTION_MODE;

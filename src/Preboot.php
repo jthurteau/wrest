@@ -21,7 +21,7 @@ class Preboot
 {
 	
 	public const STEP_LIBXML = 'LibXml';
-	public const STEP_TZ = 'Timezone';
+	public const STEP_TZ = 'TimeZone';
 
     /**
 	 * stores order and state of various preboot steps

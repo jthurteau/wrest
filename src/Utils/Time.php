@@ -79,7 +79,7 @@ class Time
 	/**
 	 * @var string
 	 */
-	protected static $_timezone = self::DEFAULT_TIME_ZONE;
+	protected static $timeZone = self::DEFAULT_TIME_ZONE;
 
 	/**
 	 * How many seconds off real time we are testing against
@@ -113,7 +113,13 @@ class Time
 	{
 		if (key_exists('defaultTimeZone', $config)) {
 			date_default_timezone_set($config['defaultTimeZone']);
+			self::$timeZone = $config['defaultTimeZone'];
 		}
+	}
+
+	public static function getTimeZone()
+	{
+		return self::$timeZone;
 	}
 
 	public static function set($seconds, $micro = 0)

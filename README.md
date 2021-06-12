@@ -286,7 +286,7 @@ PUBLIC_PATH - path to the root of public files, typically INSTALL_PATH/public
 INSTALL_PATH - path to the root of the project, typically the root of the project repo
 STORAGE_PATH - default write path for the application, sometimes INSTALL_PATH/data but better practice is outside of INSTALL_PATH, e.g. somewhere in /var
 START_TIME - timestamp of the transaction's start, typically aquired from the web server environment
-LOCAL_TIMEZONE - timezone associated with START_TIME and calls to Saf\Utils\Time
+LOCAL_TIMEZONE - time zone associated with START_TIME and calls to Saf\Utils\Time
 
 FOUNDATION_PATH - path to the foundation source code, i.e. where SAF is installed, defaults to VENDOR_PATH/Saf
 
