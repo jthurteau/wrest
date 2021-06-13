@@ -289,4 +289,9 @@ class Xml extends Backend
 		return $returnArray ? $results : current($results);
 	}
 
+	public function getRemote()
+	{
+		return $this->path;
+	}
+
 }

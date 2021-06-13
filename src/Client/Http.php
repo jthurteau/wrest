@@ -518,4 +518,9 @@ class Http{
 	{
 		$this->debugEnabled = $mode;
 	}
+
+	public function getRemote()
+	{
+		return $this->url;
+	}
 }
