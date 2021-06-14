@@ -55,8 +55,9 @@ class Auth
     protected static $supportsInternal = false;
     protected static $postLoginHooks = [];
     
-    const USER_AUTODETECT = null;
-    const MODE_SIMULATED = 1;
+    public const USER_AUTODETECT = null;
+    public const MODE_SIMULATED = 1;
+    public const SIMULATED_AUTH_CONSTANT = '\\Saf\\AUTH_SIMULATED_USER';
     //const MODE_SESSIONLESS = 2; //#TODO
     //const MODE_KEYONLY = 4; //#TODO
 
@@ -154,7 +155,7 @@ class Auth
         }
         Session::on();
         $originalActivePlugin = self::$activePlugin;
-        $simulatedAuthConst = '\\Saf\\AUTH_SIMULATED_USER';
+        $simulatedAuthConst = self::SIMULATED_AUTH_CONSTANT;
         //throw new \Saf\Exception\Inspectable($mode,$originalActivePlugin,self::$supportsInternal,self::$activePlugin);
         if (self::$supportsInternal && self::$activePlugin) {
             $simulatedLockOn =
@@ -172,7 +173,7 @@ class Auth
                 $mode == self::MODE_SIMULATED
                     && defined($simulatedAuthConst)
                     && constant($simulatedAuthConst)
-                ? \Saf\AUTH_SIMULATED_USER
+                ? constant($simulatedAuthConst) //\Saf\AUTH_SIMULATED_USER
                 : self::USER_AUTODETECT;
             // throw new \Saf\Exception\Inspectable(
             //     $userToLogin, self::$activePlugin, constant($simulatedAuthConst), self::MODE_SIMULATED, $mode

@@ -12,6 +12,7 @@ namespace Saf\Psr;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Saf\Keys;
+use Saf\Utils\UrlRewrite;
 
 trait RequestHandlerCommon {
 
@@ -23,42 +24,34 @@ trait RequestHandlerCommon {
 
     public abstract static function stackAttributeField() : string;
 
-    protected function allowed($resource, $user)
+    protected function allowed($resource, $user = null)
     {
         //#TODO patch in with configed routes
         //$accessList = Hash::deepMerge($this->accessList,$globalAccess);
-        $keys = $user->getDetail('keys');
-        if (
-            key_exists('open', $this->accessList) 
-            && in_array($resource, $this->accessList['open'])
-        ) {
+        $keys = $user ? $user->getDetail('keys') : [];
+        $roles = $user ? $user->getRoles() : [];
+        if ($this->matchRoute($resource, 'open')) {
             return 'open-access';
         }
         if (
             count($keys) > 0 
-            && key_exists('key', $this->accessList) 
-            && in_array($resource, $this->accessList['key'])) {
+            && $this->matchRoute($resource, 'key')
+        ) {
             return 'key-access';
         }
         foreach($keys as $key) {
             $keyName = Keys::keyName($key);
-            if (
-                key_exists($keyName, $this->accessList) 
-                && in_array($resource, $this->accessList[$keyName])
-            ) {
+            if ($this->matchRoute($resource, $keyName)) {
                 return "{$keyName}-key-access";
             }
         }
-        if (in_array('sysAdmin', $user->getRoles())) {
+        if ($user && in_array('sysAdmin', $user->getRoles())) {
             return 'sysAdmin-role-access';
         }
-        foreach($user->getRoles() as $role) {
-            $keyName = "{$role}-role";
-            if (
-                key_exists($keyName, $this->accessList) 
-                && in_array($resource, $this->accessList[$keyName])
-            ) {
-                return "{$keyName}-role-access";
+        foreach($roles as $role) {
+            $roleName = "{$role}-role";
+            if ($this->matchRoute($resource, $roleName)) {
+                return "{$roleName}-role-access";
             }
         }
         return false;
@@ -87,9 +80,35 @@ trait RequestHandlerCommon {
         return false; //#TODO
     }
 
+    protected function matchRoute($resource, $in)
+    {
+        return
+            key_exists($in, $this->accessList) 
+            && (
+                $this->accessList[$in] == '*'
+                || $this->accessList[$in] === $resource
+                || (
+                    is_array($this->accessList[$in]) 
+                    && in_array($resource, $this->accessList[$in])
+                )
+            );
+    }
+
+    protected static function getForward(ServerRequestInterface $request)
+    {
+        $url = trim(self::extractFromRequest(['get' => 'forwardUrl'], $request, '')); //$request->getParam('forwardUrl'));
+        $code = trim(self::extractFromRequest(['get' => 'forwardCode'], $request, '')); //trim($request->getParam('forwardCode')));   
+        return $url ? UrlRewrite::decodeForward($url) : UrlRewrite::decodeForward($code);
+    }
+
     public static function getResourceStack(ServerRequestInterface $request)
     {
         return explode('/', $request->getAttribute(self::stackAttributeField(), ''));
+    }
+
+    public static function successful($result)
+    {
+        return $result && is_array($result) && key_exists('success', $result) && $result['success'];
     }
 
 	/**

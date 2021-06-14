@@ -15,7 +15,7 @@ class Redirect extends \Exception {
 	/**
 	 * indicates if the exception's redirect should be kept in the browser history
 	 */
-	protected $_keep = FALSE;
+	protected $keep = false;
 	
 	/**
 	 * sets the exception's redirect to be kept in the browser's history
@@ -25,7 +25,7 @@ class Redirect extends \Exception {
 	 */
 	public function keep()
 	{
-		$this->_keep = TRUE;
+		$this->keep = true;
 		return $this;
 	}
 
@@ -36,7 +36,7 @@ class Redirect extends \Exception {
 	 */
 	public function isKept()
 	{
-		return $this->_keep;
+		return $this->keep;
 	}
 
 }
