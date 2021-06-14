@@ -13,30 +13,30 @@ namespace Saf\Exception;
 class Redirect extends \Exception {
 
 	/**
-	 * indicates if the exception's redirect should be kept in the browser history
+	 * indicates if the redirect should be remembered by the client
 	 */
-	protected $keep = false;
+	protected $permanent = false;
 	
 	/**
-	 * sets the exception's redirect to be kept in the browser's history
-	 * i.e. throw new Saf_Exception_Redirect('<your url>')->keep();
+	 * sets the exception's redirect to be remembered in the browser's history
+	 * i.e. throw new Redirect('<your url>')->permanent();
 	 *
-	 * @return Saf_Exception_Redirect $this profient method.
+	 * @return Saf\Exception\Redirect $this profient method.
 	 */
-	public function keep()
+	public function permanent()
 	{
-		$this->keep = true;
+		$this->permanent = true;
 		return $this;
 	}
 
 	/**
-	 * returns whether or not the exception should be kept
+	 * returns whether the redirect should be remembered by the client
 	 *
 	 * @return bool indicating to keep in history
 	 */
-	public function isKept()
+	public function isPermanent()
 	{
-		return $this->keep;
+		return $this->permanent;
 	}
 
 }
