@@ -25,7 +25,7 @@ class Pdo
     public function __invoke(ContainerInterface $container, string $name, callable $callback) : Db
     {
         $return = $callback();
-        $dbConfig = Container::getOptional($container, ['config','db'], []);
+        $dbConfig = Container::getOptional($container, ['config', 'db'], []);
         return $return->init($dbConfig);
     }
 
