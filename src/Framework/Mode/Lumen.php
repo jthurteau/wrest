@@ -11,8 +11,10 @@
 namespace Saf\Framework\Mode;
 
 use Saf\Framework\Manager;
+use Saf\Exception\NotImplemented;
 
 require_once(dirname(__DIR__) . '/Manager.php');
+require_once(dirname(dirname(__DIR__)) . '/Exception/NotImplemented.php');
 
 class Lumen extends Manager{
 
