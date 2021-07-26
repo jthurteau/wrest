@@ -39,7 +39,7 @@ class Mezzio implements UserInterface, UserRepositoryInterface
      */
     public function getIdentity() : string
     {
-        return $this->username;
+        return !is_null($this->username) ? $this->username : '';
     }
 
     /**

@@ -240,7 +240,7 @@ class Auth
         return false;
     }
 
-    public static function authenticate(ServerRequestInterface $request) : string
+    public static function authenticate(ServerRequestInterface $request) : ?string
     {
         return self::getPluginProvidedUsername();
     }
@@ -492,7 +492,7 @@ class Auth
         if (!$wasLoggedIn && self::isInternallyLoggedIn()) {
             foreach(self::$postLoginHooks as $hookName) {
                 try {
-                    $hookName::trigger(array('username' => $username));
+                    $hookName::trigger(['username' => $username]);
                 } catch (\Exception $e) {
                     Audit::add('problem', $e->getMessage());
                 }
