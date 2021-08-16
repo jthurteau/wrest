@@ -162,8 +162,8 @@ class Preboot
             ? $options['vendorPath']
             : '/var/www/application/vendor';
         $foundationPath = 
-            key_exists('founationPath', $options) 
-            ? $options['founationPath'] 
+            key_exists('foundationPath', $options) 
+            ? $options['foundationPath'] 
             : "{$vendorPath}/Saf/src";
 		$safLoaderGenerator = function(string $path){
 			return function(string $className) use ($path){

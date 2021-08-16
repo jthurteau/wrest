@@ -41,8 +41,8 @@ return function (&$canister = []){
             ? $canister['foundationScript'] 
             : 'kick';
         $path = 
-            key_exists('founationPath', $canister) 
-            ? $canister['founationPath'] 
+            key_exists('foundationPath', $canister) 
+            ? $canister['foundationPath'] 
             : $defaultPath;
         $scriptErrorMessage = 'Application foundation unavailable.';
     }

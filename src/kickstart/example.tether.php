@@ -39,8 +39,8 @@ return function ( #TODO #PHP8 allows throw as an expression
         ? "{$canister['installPath']}/vendor/Saf/src/"
         : "{$applicationRoot}/vendor/Saf/src";
     $path = 
-        key_exists('founationPath', $canister) 
-        ? $canister['founationPath'] 
+        key_exists('foundationPath', $canister) 
+        ? $canister['foundationPath'] 
         : $defaultPath;
 
     if (key_exists('resolverPylon', $canister) && in_array($canister['resolverPylon'], $tools) ) {
