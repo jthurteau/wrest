@@ -35,7 +35,7 @@ class Preboot
 		self::STEP_LIBXML => null,
 		self::STEP_TZ => null,
 	];
-	
+
 	public const STEP_LIBXML = 'LibXml';
 	public const STEP_TZ = 'TimeZone';
 	public const STEP_AUTOLOAD = 'Autoload';
@@ -114,11 +114,10 @@ class Preboot
 			case self::STEP_TZ :
 				if (defined('DEFAULT_TIMEZONE')) {
 					date_default_timezone_set(DEFAULT_TIMEZONE);
-				}				
+				}
 				break;
 				case self::STEP_AUTOLOAD :
-					$options = &Environment::options($instance, $options);
-					self::defaultAutoloader($instance, );
+					self::defaultAutoloader($instance, $options);
 					break;
 			default:
 			#TODO implement plugins?
