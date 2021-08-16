@@ -108,16 +108,20 @@ class Path
 	 */
 	public static function fileExistsInPath($filepath)
 	{
+		//#TODO this was part of another copy of this method
+        // if (!$filepath || '' === $filepath) {
+        //     return false;
+        // }
 		if(strpos($filepath, '/') === 0) {
 			return file_exists($filepath);
 		}
 		$paths = explode(\PATH_SEPARATOR, ini_get('include_path'));
 		foreach($paths as $path){
 			if (file_exists(realpath("{$path}/{$filepath}"))){
-				return TRUE;
+				return true;
 			}
 		}
-		return FALSE;
+		return false;
 	}
 
 	/**

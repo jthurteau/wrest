@@ -103,8 +103,14 @@ class Mezzio extends Manager{
         // configuration statements
         (require("{$installPath}/config/pipeline.php"))($app, $factory, $container);
         (require("{$installPath}/config/routes.php"))($app, $factory, $container);
+//#TODO try/catch from gateway.tether
+// if (class_exists('Whoops\Run', false)) { #TODO move this into Saf/Framework/Mode/Mezzio::run
+//     $previousErrorHandler && $previousErrorHandler($e);
+//     return;
 
         $app->run();
+
+// }
     }
 
     public static function preboot($instance, $options = [], $prebooted = [])

@@ -20,6 +20,7 @@ return function ( #TODO #PHP8 allows throw as an expression
             : 'PHP_SELF'; //#NOTE sometimes also available in 'SCRIPT_NAME',
         $mirror = $_SERVER[$mirrorSource];
     }
+    
     //#NOTE resolverPylon is set in host.root.php from $_SERVER['PHP_RESOLVER_PYLON'] when present
     //#NOTE you may alternatively set Saf\RESOLVER_PYLON in your pylon
     if (!key_exists('resolverPylon', $canister) && defined('Saf\RESOLVER_PYLON')) {

@@ -10,22 +10,23 @@
 
 declare(strict_types=1);
 
-return function ( #TODO #PHP8 allows throw as an expression
-    &$canister #TODO #PHP8 allows array|ArrayAccess
-) {
+return function (&$canister) {
     static $init = null; #NOTE static closure vars only get assigned once.
+    if (!is_array($canister) && !($canister instanceof ArrayAccess)) {
+        throw new Exception('Initialization Canister Invalid');
+    }
     if (!$init) {
         key_exists('installed', $canister) || ($canister['installed'] = []);
         $canister['installed']['install'] = __FILE__;
         $canister['install'] = function($util) use (&$canister) {
             is_array($util) || $util = [$util];
             if (!key_exists('installPath', $canister) || !is_string($canister['installPath'])) {
-                throw new Exception('Application agent installer misconfigured.');
+                throw new Exception('Agent installer misconfigured.');
             }
             foreach ($util as $u) {
                 $file = is_string($u) ? realpath("{$canister['installPath']}/src/kickstart/installable/{$u}.php") : null;
                 if($file && !is_readable($file)) {
-                    throw new Exception("Application agent installer:{$u} missing.", 127, new Exception($file));
+                    throw new Exception("Agent installer:{$u} missing.", 127, new Exception($file));
                 } else {
                     $result = 
                         is_string($file) 
@@ -38,7 +39,7 @@ return function ( #TODO #PHP8 allows throw as an expression
                         $canister[$u] = $result;
                         key_exists($u, $canister['installed']) || ($canister['installed'][$u] = $file);
                     } else {
-                        throw new Exception("Application agent installer:{$u} invalid.", 127, new Exception($file));
+                        throw new Exception("Agent installer:{$u} invalid.", 127, new Exception($file));
                     }
                 }
             }
@@ -58,10 +59,10 @@ return function ( #TODO #PHP8 allows throw as an expression
         $canister['shell'] = function &() use (&$canister){
             $shell = [];
             foreach ($canister as $key => $value) {
-                if (!is_callable($canister[$key])) {
-                    $shell[$key] = &$canister[$key];
-                } elseif ('installed' == $key) {
+                if ('installed' == $key) {
                     $shell['previouslyInstalled'] = $canister[$key];
+                } elseif (!is_callable($canister[$key])) {
+                    $shell[$key] = &$canister[$key];
                 }
             }
             return $shell;

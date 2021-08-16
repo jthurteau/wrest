@@ -14,7 +14,7 @@ $sapi = defined('PHP_SAPI') ? constant('PHP_SAPI') : null;
 $hostLookup = 'SERVER_NAME';
 $source = isset($_SERVER) ? $_SERVER : null;
 $copy = [
-    'REQUEST_TIME_FLOAT' => 'startTime', #NOTE this wouldn't play well with cache
+    'REQUEST_TIME_FLOAT' => 'startTime',
     'PHP_SELF' => 'uriMirror',
     'SCRIPT_NAME' => 'uriMirror',
     'SERVER_PORT' => 'applicationSuggestedPort',
@@ -27,6 +27,8 @@ $copy = [
 ];
 
 $host = [
+    'mergeKeys' => 'noCacheKeys',
+    'noCacheKeys' => 'startTime',
     'hostSapi' => $sapi,
     'hostEnvSource' => is_null($source) ? null : 'server',
 ];

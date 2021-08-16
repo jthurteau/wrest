@@ -1,11 +1,9 @@
 <?php 
 /**
  * #SCOPE_OS_PUBLIC #LIC_FULL
- * 
- * default exception/error vent, accepts an optional canister to use in a view script
- * 
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  * 
+ * default exception/error vent, accepts an optional canister to use in a view script
  */
 
 declare(strict_types=1);

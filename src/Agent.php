@@ -116,7 +116,10 @@ class Agent implements \ArrayAccess {
 		if (is_null($manager)) {
 			$modeMain = $this['mainScript'] ?: 'main';
 			$installPath = $this['installPath'] ?: '.';
-			$mainScript = "{$installPath}/{$modeMain}.php";
+			$mainScript = 
+				file_exists("{$installPath}/src/{$modeMain}.php")
+				? "{$installPath}/src/{$modeMain}.php"
+				: "{$installPath}/{$modeMain}.php";
 			#TODO #2.0.0 decide on a mechanism to send parameters to main
 			if (!file_exists($mainScript)) {
 				throw new \Exception('No main application script to run.');

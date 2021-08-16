@@ -10,28 +10,16 @@
 
 namespace Saf;
 
+use Saf\Agent;
 use Saf\Environment;
 use Saf\Preboot;
-use Saf\Agent;
 
+require_once(__DIR__ . '/Agent.php');
 require_once(__DIR__ . '/Environment.php');
 require_once(__DIR__ . '/Preboot.php');
-require_once(__DIR__ . '/Agent.php');
 
 class Kickstart
 {
-	/**
-	 * stores order and state of various preboot steps
-	 * false indicates that step will not be auto-attempted
-	 * null indicates the step has not been attempted yet
-	 * otherwise each value is an array of the instance idents that executed the step
-	 */
-	protected static $prebootSteps = [
-		self::PREBOOT_STEP_LIBXML => null,
-		self::PREBOOT_STEP_TZ => null,
-	];
-	public const PREBOOT_STEP_LIBXML = 'LibXml';
-	public const PREBOOT_STEP_TZ = 'TimeZone';
 
 	public const OPTION_NAME = Agent::OPTION_NAME;
 	public const OPTION_MODE = Agent::OPTION_MODE;
@@ -81,7 +69,7 @@ class Kickstart
 					$mode = Agent::autoMode($instance, $options);
 				}
 				$mode = Agent::negotiate($instance, $mode, $options) ?: $mode;
-				self::preboot($instance, $mode);
+				Preboot::go($instance, $mode);
 				self::$laced[$instance] = $mode;
 			}
 		} catch (\Error | \Exception $e) {
@@ -132,6 +120,8 @@ class Kickstart
 			if (Environment::instanceOption($instance, self::OPTION_THROW_MEDITATIONS)) {
 				#TODO #2.0.0 get the correct deilm
 				throw new \Exception("Failed to kickstart instance {$instance}@{$mode}", 0, Agent::getMeditation());
+				#TODO properly detect handoff
+				#throw new \Exception("Application instance {$instance}@{$mode} failed after kickstart", 0, Agent::getMeditation());
 			} elseif (Environment::instanceOption($instance, self::OPTION_RETURN_MEDITATIONS)) {
 				return $e;
 			}
@@ -154,7 +144,7 @@ class Kickstart
 			$mode = $mode == Agent::MODE_AUTODETECT ? Agent::MODE_NONE : $mode;
 			
 			#TODO #2.0.0 Environment::init($intance, $options)?
-			self::preboot($instance, $mode);
+			Preboot::go($instance, $mode);
 		} catch (\Exception $e) { #TODO handle redirects and forwards
 			Agent::meditate($e, self::MEDITATION_LEVEL);
 		}
@@ -219,74 +209,4 @@ class Kickstart
 		}
 	}
 
-	/**
-	 * steps that can't wait for a bootstrap to kick in, 
-	 * @param string $instance
-	 * @param string $mode
-	 */
-	protected static function preboot(?string $instance, ?string $mode)
-	{
-		$mode = $mode == Agent::MODE_AUTODETECT ? Agent::MODE_NONE : $mode;
-		$options = &Environment::options($instance);
-		Environment::expand($instance, self::INSTANCE_DEFAULTS); #TODO #2.0.0 expand Environment::parse so it can handle managerClass, autoload, etc.
-		Environment::set($instance, self::OPTION_RESOLVER, Preboot::resolve($instance, $options));
-		if (array_key_exists('meditationScript', $options)) {
-			Agent::setMeditation($options['meditationScript']);
-		}
-		if (
-			$mode != Agent::MODE_NONE
-			&& is_null(Environment::instanceOption($instance, self::OPTION_MANAGER))
-		) {
-			Environment::set($instance, self::OPTION_MANAGER, Agent::getModeClass($mode));
-		}
-		if (is_null(Environment::instanceOption($instance, self::OPTION_AUTOLOAD))) {
-			Environment::set($instance, self::OPTION_AUTOLOAD, Environment::DEFAULT_AUTOLOAD);
-		}
-		foreach(self::$prebootSteps as $prebootOption => $value) {
-			if (is_null($value)) {
-				self::prebootStep($prebootOption, $instance, $mode);
-			}
-		}
-		$modeClass = Environment::instanceOption($instance, self::OPTION_MANAGER);
-		if ($modeClass && class_exists($modeClass, false)) { #TODO #2.0.0 change autoload to a step for custom ordering
-			if (Environment::instanceOption($instance, self::OPTION_AUTOLOAD)){
-				$modeClass::autoload($instance, $options);
-			}
-			$modeClass::preboot($instance, $options, self::$prebootSteps);
-		} elseif ($modeClass) {
-			//Environment::autoload($modeClass);
-			//#TODO #2.0.0 warn about invalid mode class?
-		}
-	}
-
-	/**
-	 * Handling for various preboot steps, #TODO #2.0.0 move into separate Saf\Preboot class
-	 * @param string $step matching PREBOOT_STEP_*
-	 * @param string $instance 
-	 * @param string $mode
-	 */
-	protected static function prebootStep($step, $instance = 'INTERNAL', $mode = 'INIT')
-	{
-		switch ($step) {
-			case self::PREBOOT_STEP_LIBXML :
-				if (function_exists('libxml_use_internal_errors')) {
-					libxml_use_internal_errors(true);
-				} else {
-					Agent::mediate('libxml_use_internal_errors() not supported.', 'NOTICE');
-				}
-				break;
-			case self::PREBOOT_STEP_TZ :
-				if (defined('DEFAULT_TIMEZONE')) {
-					date_default_timezone_set(DEFAULT_TIMEZONE);
-				}				
-				break;
-			default:
-			#TODO implement plugins?
-		}
-		if (!array_key_exists($step, self::$prebootSteps) || !self::$prebootSteps[$step]) {
-			self::$prebootSteps[$step] = [Agent::instanceIdent($instance, $mode)];
-		} else {
-			self::$prebootSteps[$step][] = Agent::instanceIdent($instance, $mode);
-		}
-	}
 }

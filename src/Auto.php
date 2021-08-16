@@ -10,13 +10,16 @@
 
 namespace Saf;
 
-use Saf\Legacy\Autoloader;
+use Saf\Legacy\Autoloader as LegacyAutoLoader;
+use Saf\Environment\Autoloader;
+
 require_once(__DIR__ . '/Legacy/Autoloader.php');
+require_once(__DIR__ . '/Environment/Autoloader.php');
 
 class Auto
 {
-	public const ADD_PREPEND = Autoloader::POSITION_BEFORE;
-	public const ADD_APPEND = Autoloader::POSITION_AFTER;
+	public const ADD_PREPEND = LegacyAutoLoader::POSITION_BEFORE;
+	public const ADD_APPEND = LegacyAutoLoader::POSITION_AFTER;
 
 	public const REGEX_CLASS =
 		'/class\s+([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)[\s{]/';
@@ -57,17 +60,22 @@ class Auto
 	{
 		$parts = explode('\\', $class);
 		$path = $externalPath ?: __DIR__;
+		if (strrpos($path, '/') == (strlen($path) - 1)) {
+			$path = substr($path,0,strlen($path) - 1);
+		}
 		$head = array_shift($parts);
 		if (!$externalPath && $head != __NAMESPACE__) {
-			return false; #TODO, maybe re-head and default these to Modules?
+			//print_r([__FILE__,__LINE__, $class, $externalPath, $prefix, $head,count($parts)]);
+			return null; #TODO, maybe re-head and default these to Modules? Vendor?
 		} elseif (count($parts) < 1) {
-			return false; #TODO, also possible legit standard case?
+			//print_r([__FILE__,__LINE__, $class, $externalPath, $prefix, $head,count($parts)]);
+			//return null; #TODO, also possible legit standard case?
 		}
 		$classPath = implode('/', $parts);
 		if ($head != $prefix) {
 			$classPath .= "{$head}/";
 		}
-		//print_r([__FILE__,__LINE__, 'lookup',$class, $externalPath, $prefix,$path,$classPath,$head]);
+		//print_r([__FILE__,__LINE__,'lookup', $class,$externalPath,$prefix,$path,$classPath]); die;
 		return "{$path}/{$classPath}.php";
 	}
 
@@ -290,12 +298,25 @@ class Auto
 		return false;
 	}
 
+	public static function validMethodName($name){
+		//#TODO
+		return strpos($name, ' ') == false;
+	}
+
 	/**
 	 * 
 	 */
-	public static function add(string $prefix, callable $loader, $order = Autoloader::POSITION_BEFORE)
+	public static function registerLoader(string $prefix, callable $loader, $order = self::ADD_PREPEND)
 	{
-		Autoloader::addAutoloader( $prefix, $loader, $order);
+		Autoloader::register($prefix, $loader, $order);
+	}
+
+	/**
+	 * 
+	 */
+	public static function registerLegacyLoader(string $prefix, callable $loader, $order = LegacyAutoLoader::POSITION_BEFORE)
+	{
+		LegacyAutoLoader::addAutoloader( $prefix, $loader, $order);
 	}
 
 	/**
@@ -304,11 +325,6 @@ class Auto
 	public static function initLegacy($canister)
 	{
 		$canister['psrAutoloading'] = true;
-		Autoloader::init($canister);
-	}
-
-	public static function validMethodName($name){
-		//#TODO
-		return strpos($name, ' ') == false;
+		LegacyAutoLoader::init($canister);
 	}
 }

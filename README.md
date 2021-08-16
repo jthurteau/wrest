@@ -13,11 +13,11 @@ SAF provides wrapper funcionality for:
 
 SAF introduces minimal global scope pollution and aims to provide mechanims to allow the transition from reliance of such practices. When used as a "bootstrap", it allows a high degree of flexibility in coding practices. Its components are designed to be leveraged completely independently.
 
-The bootstrapping facility for SAF is called "kickstart" because it is used to encapsulate existing framework bootstrapping processes. This allows projects to adroitly employ mutiple applications managed by multiple (including no) frameworks running in parallel across enpoints.
+The bootstrapping facility for SAF is called "kickstart" because it encapsulates existing framework bootstrapping processes. This allows projects to adroitly employ mutiple applications managed by multiple (including no) frameworks running in parallel across enpoints.
 
 Kickstart models the excecution lifecycle as a "transaction". The web server hands off the transaction to a "gateway script", which identifies what application to execute and provides a baseline response if the application fails.
 
-Most frameworks provide a similar mechanism called the "bootstrap" process that include some functions of kickstart, and fill a similar role in executive function. Since SAF is framework agnostic, it provides Kickstart as an optional intermediary process that dovetails into (or replaces) existing framework bootstraps. It is designed to be flexible such that SAF can manage the entire gateway-to-shutdown application execution lifcycle, or negotiate any portion of it.
+Most frameworks provide a "bootstrap" process that include some functions of kickstart, and fill a similar role in executive function. Since SAF is framework agnostic, it provides Kickstart as an optional intermediary process that dovetails into (or replaces) existing framework bootstraps. It is designed to be flexible such that SAF can manage the entire gateway-to-shutdown application execution lifcycle, or negotiate any portion of it.
 
 ## Core Concepts ##
 
@@ -74,7 +74,7 @@ Encapsulating scripts also "create" data, but in a way that does not "bind to th
 
 #TODO execution environment vs. persistent environment
 
-## Gateways, Kickstart, Bootstrapping ##
+## Pylons, Gateways, Kickstart, Bootstrapping ##
 
 https://lucid.app/lucidspark/invitations/accept/c2332b74-627d-4732-997b-43ee541f0bc1
 
@@ -97,7 +97,7 @@ Gateways conform to the following criteria:
 
 - a script that is directly triggered from "outside" (e.g. web request, commandline or interactive session), and
 - has intentionaly minimal direct contact with its executing environment, and
-- ideally in no way changes the local executing environment, and
+- ideally in no way changes the executing environment, and
 - it delegates reading environment to "rooting" scripts, and
 - does not read or accept parameters or data from mechanisms other than rooting, and
 - creates a canister (array) of data, and
@@ -136,15 +136,15 @@ In a "normal" transaction, execution returns back through the gateway, and the g
 
 SAF aims for Zero Pollution, so gateways should also avoid defining any constants in the global scope, but may optionally use a namespace and define constants in that namespace. SAF makes a few assertions about how such a namespace should not be used during kickstart and no assertions on how may may/should/shouldn't be used beyond the scope of kickstart (e.g. by code that is native to the project).
 
-Typical data management assumes that the Gateway "creates" its own canister of data based on information from rooting, It should
+Typical data management assumes that the Gateway "creates" its own canister of data based on information from rooting.
 
 ### Recommended Gateway Footprint
 
 The implementation of gateways is entirely up to the developer. The following are purely recommendations as a basis of good design:
 
-- a flexible gateway needs to be able to tether an arbitrary file in the public path to an arbitrary file in a directory outside of the public path. The directory outside of the public path is refered to as the "install path" and is also often the "project root" when a more complicated multi-project scenario is not in play. The common modern practice is for the public path to be a subdirectory of the install path, so mapping is as simple as going up the directory tree one level. If the mapping is always straightforward and predictable, it can be hard coded. If it is parametarized, it is recommended to be the first parameter (even if it is the one least likely to varry). Auto-detection and reading from the environment are acceptable, but not fitting in best practice.
+- a flexible gateway needs to be able to tether an arbitrary file in the public path to an arbitrary file in a directory outside of the public path. The directory outside of the public path is refered to as the "install path" and is also often the "project root" when a more complicated multi-project scenario is not in play. The common modern practice is for the public path to be a subdirectory of the install path, so mapping is as simple as going up the directory tree one level. 
 
-- in addition to the path for the non-public directory holding the tether, the other component of any tether is the filename. It isn't assumed how this might varry. An implementation where there are multiple tethers per install path is just as valid as multiple install paths with a uniform tether, or different tether setups. The tether file name and path may be a single or seprate parameter depending on what makes the most sense.
+<!-- - in addition to the path for the non-public directory holding the tether, the other component of any tether is the filename. It isn't assumed how this might varry. An implementation where there are multiple tethers per install path is just as valid as multiple install paths with a uniform tether, or different tether setups. The tether file name and path may be a single or seprate parameter depending on what makes the most sense. -->
 
 - in addition to paths related to gateway entry, there is another common case that the gateway needs to handle and that is critical error display (venting). This can be as simple as a 30\[2|3|7] redirect, or serving a static file. It is also possible to serve a tratitional PHP template style file. It is common, but not assumed that the file(s) needed for this are in the same install path. A third parameter may be needed for pathing to a script/tether for venting.
 
@@ -348,4 +348,6 @@ PHAgents are designed to easily hybernate or mementize as arrays, and should gen
 
 # Recommended Exception Codes
 
-Code 127, used for errors loading scripts (e.g. file not found), sets a previous Exception where the message is the fine in question.
+Code 127, used for file errors loading scripts (e.g. file not found), sets a previous Exception where the message is the file in question.
+
+Code 126, used for type errors (e.g. a root that returns a string, or a canister that isn't array|ArrayAccess), sets a previous Exception where the message is the source of the issue.

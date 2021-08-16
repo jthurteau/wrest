@@ -434,9 +434,21 @@ class Http{
 		return $return;
 	}
 	
+	public static function isUri(string $uri){
+		return strpos($uri, 'https://') === 0;
+	}
+
 	public static function get($url, $query = array())
 	{
-		
+		$temp = new Http($url);
+		$result = $temp->go();
+		if (is_array($result) && key_exists('raw', $result)) {
+			return $result['raw'];
+		} elseif (is_array($result) && key_exists('status', $result)) {
+			return $result['status'];
+		} else {
+			return null;
+		}
 	}
 	
 	public static function post($url, $postData, $postType)

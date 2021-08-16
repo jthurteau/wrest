@@ -1,14 +1,14 @@
 <?php
 /**
  * #SCOPE_OS_PUBLIC #LIC_FULL
- * 
- * rooting script to pull composer meta-data into a canister
- * 
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  * 
+ * rooting script to pull composer meta-data
  */
 
-$source = __DIR__ . '/composer.json';
+(static function() {
+'../../'
+$source = "{$installPath}/composer.json");
 if (file_exists($source) && is_readable($source)) {
     $composerMeta = json_decode(file_get_contents($source), true);
     if ($composerMeta && is_array($composerMeta)) {
@@ -39,3 +39,5 @@ if (file_exists($source) && is_readable($source)) {
     }
 }
 return [];
+
+})(realpath('..'), 'local-dev.root');

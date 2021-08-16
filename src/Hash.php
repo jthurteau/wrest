@@ -646,7 +646,7 @@ class Hash
 	}
 
 	protected static function introspectData($mixed, $provider = NULL)
-	{ #TODO this is also in debug, so consolidate/improve
+	{ #TODO this is also in debug and self::toString, so consolidate/improve
 		ob_start();
 		print_r($message);
 		$output = ob_get_contents();
