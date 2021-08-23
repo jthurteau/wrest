@@ -3,21 +3,23 @@
  * #SCOPE_OS_PUBLIC #LIC_FULL
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  * 
- * gateway pylon, specifies an install path and optional bulb
- * @link saf.src:kickstart/gateway.php7.pylon.php
+ * sample gateway pylon, specifies an install path and optional bulb
  */
 
 declare(strict_types=1);
 
-(static function() {
+(static function(string $installPath, ?string $bulb = null) {
 	try{
-        $installPath = realpath('..');
-        $pylonVector = 'gateway';
-		$canister = [
-			'installPath' => $installPath,
-            'bulb' => 'app',
-		];
-		$tetherPath = "{$installPath}/src/kickstart/{$pylonVector}.tether.php";
+		$bulbPath = $bulb ? "{$installPath}/{$bulb}.php" : null;
+		$canister = 
+			$bulbPath && is_readable($bulbPath) 
+			? (require($bulbPath))
+			: [];
+		if (!is_array($canister) && !($canister instanceof ArrayAccess)) {
+			$canister = ['invalidBulb' => [$bulbPath => 'Gateway Bulb Invalid']];
+		}
+		key_exists('installPath', $canister) || ($canister['installPath'] = $installPath);
+		$tetherPath = "{$installPath}/src/kickstart/gateway.tether.php";
 		$fileException = new Exception($tetherPath);
 		if (!is_readable($tetherPath)) {
 			throw new Exception('Gateway Unavailable', 127, $fileException);
@@ -36,11 +38,7 @@ declare(strict_types=1);
 				&& key_exists('vent', $canister)
 				&& is_callable($canister['vent'])
 			? $canister['vent'](['fatalMeditation' => $e])
-			: (
-				method_exists($e, 'getPublicMessage') 
-				? $e->getPublicMessage()
-				: (get_class($e) . ': ' . $e->getMessage())
-			)
+			: $e->getMessage()
 		);
 	}
-})();
+})('..', 'local-dev.root');

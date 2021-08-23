@@ -1,16 +1,14 @@
 <?php 
 /**
  * #SCOPE_OS_PUBLIC #LIC_FULL
- * 
- * auto-pipe script, anchors $appHandle to the request url
- * 
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  * 
+ * auto-pipe script, anchors $appHandle to the request url
+ * @link saf.src:kickstart/tools/pipe.tether.php
  */
 
-return function ( #TODO #PHP8 allows throw as an expression
-    array &$canister = []
-){
+return function ( &$canister = []){
+    $localDevToken = 'local-dev.';
     if (key_exists('uriMirror', $canister)) {
         $mirror = $canister['uriMirror'];
     } else { //#DISCLAIMER reading environment in a tether is not best practice.
@@ -24,7 +22,14 @@ return function ( #TODO #PHP8 allows throw as an expression
     //#NOTE resolverPylon is set in host.root.php from $_SERVER['PHP_RESOLVER_PYLON'] when present
     //#NOTE you may alternatively set Saf\RESOLVER_PYLON in your pylon
     if (!key_exists('resolverPylon', $canister) && defined('Saf\RESOLVER_PYLON')) {
-         $canister['resolverPylon'] = Saf\RESOLVER_PYLON;
+        $canister['resolverPylon'] = 
+           strpos(Saf\RESOLVER_PYLON, $localDevToken) === 0
+           ? substr(Saf\RESOLVER_PYLON, strlen($localDevToken))
+           : Saf\RESOLVER_PYLON;
+        if (strpos(Saf\RESOLVER_PYLON, $localDevToken) === 0) {
+            $canister['resolverPrefix'] = 
+                substr(Saf\RESOLVER_PYLON, 0, strlen($localDevToken));
+        }
     }
     $blade = 
         key_exists('resolverPylon', $canister) 
@@ -32,8 +37,12 @@ return function ( #TODO #PHP8 allows throw as an expression
         :  'index.php';
     $index = strpos($mirror, $blade);
     $length = ($index !== false ? $index : PHP_MAXPATHLEN);
+    if (key_exists('resolverPrefix', $canister)) {
+        $length -= strlen($canister['resolverPrefix']);
+    }
+    $baseUri = substr($mirror, 0, $length);
 
-    key_exists('baseUri', $canister) || ($canister['baseUri'] = substr($mirror, 0, $length));
+    key_exists('baseUri', $canister) || ($canister['baseUri'] = $baseUri);
 
     if (!key_exists('resolverRest', $canister)) {
         $request = $_SERVER['REQUEST_URI'];

@@ -40,4 +40,4 @@ if (file_exists($source) && is_readable($source)) {
 }
 return [];
 
-})(realpath('..'), 'local-dev.root');
+})();

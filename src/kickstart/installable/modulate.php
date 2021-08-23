@@ -1,13 +1,11 @@
 <?php
-
 /**
  * #SCOPE_OS_PUBLIC #LIC_FULL
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
  * 
  * installable closure to add module adapter tool,
  * for use with $canister['install']
- * 
- * @author Troy Hurteau <jthurtea@ncsu.edu>
- * 
+ * @link saf.src:kickstart/installable/modulate.php
  */
 
 declare(strict_types=1);
