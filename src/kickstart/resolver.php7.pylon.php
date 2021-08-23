@@ -5,6 +5,7 @@
  * 
  * sample multiviews resolver pylon, 
  * set resolver hint and forwards to main pylon or gateway script
+ * @link saf.src:kickstart/resolver.php7.pylon.php
  */
 
 define('Saf\RESOLVER_PYLON', basename(__FILE__, '.php'));

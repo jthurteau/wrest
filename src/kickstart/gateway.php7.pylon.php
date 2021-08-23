@@ -5,6 +5,7 @@
  * 
  * gateway pylon, specifies an install path and optional bulb
  * @link saf.src:kickstart/gateway.php7.pylon.php
+ * @link install:public/index.php
  */
 
 declare(strict_types=1);

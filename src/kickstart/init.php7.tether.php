@@ -1,11 +1,11 @@
-<?php 
+<?php
 /**
  * #SCOPE_OS_PUBLIC #LIC_FULL
- * 
- * init tether, binds a canister to core callables
- * 
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  * 
+ * init tether, binds a canister to core callables
+ * @link saf.src:kickstart/init.php7.tether.php
+ * @link install:kickstart/init.tether.php
  */
 
 declare(strict_types=1);
@@ -69,8 +69,8 @@ return function (&$canister) {
         };
         $required = 
             key_exists('requires', $canister) 
-            ? $canister['requires'] 
-            : ['tether','root'];
+            ? $canister['requires']
+            : ['tether','root','vent','merge'];
         $canister['install']($required);
     }
     $init = true;
