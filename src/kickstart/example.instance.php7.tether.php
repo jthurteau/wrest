@@ -4,47 +4,47 @@
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  * 
  * instance script, accepts an optional canister and initiates kickstart
+ * @link saf.src:kickstart/example.instance.php7.tether.php
+ * @link install:/instance.tether.php
  */
 
 declare(strict_types=1);
 
 return function (&$canister = []){
+    if (!is_array($canister) && !($canister instanceof ArrayAccess)) {
+        throw new Exception('Tethered Canister Invalid', 126);
+    }
     key_exists('installPath', $canister) || ($canister['installPath'] = __DIR__);
-    key_exists('autoTools', $canister) || ($canister['autoTools'] = []);
+    key_exists('resolvableTools', $canister) || ($canister['resolvableTools'] = []);
     key_exists('inlineTools', $canister) || ($canister['inlineTools'] = []);
-    #NOTE see _dep_instance_roots.php
-    $applicationRoot =
-        key_exists('applicationRoot', $canister) 
-        ? $canister['applicationRoot'] 
-        : '/var/www/application';
-    $defaultPath = 
-        file_exists("{$canister['installPath']}/vendor/Saf/src/") #file_exists("{$canister['installPath']}/vendor/Saf/src/{$script}.php")
-        ? "{$canister['installPath']}/vendor/Saf/src/"
-        : "{$applicationRoot}/vendor/Saf/src";
     $canister['tether']('src/kickstart/view.tether');
-    $toolPath = "//{$canister['installPath']}/src/tools";
+    $toolPath = "src/tools";
     foreach($canister['inlineTools'] as $inlineTool) {
-         $inlineToolPath = "{$toolPath}/{$inlineTool}.tether";
-         $toolError = "Error including inline {$inlineTool} tether";
-         $canister['tether']($inlineToolPath, $toolError);
+        $inlineToolPath = "{$toolPath}/{$inlineTool}.tether";
+        $toolError = "Error including inline {$inlineTool} tether";
+        $canister['tether']($inlineToolPath, $toolError);
     }
     if (
         key_exists('resolverPylon', $canister) 
-        && in_array($canister['resolverPylon'], $canister['autoTools'])
+        && in_array($canister['resolverPylon'], $canister['resolvableTools'])
     ) {
         $script = $canister['resolverPylon'];
         $path = "{$canister['installPath']}/src/tools";
         $scriptErrorMessage = "Application tool: {$script}, is unavailable";
     } else {
-        $script = 
+        $script =
             key_exists('foundationScript', $canister) 
             ? $canister['foundationScript'] 
             : 'kick';
-        $path = 
+        $vendorPath =
+            key_exists('vendorPath', $canister) 
+            ? $canister['vendorPath']
+            : '/var/www/application/vendor';
+        $path =
             key_exists('foundationPath', $canister) 
             ? $canister['foundationPath'] 
-            : $defaultPath;
+            : "{$vendorPath}/Saf/src";
         $scriptErrorMessage = 'Application foundation unavailable.';
     }
-    return $canister['tether']("//${path}/{$script}.tether", $scriptErrorMessage);
+    return $canister['tether']("${path}/{$script}.tether", $scriptErrorMessage);
 };
