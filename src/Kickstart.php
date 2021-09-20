@@ -119,7 +119,11 @@ class Kickstart
 			Agent::meditate($e, self::MEDITATION_LEVEL);
 			if (Environment::instanceOption($instance, self::OPTION_THROW_MEDITATIONS)) {
 				#TODO #2.0.0 get the correct deilm
-				throw new \Exception("Failed to kickstart instance {$instance}@{$mode}", 0, Agent::getMeditation());
+				$state = 
+					$agent && $agent->isActive()
+					? 'Failed'
+					: 'Failed to kickstart';
+				throw new \Exception("{$state} instance {$instance}@{$mode}", 0, Agent::getMeditation());
 				#TODO properly detect handoff
 				#throw new \Exception("Application instance {$instance}@{$mode} failed after kickstart", 0, Agent::getMeditation());
 			} elseif (Environment::instanceOption($instance, self::OPTION_RETURN_MEDITATIONS)) {

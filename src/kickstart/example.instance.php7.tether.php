@@ -17,7 +17,6 @@ return function (&$canister = []){
     key_exists('installPath', $canister) || ($canister['installPath'] = __DIR__);
     key_exists('resolvableTools', $canister) || ($canister['resolvableTools'] = []);
     key_exists('inlineTools', $canister) || ($canister['inlineTools'] = []);
-    $canister['tether']('src/kickstart/view.tether');
     $toolPath = "src/tools";
     foreach($canister['inlineTools'] as $inlineTool) {
         $inlineToolPath = "{$toolPath}/{$inlineTool}.tether";

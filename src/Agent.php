@@ -88,6 +88,8 @@ class Agent implements \ArrayAccess {
 	*/
     protected $id = null;
 
+	public bool $active = false;
+
 
 	public static function availableModes()
 	{
@@ -304,5 +306,21 @@ class Agent implements \ArrayAccess {
 	public function env()
 	{
 		return self::duplicate($this->environment);
+	}
+
+	/**
+	 * method for applicaion to acknowledge receiving agency from framework
+	 */
+	public function activate()
+	{
+		$this->active = true;
+	}
+
+	/**
+	 * returns is this agent's application has accepted agency
+	 */
+	public function isActive()
+	{
+		return $this->active;
 	}
 }

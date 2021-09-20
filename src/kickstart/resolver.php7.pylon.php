@@ -10,3 +10,4 @@
 
 define('Saf\RESOLVER_PYLON', basename(__FILE__, '.php'));
 require_once('index.php');
+// return (require_once('../src/kickstart/pylon.tether.php'))(['gatewayResolver' =>  basename(__FILE__, '.php')]);
