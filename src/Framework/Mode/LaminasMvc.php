@@ -27,7 +27,7 @@ class LaminasMvc extends Manager{
 
     }
 
-    public static function run($instance, $options = null)
+    public static function run($agentId, $options = null)
     {
         // $application = \Saf_Application::load(APPLICATION_ID, APPLICATION_ENV, true);
         print_r(['running laminas-mvc application', $instance, $options]); die;

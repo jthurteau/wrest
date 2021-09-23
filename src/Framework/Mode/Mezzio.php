@@ -88,8 +88,9 @@ class Mezzio extends Manager{
 
     }
 
-    public static function run($instance, $options = null)
+    public static function run($agentId, $options = null)
     {
+        self::agentCallbacks($agentId);
         $installPath = self::installPath($options); #TODO this is srcPath?
 
         /** @var \Psr\Container\ContainerInterface $container */
@@ -115,7 +116,18 @@ class Mezzio extends Manager{
 
     public static function preboot($instance, $options = [], $prebooted = [])
     {
-
+        self::$agentCallbacks['debug'] = function($agentId) {
+            $agent = \Saf\Agent::lookup($agentId);
+            $options = $agent->env();
+            if (key_exists('enableDoctor', $options)) {
+                $mode = 
+                    key_exists('forceDebug', $options) && $options['forceDebug']
+                    ? \Saf\Debug::MODE_FORCE
+                    : \Saf\Debug::MODE_SILENT;
+                $debugPlugin = new \Snoop\SafPlugin($options);
+                \Saf\Debug::init($mode, $debugPlugin);
+            }
+        };
     }
 
 }

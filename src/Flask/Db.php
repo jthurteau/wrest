@@ -20,7 +20,7 @@ class Db {// implements FlaskInterface {
         if (is_null($db)) {
             return 'Error, Not Configured';
         }
-        \Saf\Debug::outData([__FILE__,__LINE__,$db->isConnected()]);
+        \Saf\Debug::outData([__FILE__,__LINE__,'connected status check',$db->isConnected()]);
         try{
             $result = $sample();
             if (!$db->isConnected()) {

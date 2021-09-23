@@ -40,10 +40,10 @@ class Saf extends Manager{
 
     public static function preboot($instance, $options = [], $prebooted = [])
     {
-
+        
     }
 
-    public static function run($instance, $options = [])
+    public static function run($agentId, $options = [])
     {
         // $application = \Saf_Application::load(APPLICATION_ID, APPLICATION_ENV, true);
         print_r(['running saf application', $instance, $options]); //die;

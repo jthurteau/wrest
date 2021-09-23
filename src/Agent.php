@@ -132,7 +132,7 @@ class Agent implements \ArrayAccess {
 			$params = key_exists('mainParams', $options) ? $options['mainParams'] : [];
 			return is_callable($main) ? $main(...$params) : $main;
 		} else {
-			return $manager::run($this->instance, $options);
+			return $manager::run($this->id, $options);
 		}
 	}
 

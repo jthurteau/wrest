@@ -33,7 +33,7 @@ class Lumen extends Manager{
         require_once("{$vendorPath}/autoload.php");
     }
 
-    public static function run($instance, $options = null)
+    public static function run($agentId, $options = null)
     {
         $srcPath = self::srcPath($options);
         // if (key_exists('shell', $options)) {

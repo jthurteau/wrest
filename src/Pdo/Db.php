@@ -47,6 +47,7 @@ class Db
     {
         //throw new \Saf\Exception\Inspectable($config);
         $this->config = $config;
+        //\Saf\Debug::outData(['pdo config',$config]);
         if ( key_exists('dsn', $config) && is_array($config['dsn'])) {
             $this->configure($config['dsn']);
             if (

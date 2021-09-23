@@ -17,6 +17,8 @@ abstract class Manager{
 
     public const DEFAULT_APPLICATION_ROOT = '/var/www/application';
 
+    protected static $agentCallbacks = [];
+
     /**
      * returns true if the manager can support the instance and its options
      * @param string $instance
@@ -41,7 +43,7 @@ abstract class Manager{
     /**
      * 
      */
-    abstract public static function run(string $instance, array $options);
+    abstract public static function run(string $agentId, array $options);
 
     /**
      * 
@@ -140,6 +142,13 @@ abstract class Manager{
     protected static function scan($path, $match)
     {
         return Auto::scan($path, $match);
+    }
+
+    protected static function agentCallbacks(string $agentId)
+    {
+        foreach(self::$agentCallbacks as $handle => $callback) {
+            $callback($agentId);
+        }
     }
 
 }
