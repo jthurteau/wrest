@@ -25,22 +25,22 @@ return static function (&$canister = []) {
             $initPath = "{$canister['kickPath']}/init.tether.php";
             $initTether = is_readable($initPath) ? require($initPath) : null;
             if (!is_callable($initTether)) {
-                throw new Exception('Initialization failed.', 126, new Exception($initPath));
+                throw new Exception('Gateway Failed', 126, new Exception($initPath));
             }
             $initTether($canister);
         }
         key_exists('bulb', $canister) && $canister['merge']($canister['bulb']);
-        $vectorFail = 'Entry vector ({$}) unavailable.';
+        $vectorFail = 'Gateway vector ({$}) unavailable';
         return $canister['tether']("{$canister['gatewayVector']}", $vectorFail);
     } catch (Error | Exception $e) {
         if (!is_array($canister) && !($canister instanceof ArrayAccess)) {
             $canister = [];
         }
         $previousExceptionHandler = set_exception_handler(null);
-        if (class_exists('Whoops\Run', false)) { #TODO move this into Saf/Framework/Mode/Mezzio::run
-            $previousErrorHandler && $previousErrorHandler($e);
-            return;
-        }
+        // if (class_exists('Whoops\Run', false)) { #TODO move this into Saf/Framework/Mode/Mezzio::run
+        //     $previousErrorHandler && $previousErrorHandler($e);
+        //     return;
+        // }
         header('HTTP/1.0 500 Internal Server Error');
         header('Saf-Meditation-State: gateway');
         $canister['fatalMeditation'] = $e;

@@ -9,20 +9,26 @@
 
 return (function(){
     $devBulbPath = __DIR__ . '/local-dev.root.php';
+    $inlineTools = ['pipe'];
+    $resolvableTools = [];
+    $mergeKeys = ['inlineTools','resolvableTools'];
     $devBulb = 
         is_readable($devBulbPath)
         ? (require($devBulbPath))
         : [];
-    if (is_array($devBulb) && $devBulb instanceof ArrayAccess) {
+    if (!is_array($devBulb) && !($devBulb instanceof ArrayAccess)) {
         $devBulb = ['invalidBulb' => [$devBulbPath => 'Dev Bulb Invalid']];
     }
-    $inlineTools = ['pipe'];
-    if (key_exists('inlineTools', $devBulb) && is_array($devBulb['inlineTools'])) {
-        $devBulb['inlineTools'] = array_unique(array_merge($devBulb['inlineTools'], $inlineTools));
+    foreach($mergeKeys as $key) {
+        if (isset($$key) && key_exists($key, $devBulb)) {
+            is_array($devBulb[$key]) || ($devBulb[$key] = [$devBulb[$key]]);
+            $devBulb[$key] = array_unique(array_merge($devBulb[$key], $$key));
+        }
     }
     $appHandle = basename(__DIR__);
     return $devBulb + [ #NOTE values in $devBulb override those that follow...
         'applicationHandle' => $appHandle,
         'inlineTools' => $inlineTools,
+        'resolvableTools' => $resolvableTools,
     ];
 })();
