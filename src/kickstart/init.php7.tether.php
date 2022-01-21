@@ -102,7 +102,7 @@ return function (&$canister) {
         $bridge = 
             strpos($name, '/src') === (strlen($name) - 4 )
             ? '/'
-            : (strpos($type, '.') === 0 ? '.' : '');
+            : (strpos($type, '.') === 0 ? '.' : ''); //#TODO this looks wrong, strlen($type)?
         if (strpos($type, '.') === 0) {
             $type = substr($type, 1);
         }
@@ -110,6 +110,7 @@ return function (&$canister) {
             strpos($name, '/') === 0
             ? $name
             : "{$canister['installPath']}/{$name}";
+        //#TODO if the name specifies .php, truncate $type to bypass typed file lookup
         $ext = 
             strrpos($name,'.php') === (strlen($name) - 4)
             ? ''
@@ -276,7 +277,7 @@ return function (&$canister) {
         if(!file_exists($tetherFile) || !is_readable($tetherFile)){
             if (!file_exists($genericFile) || !is_readable($genericFile)) {
                 return $canister['_e']($tether, $tetherFile, $fail);
-            } else {
+            } else {//#TODO compare typed to generic to save fileloading overhead when duplicate
                 $tether = require($genericFile);
             }
         } else {
@@ -299,7 +300,7 @@ return function (&$canister) {
         if(!file_exists($rootFile) || !is_readable($rootFile)){
             if (!file_exists($genericFile) || !is_readable($genericFile)) {
                 return $canister['_e']($root, $rootFile, $fail);
-            } else {
+            } else {//#TODO compare typed to generic to save fileloading overhead when duplicate
                 $root = require($genericFile);
             }
         } else {
@@ -317,10 +318,18 @@ return function (&$canister) {
      * vent data in $final (along with the $canister) to $vent
      */
     $registry['vent'] = function ($final, $vent = null) use (&$canister) { //#TODO ?string or callable
-        $defaultPayload = [__FILE__, $final, $canister];
+        $defaultPayload = ['result' => $final, 'ventFile' => __FILE__];
         $errors = error_get_last();
+        $allowLeak = (
+            (key_exists('localDevEnabled', $canister) && $canister['localDevEnabled'])
+            || (key_exists('enableDebug', $canister) && $canister['enableDebug'])
+            || (key_exists('forceDebug', $canister) && $canister['forceDebug'])
+        );
         if ($errors) {
             $defaultPayload['errors'] = $errors;
+        }
+        if ($allowLeak) {
+            $defaultPayload['debug'] = $canister['shell']();
         }
         if ($vent) {
             if (is_string($vent)) {
@@ -329,7 +338,7 @@ return function (&$canister) {
                 if(!file_exists($ventFile) || !is_readable($ventFile)){
                     if (!file_exists($genericFile) || !is_readable($genericFile)) {
                         return $canister['_e']($vent, $ventFile); //#TODO this pattern may not work for vent
-                    } else {
+                    } else {//#TODO compare typed to generic to save fileloading overhead when duplicate
                         $vent = require($genericFile);
                     }
                 } else {
@@ -353,7 +362,7 @@ return function (&$canister) {
         if(!file_exists($pylonFile) || !is_readable($pylonFile)){
             if (!file_exists($genericFile) || !is_readable($genericFile)) {
                 return $canister['_e']($pylon, $pylonFile, $fail);
-            } else {
+            } else {//#TODO compare typed to generic to save fileloading overhead when duplicate
                 $pylon = require($genericFile);
             }
         } else {

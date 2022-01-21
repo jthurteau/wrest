@@ -29,6 +29,7 @@ return static function (&$canister = []) {
             }
             $initTether($canister);
         }
+        //#NOTE this doesn't handle multiple bulb options (needs to use :first)
         key_exists('bulb', $canister) && $canister['merge']($canister['bulb']);
         $vectorFail = 'Gateway vector ({$}) unavailable';
         return $canister['tether']("{$canister['gatewayVector']}", $vectorFail);

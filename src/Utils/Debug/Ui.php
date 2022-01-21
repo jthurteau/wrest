@@ -30,6 +30,11 @@ class Ui
 	protected static $printedDebugEntry = false;
 	protected static $printedDebugShutdown = false;
 
+	public static function noop()
+	{
+		
+	}
+
     public static function out($level, $message, $trace)
     {
 		$expandIcon = self::$expandIcon;
