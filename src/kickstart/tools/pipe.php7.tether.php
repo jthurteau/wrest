@@ -1,10 +1,13 @@
 <?php 
 /**
- * #SCOPE_OS_PUBLIC #LIC_FULL
- * @author Troy Hurteau <jthurtea@ncsu.edu>
- * 
  * auto-pipe script, anchors $appHandle to the request url
- * @link saf.src:kickstart/tools/pipe.tether.php
+ * 
+ * PHP version 7
+ *
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ * @link saf.src:kickstart/tools/pipe.php7.tether.php
+ * @link install:kickstart/tools/pipe.tether.php
+ * @license https://github.com/jthurteau/saf/blob/main/LICENSE GNU General Public License v3.0
  */
 
 return function ( &$canister = []){
@@ -60,7 +63,7 @@ return function ( &$canister = []){
     }
     $canister['pipes'] = [
         'pylons' => key_exists('resolverPylon', $canister) ? [$canister['resolverPylon']] : [], #TODO this wouldn't work with caching in place...
-    ];
+    ]; //# TODO rename this gateways quays?
     if (strlen($canister['baseUri']) > 1) {
         $host = null; #TODO detect if baseUri is not root relative and handle;
         $protocol = null; #TODO detect if baseUri is protocol relative;

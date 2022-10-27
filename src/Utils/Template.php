@@ -14,19 +14,60 @@ use Saf\Utils\Reflector;
 
 class Template
 {
-    protected $rawMessage = '';
+    protected static $templateOptions = [
+        'php',
+        'xml'
+    ];
 
-    public function __construct($messageName, $ext='.xml')
+    protected $rawMessage = '';
+    protected $viewPath = '';
+
+
+    protected static $messagePath = 'application:/messages/';
+
+    public function __construct(string $messageName, string $ext = null)
     {
-        $messagePath = \Saf\APPLICATION_PATH . "/messages/{$messageName}{$ext}";
+        $path = self::$messagePath;
+        if (strpos($path,'application:') === 0) {
+            $path = str_replace('application:', \Saf\APPLICATION_PATH, $path);
+        }
+        if (is_null($ext)) {
+            foreach(self::$templateOptions as $extOption){
+                if (file_exists("{$path}/{$messageName}.{$extOption}")) {
+                    $ext = $extOption;
+                    break;
+                }
+            }
+        }
+        $messagePath ="{$path}/{$messageName}.{$ext}";
         if(!file_exists($messagePath)){
                 throw new \Exception("Template for {$messageName} not found.");
         }
-        $this->rawMessage = file_get_contents($messagePath);
+        switch($ext) {
+            case 'php':
+                $this->viewPath = $messagePath;
+                break;
+            default:
+                $this->rawMessage = file_get_contents($messagePath);
+        }
     }
     
     public function get($params = null)
     {
+        if ($this->viewPath) {
+            ob_start();
+            $extractParams = key_exists('params', $params) ? $params['params'] : $params ;
+            if (is_array($extractParams)) {
+                extract($extractParams);
+            } 
+            require $this->viewPath;
+            $buffer = ob_get_clean();
+            ob_end_clean();
+            // if (key_exists('timezone',$extractParams)) {
+            //     print_r([__FILE__,__LINE__,$extractParams,$buffer]);die;
+            // }
+            return $buffer;
+        }
         return
             is_null($params)
             ? $this->rawMessage
@@ -40,10 +81,16 @@ class Template
             //var_export($context);
             require($phpPath);
             $output .= ob_get_clean();
+            ob_end_clean();
             return $output;
         } catch (\Error | \Exception $e) {
             throw new \Exception("Emmiter Exception while rendering {$phpPath}", 500 , $e);
         }
+    }
+
+    public static function setPath(string $path)
+    {
+        self::$messagePath = $path;
     }
 }
 

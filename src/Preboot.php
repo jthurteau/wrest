@@ -185,7 +185,8 @@ class Preboot
         };
         $appLoaderGenerator = function(string $path){
             return function(string $className) use ($path){
-                return Auto::classPathLookup($className, "{$path}/src/", 'App');
+
+                return Auto::classPathLookup($className, "{$path}/", 'App');
             };
         };
         $moduleLoaderGenerator = function(string $path){

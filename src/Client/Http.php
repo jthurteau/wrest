@@ -13,6 +13,11 @@ namespace Saf\Client;
 class Http{
 	
 	public const UNENCODED_POST_DATA = -1;
+
+	public const CURL_CONFIG_MAP = [
+		'timeout' => CURLOPT_TIMEOUT,
+		'connectionTimeout' => CURLOPT_CONNECTTIMEOUT,
+	];
 	
 	protected $connection = null;
 
@@ -181,6 +186,9 @@ class Http{
 				unset($urlOrConfig['CURLOPT_HTTPHEADER']);
 			}
 			foreach($urlOrConfig as $key=>$value) {
+				if (key_exists($key, self::CURL_CONFIG_MAP)) {
+					$key = self::CURL_CONFIG_MAP[$key];
+				}
 				if(strpos($key,'CURL') === 0 && defined("\\{$key}")){
 					$this->curlConfig[constant("\\{$key}")] = $value; //#TODO #1.1.0 these are not yet being pulled on go()
 				} elseif (strpos($key,'CURL') === 0) {

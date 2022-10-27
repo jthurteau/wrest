@@ -221,7 +221,7 @@ class Environment
 	 */
 	public static function &options(?string $instance)
 	{
-		if (!is_null($instance) && array_key_exists($instance, self::$instanceOptions)) {
+		if (!is_null($instance) && key_exists($instance, self::$instanceOptions)) {
 			return self::$instanceOptions[$instance];
 		} else {
 			$defaultCopy = self::$defaultOptions;

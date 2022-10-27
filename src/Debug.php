@@ -10,10 +10,10 @@
 
 namespace Saf;
 
-use Saf\Kickstart;
-use Saf\Hash;
+// use Saf\Kickstart;
+// use Saf\Hash;
 use Saf\Cast;
-use Saf\Utils\Status;
+// use Saf\Utils\Status;
 //#TODO patch into Saf\Meditation;
 
 use Saf\Utils\Debug\Handler;
@@ -248,7 +248,7 @@ class Debug
 			ini_set('display_errors', self::$disabledDisplayMode);
 			error_reporting(self::$disabledErrorLevel);
 		}
-		Handler:hush();
+		Handler::hush();
 	}
 
 	/**
@@ -347,7 +347,7 @@ class Debug
 
 	public static function outRaw($message, $preformat = false)
 	{
-		Handler::outRaw($level, $message, self::getTrace());
+		Handler::outRaw($message, self::getTrace());
 	}
 
 	public static function outData($message, $level = self::LEVEL_ERROR)

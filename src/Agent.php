@@ -96,7 +96,7 @@ class Agent implements \ArrayAccess {
 		return array_merge(
 			[
 				self::MODE_AUTODETECT,
-				self::MODE_ZFNONE,
+				self::MODE_NONE,
 			], self::scanFrameworkModes()
 		);
 	}
@@ -113,7 +113,7 @@ class Agent implements \ArrayAccess {
 
 	public function run($manager = null)
 	{
-		$options = self::duplicate($this->environment);
+		$options = self::duplicate($this->environment); //#NOTE this needs work
 		$options['agentId'] = $this->id;
 		if (is_null($manager)) {
 			$modeMain = $this['mainScript'] ?: 'main';
@@ -219,7 +219,7 @@ class Agent implements \ArrayAccess {
 	/**
 	 * generates a unique id for passed meditation
 	 */
-	protected static function meditationIdStrategy($e)
+	protected static function meditationIdStrategy(\Throwable $e)
 	{
 		return ++self::$idSeed;
 	}
@@ -243,29 +243,29 @@ class Agent implements \ArrayAccess {
     */
 	protected static function initMeditation()
 	{
-		$installPath = defined('INSTALL_PATH') ? INSTALL_PATH : '.'; #TODO this seems old
-		$applicationPath = 
-			defined('APPLICATION_PATH') 
-				? APPLICATION_PATH 
-				: ($installPath . "/application");
-		$possibilities = [
-
-			"{$installPath}/error.php"
-		];
-		foreach($possibilities as $path){
-			if (file_exists($path)) {
-				return $path;
-			}
-		}
-		return realpath("{$applicationPath}/views/scripts/exception.php");
+		return __DIR__ . '/kickstart/views/meditation.view.php';
+		// $active = self::
+		// $installPath = defined('INSTALL_PATH') ? INSTALL_PATH : '.'; #TODO this seems old
+		// $applicationPath = 
+		// 	defined('APPLICATION_PATH') 
+		// 		? APPLICATION_PATH 
+		// 		: ($installPath . "/application");
+		// $possibilities = [
+		// 	"{$installPath}/error.php"
+		// ];
+		// foreach($possibilities as $path){
+		// 	if (file_exists($path)) {
+		// 		return $path;
+		// 	}
+		// }
+		// return realpath("{$applicationPath}/views/scripts/exception.php");
 	}
 
 	/**
 	 * returns the specified meditation, or the most recent one
 	 * @param mixed meditation id
-	 * @return array meditation
 	 */
-	public static function getMeditation($id = null)
+	public static function getMeditation($id = null) : \Throwable
 	{
 		if (!is_null($id) && array_key_exists($id, self::$meditations)) {
 			return self::$meditations[$id];
@@ -303,9 +303,14 @@ class Agent implements \ArrayAccess {
 	/**
 	 * 
 	 */
-	public function env()
+	public function &env($shared = false)
 	{
-		return self::duplicate($this->environment);
+		if ($shared) { //#NOTE ternarys break return by reference
+			return $this->environment;
+		} else {
+			$duplicate = self::duplicate();
+			return $duplicate;
+		}
 	}
 
 	/**

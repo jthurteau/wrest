@@ -3,7 +3,7 @@
 /**
  * init tether, binds a canister to core callables
  * 
- * PHP version 7
+ * PHP version 8
  *
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  * @link saf.src:kickstart/init.php7.tether.php
@@ -13,15 +13,12 @@
 
 declare(strict_types=1);
 
-return function (&$canister) {
+return function &(array|\Saf\Canister &$canister = []) : array|\Saf\Canister {
     static $init = null; #NOTE static closure vars only get assigned once.
     if ($init) {
-        return;
+        return $canister;
     }
     $aim = 'Agent installer misconfigured, ';
-    if (!is_array($canister) && !($canister instanceof ArrayAccess)) {
-        throw new Exception("{$aim}Canister Invalid", 126);
-    }
     if (
         !key_exists('installPath', $canister)
     ) {
@@ -320,7 +317,7 @@ return function (&$canister) {
     /**
      * vent data in $final (along with the $canister) to $vent
      */
-    $registry['vent'] = function ($final, $vent = null) use (&$canister) { //#TODO ?string or callable
+    $registry['vent'] = function (mixed $final, string|callable|null $vent = null) use (&$canister) { //#TODO ?string or callable
         $defaultPayload = ['result' => $final, 'ventFile' => __FILE__];
         $errors = error_get_last();
         $allowLeak = (
@@ -381,7 +378,7 @@ return function (&$canister) {
     /**
      * merge values in $root to the canister, preserves values for existing keys
      */
-    $registry['merge'] = function($root, ?string $fail = null) use (&$canister) { #TODO string|array|ArrayAccess
+    $registry['merge'] = function($root, ?string $fail = null) use (&$canister) { #TODO string|array|\Saf\Canister
         //print_r([__FILE__,__LINE__,'[merge]',$root,$fail]);
         if (!is_array($root) && !($root instanceof ArrayAccess)) {
             $root = $canister['root']($root, $fail);
@@ -396,7 +393,7 @@ return function (&$canister) {
     /**
      * overwrite values in $root to the canister
      */
-    $registry['replace'] = function($root, ?string $fail = null) use (&$canister) { #TODO string|array|ArrayAccess
+    $registry['replace'] = function($root, ?string $fail = null) use (&$canister) { #TODO string|array|\Saf\Canister
         if (!is_array($root) && !($root instanceof ArrayAccess)) {
             $root = $canister['root']($root, $fail);
         }
@@ -409,7 +406,7 @@ return function (&$canister) {
     /**
      * deep merge values in $root to the canister using $method (defaults to _m)
      */
-    $registry['deep'] = function($root, ?string $fail = null, ?callable $method = null) use (&$canister) { #TODO string|array|ArrayAccess
+    $registry['deep'] = function($root, ?string $fail = null, ?callable $method = null) use (&$canister) { #TODO string|array|\Saf\Canister
         if (!is_array($root) && !($root instanceof ArrayAccess)) {
             $root = $canister['root']($root, $fail);
             if (!is_array($root)) {

@@ -3,21 +3,18 @@
 /**
  * Web gateway tether
  * 
- * PHP version 7
+ * PHP version 8
  *
  * @author Troy Hurteau <jthurtea@ncsu.edu>
- * @link saf.src:kickstart/gateway.php7.tether.php
+ * @link saf.src:kickstart/gateway.php8.tether.php
  * @link install:kickstart/gateway.tether.php
  * @license https://github.com/jthurteau/saf/blob/main/LICENSE GNU General Public License v3.0
  */
 
 declare(strict_types=1);
 
-return static function (&$canister = []) {
+return static function (array|\Saf\Canister &$canister = []) {
     try{
-        if (!is_array($canister) && !($canister instanceof ArrayAccess)) {
-            throw new Exception('Gateway Canister Invalid', 126);
-        }
         key_exists('installPath', $canister) 
             || ($canister['installPath'] = realpath('..'));
         key_exists('kickPath', $canister)
@@ -28,9 +25,8 @@ return static function (&$canister = []) {
         ) {
             $initPath = "{$canister['kickPath']}/init.tether.php";
             $initTether = is_readable($initPath) ? require($initPath) : null;
-            if (!is_callable($initTether)) {
-                throw new Exception('Initialization failed.', 126, new Exception($initPath));
-            }
+            is_callable($initTether) 
+                || throw new Exception('Initialization failed.', 126, new Exception($initPath));
             $initTether($canister);
         }
         $firstBulb = $canister['first']($canister['bulb'], 'root');
@@ -53,7 +49,7 @@ return static function (&$canister = []) {
         $vectorFail = 'Entry vector ({$}) unavailable.';
         return $canister['tether']("{$canister['gatewayVector']}", $vectorFail);
     } catch (Error | Exception $e) {
-        if (!is_array($canister) && !($canister instanceof ArrayAccess)) {
+        if (!is_array($canister) && !is_a($canister, '\Saf\Canister')) {
             $canister = [];
         }
         $previousExceptionHandler = set_exception_handler(null);

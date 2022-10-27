@@ -152,7 +152,7 @@ class Autoloader
 		}
 		foreach($oldMemory as $oldFile) {
 			if (!in_array($oldFile, $matches)) {
-				self::stub($className, 'missing', $file, 'Previously matched file no longer present.');
+				self::stub($className, 'missing', $oldFile, 'Previously matched file no longer present.');
 			}
 		}
 		return $matches;
@@ -189,13 +189,16 @@ class Autoloader
 					. $e->getMessage() . ' '
 				);
 			}
+			//$rootedClassName = strpos($className, '\\') === 0 ? $className : "\\{$className}";
 			if ($issue) {
 				$classStub = $found ? 'invalid' : 'absent';
 				self::stub($className, $classStub, $file, $issue);
-			} elseif (class_exists($className, false)) {
+			} elseif (class_exists($className, false)) {//$rootedClassName, false)) {
 				self::remember($className, $file);
 				return true;
-			} else {
+			} else if ($preflight) {
+				self::stub($className, 'preflight', $file, 'File found during scan, but not tested');
+			} else{
 				self::stub($className, 'mismatch', $file, 'File does not contain declaration, empirical');
 			}
 		}

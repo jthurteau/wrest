@@ -58,6 +58,19 @@ class Auto
 	 */
 	public static function classPathLookup(string $class, string $externalPath = null, $prefix = __NAMESPACE__)
 	{
+		// $exitTrace = false;
+		// try{
+		// 	$trace = Debug::getTrace();
+		// 	print_r([
+		// 		__FILE__,__LINE__,
+		// 		$class,$externalPath,$prefix,
+		// 		//$trace
+		// 	]);
+		// 	$exitTrace = true;
+		// } catch (\Error | \Exception $e) {
+		// 	//$trace = $e->getMessage();
+		// }
+
 		$parts = explode('\\', $class);
 		$path = $externalPath ?: __DIR__;
 		if (strrpos($path, '/') == (strlen($path) - 1)) {
@@ -76,6 +89,9 @@ class Auto
 			$classPath .= "{$head}/";
 		}
 		//print_r([__FILE__,__LINE__,'lookup', $class,$externalPath,$prefix,$path,$classPath]); die;
+		// if ($exitTrace) {
+		// 	print_r([__FILE__,__LINE__,"{$path}/{$classPath}.php"]);
+		// }
 		return "{$path}/{$classPath}.php";
 	}
 

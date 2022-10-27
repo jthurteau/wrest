@@ -14,7 +14,7 @@ class Saf_Client_Xml //#TODO #2.0.0 not currently used needs work
 	const PARSE_PATTERN_SINGLETON = 1;
 	
 	const KEY_DEFAULT = 'ID';
-	const KEY_INTERATIVE = 0;
+	const KEY_ITERATIVE = 0;
 	const KEY_SINGLETON = -1;
 
 	protected $_host = ''; 
@@ -87,7 +87,7 @@ class Saf_Client_Xml //#TODO #2.0.0 not currently used needs work
 			$idKey = self::API_KEY_DEFAULT;
 		}
 		$currentKey =
-			$idKey === self::API_KEY_INTERATIVE
+			$idKey === self::KEY_ITERATIVE
 				|| $idKey === self::API_KEY_SINGLETON
 			? 0
 			: $idKey;
@@ -115,13 +115,13 @@ class Saf_Client_Xml //#TODO #2.0.0 not currently used needs work
 						|| !$keys
 					) && (
 						$idKey === self::API_KEY_SINGLETON
-						|| $idKey === self::API_KEY_INTERATIVE
+						|| $idKey === self::KEY_ITERATIVE
 						|| array_key_exists($currentKey, $item) 
 					)
 				) {
 					$itemKey = 
 						$idKey === self::API_KEY_SINGLETON
-							|| $idKey === self::API_KEY_INTERATIVE
+							|| $idKey === self::KEY_ITERATIVE
 						? $currentKey
 						: $item[$currentKey];
 					$response[$itemKey] = $keys ? array() : $item;
@@ -134,7 +134,7 @@ class Saf_Client_Xml //#TODO #2.0.0 not currently used needs work
 							: NULL;
 						}
 					}
-					if ($idKey === self::API_KEY_INTERATIVE) {
+					if ($idKey === self::KEY_ITERATIVE) {
 						$currentKey++;
 					}
 				}

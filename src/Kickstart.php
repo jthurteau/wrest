@@ -121,7 +121,7 @@ class Kickstart
 				#TODO #2.0.0 get the correct deilm
 				$state = 
 					$agent && $agent->isActive()
-					? 'Failed'
+					? 'Failed running'
 					: 'Failed to kickstart';
 				throw new \Exception("{$state} instance {$instance}@{$mode}", 0, Agent::getMeditation());
 				#TODO properly detect handoff
@@ -159,7 +159,7 @@ class Kickstart
 	 * @param array $options
 	 * @return string instance ident
 	 */
-	public static function go(array $options = [])
+	public static function go(array &$options = [])
 	{
 		return self::kick(self::lace(null, $options));
 	}
@@ -175,7 +175,7 @@ class Kickstart
 		if (is_null($instance)) {
 			$instance = Agent::defaultInstance();
 		}
-		$instance = Agent::getInstance($instance);
+		//$instance = Agent::getInstance($instance);
 		return 
 			array_key_exists($instance, self::$kicked) 
 			? self::$kicked[$instance] 

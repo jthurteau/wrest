@@ -60,7 +60,7 @@ trait Guru {
     /**
      * returns a unique id for meditations
      */
-	abstract public static function meditationIdStrategy();
+	abstract public static function meditationIdStrategy(\Throwable $e);
 
    	/**
 	 * Outputs in the case of complete and total failure during the kickstart process.
@@ -104,7 +104,6 @@ trait Guru {
 			$m = new Meditation($meditationText, self::meditationIdStrategy($e), $e);
 			self::$meditations[$m->getCode()] = $m;
 		}
-
 	}
 
     protected static function isProtoMeditation($e, $asString = false)

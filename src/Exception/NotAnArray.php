@@ -1,13 +1,15 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/**
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Exception class when a value that is expected to be an array can't be converted.
+ */
 
-Exception class when a value that is expected to be an array can't be converted.
+namespace Saf\Exception;
 
- *******************************************************************************/
-
-class Saf_Exception_NotAnArray extends Exception{
+class NotAnArray extends \Exception{
 	protected $message = 'Attempted to extract data, search target was not an array, could not be converted to an array.';
 }

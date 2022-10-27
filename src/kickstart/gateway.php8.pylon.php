@@ -3,10 +3,10 @@
 /**
  * Gateway pylon, specifies an install path and optional bulb
  *
- * PHP version 7
+ * PHP version 8
  *
  * @author Troy Hurteau <jthurtea@ncsu.edu>
- * @link   saf.src:kickstart/gateway.php7.pylon.php
+ * @link   saf.src:kickstart/gateway.php8.pylon.php
  * @link   install:public/index.php
  * @license https://github.com/jthurteau/saf/blob/main/LICENSE GNU General Public License v3.0
  */
@@ -26,9 +26,8 @@ declare(strict_types=1);
         ];
         $tetherPath = "{$installPath}/src/kickstart/gateway.tether.php";
         $fileException = new Exception($tetherPath);
-        if (!is_readable($tetherPath)) {
-            throw new Exception('Gateway Unavailable', 127, $fileException);
-        }
+        is_readable($tetherPath)
+            || throw new Exception('Gateway Unavailable', 127, $fileException);
         $gatewayTether = require($tetherPath);
         return is_callable($gatewayTether) ? $gatewayTether($canister) : $gatewayTether;
     } catch (Error | Exception $e) {

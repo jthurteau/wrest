@@ -46,7 +46,7 @@ return static function (&$canister = []) {
 			: (
 				method_exists($e, 'getPublicMessage') 
 				? $e->getPublicMessage()
-				: (get_class($e) . ( $eCode ? "({$eCode})" : '')': ' . $e->getMessage())
+				: (get_class($e) . ( $eCode ? "({$eCode})" : '') . ': ' . $e->getMessage())
 			)
 		);
 	}
