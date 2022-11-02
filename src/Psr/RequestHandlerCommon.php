@@ -84,14 +84,46 @@ trait RequestHandlerCommon {
     {
         return
             key_exists($in, $this->accessList) 
-            && (
-                $this->accessList[$in] == '*'
-                || $this->accessList[$in] === $resource
+            && $this->searchRoutes($resource, $this->accessList[$in]);
+    }
+
+    protected function searchRoutes($resource, $list)
+    {
+        if ($list == '*') {
+            return true;
+        }
+        is_array($resource) || ($resource = explode('/', $resource));
+        is_array($list) || ($list = [$list]);
+        foreach($list as $route) {
+            is_array($route) || ($route = explode('/', $route));
+            if (
+                $route == $resource 
+                || $this->matchResource($resource, $route)
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected function matchResource(array $resource, array $route)
+    {
+        foreach($resource as $part) {
+            if(
+                !count($route)
                 || (
-                    is_array($this->accessList[$in]) 
-                    && in_array($resource, $this->accessList[$in])
+                    '*' != $route[0]
+                    && $part != $route[0]
                 )
-            );
+            ) {
+                return false;
+            }
+            $current = array_shift($route);
+            if (!count($route) && $current == '*') {
+                return true;
+            }
+        }
+        return true;
     }
 
     protected static function getForward(ServerRequestInterface $request)
