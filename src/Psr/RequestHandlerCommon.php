@@ -12,6 +12,7 @@ namespace Saf\Psr;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Saf\Keys;
+use Saf\Auto;
 use Saf\Utils\UrlRewrite;
 
 trait RequestHandlerCommon {
@@ -55,6 +56,61 @@ trait RequestHandlerCommon {
             }
         }
         return false;
+    }
+
+    protected function resourceMap (string $handlerNamespace, $resource)
+    {
+        $namespaceStack = explode('\\', $handlerNamespace);
+        foreach ($resource as $index=>$part) {
+            $resource[$index] = ucfirst($part);
+        }
+        if (count($namespaceStack) > 1 && $namespaceStack[count($namespaceStack) - 1] == 'Handler') {
+            $resourceNamespaceStack = $namespaceStack;
+            $resourceNamespaceStack[count($resourceNamespaceStack) - 1] = 'Resource';
+            return array_merge($resourceNamespaceStack, $resource);
+        }
+        return array_merge($namespaceStack, $resource);
+    }
+
+    protected function route($resource, ServerRequestInterface $request)
+    {
+        if (count($resource) < 3) {
+            return [
+                'success' => false,
+                'request' => $resource,
+                'message' => 'resource routing underflow'
+            ];
+        }
+        $base = implode('\\', array_slice($resource, 0, 3));
+        $rest = array_slice($resource, 3);
+        $match = $base;
+        $test = $match;
+        foreach ($rest as $part) {
+            $test = $test .= "\\{$part}";
+            if (
+                !Auto::validClassName($part) 
+            ) {
+                break;
+            }
+            if (
+                class_exists($test) 
+                && method_exists($test, 'handle')
+            ) {
+                $match = $test;
+            }
+        }
+        if (
+            $match != $base 
+            || (class_exists($base) && method_exists($base, 'handle'))
+        ) {
+            $match = new $base();
+            return $match->handle($request, $rest);
+        }
+        return [
+            'success' => false,
+            'request' => $resource,
+            'message' => 'resource routing falure'
+        ];
     }
 
     protected function matchAcl($resource, $list)
@@ -113,7 +169,7 @@ trait RequestHandlerCommon {
                 !count($route)
                 || (
                     '*' != $route[0]
-                    && $part != $route[0]
+                    && $part != $route[0] #TODO matchPart(string $part, string $route)
                 )
             ) {
                 return false;
