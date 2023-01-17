@@ -58,7 +58,7 @@ trait RequestHandlerCommon {
         return false;
     }
 
-    protected function resourceMap (string $handlerNamespace, $resource)
+    protected static function resourceMap(string $handlerNamespace, $resource)
     {
         $namespaceStack = explode('\\', $handlerNamespace);
         foreach ($resource as $index=>$part) {
@@ -83,33 +83,37 @@ trait RequestHandlerCommon {
         }
         $base = implode('\\', array_slice($resource, 0, 3));
         $rest = array_slice($resource, 3);
-        $match = $base;
-        $test = $match;
-        foreach ($rest as $part) {
-            $test = $test .= "\\{$part}";
-            if (
-                !Auto::validClassName($part) 
-            ) {
-                break;
-            }
-            if (
-                class_exists($test) 
-                && method_exists($test, 'handle')
-            ) {
-                $match = $test;
-            }
-        }
-        if (
-            $match != $base 
-            || (class_exists($base) && method_exists($base, 'handle'))
-        ) {
+        if (class_exists($base) && method_exists($base, 'handle')) {
             $match = new $base();
             return $match->handle($request, $rest);
         }
+        // // $match = $base; //#TODO think on this more
+        // $test = $base;
+        // foreach ($rest as $part) {
+        //     $test = $test .= "\\{$part}";
+        //     if (
+        //         !Auto::validClassName($part) 
+        //     ) {
+        //         break;
+        //     }
+        //     if (
+        //         class_exists($test) 
+        //         && method_exists($test, 'handle')
+        //     ) {
+        //         $match = $test;
+        //     }
+        // }
+        // if (
+        //     $match != $base 
+        //     || (class_exists($base) && method_exists($base, 'handle'))
+        // ) {
+        //     $match = new $base();
+        //     return $match->handle($request, $rest);
+        // }
         return [
             'success' => false,
             'request' => $resource,
-            'message' => 'resource routing falure'
+            'message' => 'resource routing failure'
         ];
     }
 

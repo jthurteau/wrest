@@ -154,7 +154,15 @@ class Time
 		}
 		return $now + self::$_diff;
 	}
-	
+
+	/**
+	 * returns the relative time based on $modifier
+	 */
+	public static function relative($modifier)
+	{
+		return self::modify(self::time(), $modifier);
+	}
+
 	/**
 	 * returns a modified timestamp
 	 * @param unknown_type $timestamp
