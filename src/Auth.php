@@ -54,10 +54,14 @@ class Auth
     protected static $loadedConfig = null;
     protected static $supportsInternal = false;
     protected static $postLoginHooks = [];
+    protected static $simKeys = [];
     
     public const USER_AUTODETECT = null;
     public const MODE_SIMULATED = 1;
     public const SIMULATED_AUTH_CONSTANT = '\\Saf\\AUTH_SIMULATED_USER';
+    public const SIMULATED_AUTH_LOCK_KEY = 'simulated_login_lock';
+    public const SIMULATED_AUTH_USER_KEY = 'simulated_user';
+    public const SIMULATED_AUTH_KEY_PARAM = 'simulated_login_key';
     //const MODE_SESSIONLESS = 2; //#TODO
     //const MODE_KEYONLY = 4; //#TODO
 
@@ -101,6 +105,9 @@ class Auth
         ) {
             self::$activePlugin = new Local();
             self::$supportsInternal = true;
+            if (key_exists('simulatedAuthKeys', $config)) {
+                self::$simKeys = $config['simulatedAuthKeys'];
+            }
         }
         $plugins =
             key_exists('plugin', $config)
@@ -160,17 +167,17 @@ class Auth
         if (self::$supportsInternal && self::$activePlugin) {
             $simulatedLockOn =
                 isset($_SESSION)
-                && key_exists('simulated_login_lock', $_SESSION);
+                && key_exists(self::SIMULATED_AUTH_LOCK_KEY, $_SESSION);
             $currentSimulatedUser =
-                key_exists('simulated_user', $_SESSION)
-                ? $_SESSION['simulated_user']
+                key_exists(self::SIMULATED_AUTH_USER_KEY, $_SESSION)
+                ? $_SESSION[self::SIMULATED_AUTH_USER_KEY]
                 : '';
             if ($simulatedLockOn) {
                 $mode = self::MODE_SIMULATED;
                 defined($simulatedAuthConst) || define($simulatedAuthConst, $currentSimulatedUser);
             }
             $userToLogin =
-                $mode == self::MODE_SIMULATED
+                $mode === self::MODE_SIMULATED
                     && defined($simulatedAuthConst)
                     && constant($simulatedAuthConst)
                 ? constant($simulatedAuthConst) //\Saf\AUTH_SIMULATED_USER
@@ -185,8 +192,8 @@ class Auth
                     self::$authenticated
                     && $mode == self::MODE_SIMULATED
                 ) {
-                    $_SESSION['simulated_login_lock'] = true;
-                    $_SESSION['simulated_user'] = constant($simulatedAuthConst);
+                    $_SESSION[self::SIMULATED_AUTH_LOCK_KEY] = true;
+                    $_SESSION[self::SIMULATED_AUTH_USER_KEY] = constant($simulatedAuthConst);
                 }
                 return self::$authenticated;
             }
@@ -276,7 +283,7 @@ class Auth
 
     public static function logout($realm = '*')
     {
-        unset($_SESSION['simulated_login_lock']);
+        unset($_SESSION[self::SIMULATED_AUTH_LOCK_KEY]);
         self::logoutExternally();
         self::logoutLocally();
     }
@@ -398,7 +405,7 @@ class Auth
         self::$userObject = $userObject;
         self::$activePlugin->setPluginStatus($success, $errorCode);
         if ('' != $errorCode) {
-            throw new Exception("Login Error, error code: {$errorCode}");
+            throw new \Exception("Login Error, error code: {$errorCode}");
         }
     }
 
@@ -409,7 +416,7 @@ class Auth
             return false;
         }
         if(!key_exists('username', $userInfo)) {
-            throw new Exception('Must specify username to create user.');
+            throw new \Exception('Must specify username to create user.');
         }
         $username = $userInfo['username'];
         $firstName = key_exists('firstName', $userInfo) ? $userInfo['firstName'] : '';
@@ -467,6 +474,27 @@ class Auth
     public static function allowGuest()
     {
         return self::$allowGuest;
+    }
+
+    public static function allowSimulatedLogin(string $username, ServerRequestInterface $request)
+    {
+        $query = $request->getQueryParams();
+        $simKey = 
+            key_exists(self::SIMULATED_AUTH_KEY_PARAM, $query) 
+            ? $query[self::SIMULATED_AUTH_KEY_PARAM] 
+            : null;
+        if ($simKey && in_array($simKey, self::$simKeys)) {
+            foreach(self::$simKeys as $keyIndex => $key) {
+                if (
+                    $key === $simKey 
+                    && (is_numeric($key) || $key === $username)
+                ) {
+                    return $username;
+                }
+            }
+            return $username;
+        }
+        return false;
     }
 
     protected static function login($username = self::USER_AUTODETECT)

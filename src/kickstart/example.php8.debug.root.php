@@ -44,10 +44,10 @@ return (static function(){
             'Saf\AUTH_SIMULATED_USER' => 'jthurtea',
     ];
     
-    key_exists('stdQuays', $debug) || $debug['stdQuays'] = []; 
-    key_exists('const', $debug['stdQuays']) 
-        || $debug['stdQuays']['const'] = [];
-    $debug['stdQuays']['const'] = $debugConstants + $debug['stdQuays']['const'];
+    key_exists('stdInlets', $debug) || $debug['stdInlets'] = []; 
+    key_exists('const', $debug['stdInlets']) 
+        || $debug['stdInlets']['const'] = [];
+    $debug['stdInlets']['const'] = $debugConstants + $debug['stdInlets']['const'];
 
     $debugTools = ['doctor'];
     $debug['inlineTools'] =

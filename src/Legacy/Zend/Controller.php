@@ -9,6 +9,11 @@ use Psr\Http\Message\ServerRequestInterface;
 
 trait Controller {
 
+    protected function enter(ServerRequestInterface $request)
+    {
+        $this->currentRequest = $request;
+    }
+
     /**
      * Auto extract a request param from one or more sources, substituting
      * optional default if not present.
@@ -26,7 +31,10 @@ trait Controller {
     {
         $result = $default;
         if (is_null($request)) {
-            //$request = $this->getRequest();
+            if (is_null($this->currentRequest)) {
+                //#TODO note failure
+                return $result;
+            }
             $request = $this->currentRequest;
         }
         if (!is_array($sources)) {
@@ -45,7 +53,7 @@ trait Controller {
                 case 'stack' :
                     $stack = 
                         is_a($request, ServerRequestInterface::class, false) 
-                        ? $this->currentParent->getResourceStack($request) 
+                        ? RequestHandlerCommon::getResourceStack($request) 
                         : $request->getParam('resourceStack');
                     if (key_exists($index, $stack) && '' !== $stack[$index] ) {
                         return $stack[$index];

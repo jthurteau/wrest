@@ -11,6 +11,7 @@
 namespace Saf\Psr;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Saf\Psr\StandardRequestHandler;
 use Saf\Keys;
 use Saf\Auto;
 use Saf\Utils\UrlRewrite;
@@ -25,6 +26,12 @@ trait RequestHandlerCommon {
 
     public abstract static function stackAttributeField() : string;
 
+    public function translate(string $message) : string
+    {
+        print_r([__FILE__,__LINE__,$message,'testing mix-in handler']); die;
+        return $message;
+    }
+
     protected function allowed($resource, $user = null)
     {
         //#TODO patch in with configed routes
@@ -33,6 +40,11 @@ trait RequestHandlerCommon {
         $roles = $user ? $user->getRoles() : [];
         if ($this->matchRoute($resource, 'open')) {
             return 'open-access';
+        }
+        if ($this->matchRoute($resource, 'any-user')) {
+            if ($user->getIdentity()) {
+                return 'authorized-access';
+            }
         }
         if (
             count($keys) > 0 
@@ -46,9 +58,12 @@ trait RequestHandlerCommon {
                 return "{$keyName}-key-access";
             }
         }
-        if ($user && in_array('sysAdmin', $user->getRoles())) {
-            return 'sysAdmin-role-access';
-        }
+        // if ($user && in_array('admin', $user->getRoles())) {
+        //     return 'admin-role-access';
+        // }
+        // if ($user && in_array('sysAdmin', $user->getRoles())) {
+        //     return 'sysAdmin-role-access';
+        // }
         foreach($roles as $role) {
             $roleName = "{$role}-role";
             if ($this->matchRoute($resource, $roleName)) {
@@ -56,6 +71,43 @@ trait RequestHandlerCommon {
             }
         }
         return false;
+    }
+
+    protected function accessRecommendation($resource, $user = null)
+    {
+        $recommendation = false;
+        //#TODO patch in with configed routes
+        //$accessList = Hash::deepMerge($this->accessList,$globalAccess);
+        $keys = $user ? $user->getDetail('keys') : [];
+        $roles = $user ? $user->getRoles() : [];
+        if ($this->matchRoute($resource, 'open')) {
+            return 'open-access';
+        }
+        if ($this->matchRoute($resource, 'any-user')) {
+            if ($user->getIdentity()) {
+                return 'authorized-access';
+            }
+            $recommendation = 'login-required';
+        }
+        $anyKeyAccess = $this->matchRoute($resource, 'key');
+        if (count($keys) > 0 && $anyKeyAccess) {
+            return 'key-access';
+        } elseif ($anyKeyAccess && !$recommendation) {
+            $recommendation = 'key-required';
+        }
+        // foreach($keys as $key) {
+        //     $keyName = Keys::keyName($key);
+        //     if ($this->matchRoute($resource, $keyName)) {
+        //         return "{$keyName}-key-access";
+        //     }
+        // }
+        // foreach($roles as $role) {
+        //     $roleName = "{$role}-role";
+        //     if ($this->matchRoute($resource, $roleName)) {
+        //         return "{$roleName}-role-access";
+        //     }
+        // }
+        return $recommendation;
     }
 
     protected static function resourceMap(string $handlerNamespace, $resource)
@@ -84,7 +136,11 @@ trait RequestHandlerCommon {
         $base = implode('\\', array_slice($resource, 0, 3));
         $rest = array_slice($resource, 3);
         if (class_exists($base) && method_exists($base, 'handle')) {
-            $match = new $base();
+            if (key_exists($base, $this->models)) {
+                $match = $this->models[$base];
+            } else {
+                $match = new $base();
+            }
             return $match->handle($request, $rest);
         }
         // // $match = $base; //#TODO think on this more
@@ -193,9 +249,9 @@ trait RequestHandlerCommon {
         return $url ? UrlRewrite::decodeForward($url) : UrlRewrite::decodeForward($code);
     }
 
-    public static function getResourceStack(ServerRequestInterface $request)
+    public static function getResourceStack(ServerRequestInterface $request, $field = StandardRequestHandler::STACK_ATTRIBUTE)
     {
-        return explode('/', $request->getAttribute(self::stackAttributeField(), ''));
+        return explode('/', $request->getAttribute($field, ''));
     }
 
     public static function successful($result)
@@ -213,7 +269,7 @@ trait RequestHandlerCommon {
      * alternatively any order of some or all of the letters: a p g
      * can be specified for a custom search order of the request
 	 * @param mixed $sources string, int, array indicating one or more sources
-	 * @param Psr\Http\Server\RequestHandlerInterface $request request object to use
+	 * @param Psr\Http\Message\ServerRequestInterface $request request object to use
 	 * @param mixed $default value to return if no match is found, defaults to NULL
 	 * #TODO #1.5.0 add option for each source to be an array so more than one value in each can be searched
 	 */
@@ -250,7 +306,7 @@ trait RequestHandlerCommon {
 				// 	}
 				// 	break;
 				case 'request' :
-                    $result = self::requestSearch($request, self::defaultRequestSearchOrder(), $index);
+                    $result = self::requestSearch($request, StandardRequestHandler::DEFAULT_REQUEST_SEARCH, $index);
                     break;
 					// if ($request->has($index)) {
 					// 	return $request->getParam($index);

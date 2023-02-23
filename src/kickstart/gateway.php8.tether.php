@@ -33,13 +33,20 @@ return static function (array|\Saf\Canister &$canister = []) {
         is_array($firstBulb) && key_exists('bulb', $canister) && $canister['merge']($firstBulb);
         if (!key_exists('germinated', $canister) || !$canister['germinated']) {
             key_exists('gatewayRoots', $canister) && $canister['each']($canister['gatewayRoots'], 'deep');
+            if (key_exists('stdInlets', $canister)) {
+                foreach($canister['stdInlets'] as $inlet => $data) {
+                    $inletPath = "{$canister['kickPath']}/{$inlet}";
+                    $inletFail = 'Inlet ({$}) unavailable.';
+                    $inletResult = $canister['inlet']($data, $inletPath, $inletFail);
+                }
+            }
             $environmentPath = 
                 key_exists('environmentPath', $canister)
                 ? $canister['environmentPath']
                 : 'config/kickstart';
             $environmentRoot = 
                 key_exists('environmentName', $canister)
-                ? "{$environmentPath}/env.{$canister['environmentName']}.root"
+                ? "{$environmentPath}/env.{$canister['environmentName']}"
                 : null;
             $environmentRoot && $canister['deep']($environmentRoot);
         }

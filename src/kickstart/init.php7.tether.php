@@ -361,7 +361,7 @@ return function (&$canister) {
     //# TODO $registry['sema'] = function
 
     /**
-     * store quay
+     * store executable state with quay 
      */
     $registry['quay'] = function(string $quay, ?string $fail = null) use (&$canister) {
         $quayFile = $canister['_f']($quay, '.quay');
@@ -376,6 +376,25 @@ return function (&$canister) {
             $quay = require($quayFile);
         } #TODO $file = $canister['_v']($name, $type, $fail); //validate
         return $quay;
+    };
+
+    /**
+     * pass executable state to store with inlet 
+     */
+    $registry['inlet'] = function($data, string $inlet, ?string $fail = null) use (&$canister) {
+        $inletFile = $canister['_f']($inlet, '.inlet');
+        $genericFile = $canister['_f']($inlet);
+        if(!file_exists($inletFile) || !is_readable($inletFile)){
+            if (!file_exists($genericFile) || !is_readable($genericFile)) {
+                return $canister['_e']($inlet, $inletFile, $fail);
+            } else {
+                $inlet = require($genericFile);
+            }
+        } else {
+            $inlet = require($inletFile);
+        } #TODO $file = $canister['_v']($name, $type, $fail); //validate
+        return is_callable($inlet) ? $inlet($data, $canister) : $inlet;
+        return $inlet;
     };
 
     /**
