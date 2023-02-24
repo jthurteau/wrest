@@ -28,7 +28,7 @@ trait RequestHandlerCommon {
 
     public function translate(string $message) : string
     {
-        print_r([__FILE__,__LINE__,$message,'testing mix-in handler']); die;
+        //#NOTE this SHOULD be defined in the using class or one of its base classes, but is considered optional
         return $message;
     }
 

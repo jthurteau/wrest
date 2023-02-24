@@ -40,20 +40,17 @@ class FoundationMiddleware implements MiddlewareInterface
     {
         try {
             ForwardHandler::register(self::$baseRoute, self::$router);
-            return $handler->handle($request->withAttribute('agent', Agent::last()));
+            try {
+                return $handler->handle($request->withAttribute('agent', Agent::last()));
+            }  catch (Forward $f) {
+                return ForwardHandler::reroute($f, $request);
+            }
         } catch (Redirect $r) {
             $redirected = 
                 $request
                 ->withAttribute('location', $r->getMessage())
                 ->withAttribute('permanentRedirect', $r->isPermanent());
             return (new RedirectHandler(self::$renderer))->handle($redirected);
-        } catch (Forward $f) {
-            $forwardRoute = $f->getMessage();
-            $forwarded = 
-                $f->hasRequest()
-                ? $f->getRequest()
-                : $request;
-            return (new ForwardHandler($forwardRoute))->handle($forwarded);
         }
     }
 

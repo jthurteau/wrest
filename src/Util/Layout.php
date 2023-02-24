@@ -1,34 +1,39 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php 
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/**
+ * Utility class for layout handling
+ */
 
-Utility class for layout handling
+declare(strict_types=1);
 
-*******************************************************************************/
+namespace Saf\Util;
+//baseUrl
+//publicPath
 
-class Saf_Layout
+use Saf\Util\Location;
+
+class Layout
 {
 
-	const LAYOUT_DEFAULT_HTML_FORMAT = 'html+javascript:css';
-	const LAYOUT_BASE_HTML_FORMAT = 'html';
-	const LAYOUT_DEFAULT_AJAX_FORMAT = 'json';
-	const LAYOUT_DEFAULT_FILE_FORMAT = 'binary';
+	const DEFAULT_HTML_FORMAT = 'html+javascript:css';
+	const BASE_HTML_FORMAT = 'html';
+	const DEFAULT_AJAX_FORMAT = 'json';
+	const DEFAULT_FILE_FORMAT = 'binary';
+	const DEFAULT_RESPONSE_FORMAT = self::BASE_HTML_FORMAT;
 
-	protected static $_format = DEFAULT_RESPONSE_FORMAT;
-	protected static $_css = array();
-	protected static $_js = array();
-	protected static $_min = FALSE;
+	protected static $format = self::DEFAULT_RESPONSE_FORMAT;
+	protected static $css = [];
+	protected static $js = [];
+	protected static $min = false;
 
-	protected static $_formatMap = array(
-		'text/html' => self::LAYOUT_DEFAULT_HTML_FORMAT,
-		'application/xhtml+xml' => self::LAYOUT_DEFAULT_HTML_FORMAT,
-		'application/xml' => self::LAYOUT_BASE_HTML_FORMAT,
-		'image/webp' => self::LAYOUT_DEFAULT_FILE_FORMAT,
-		'application/json' => self::LAYOUT_DEFAULT_AJAX_FORMAT,
-		'text/javascript' => self::LAYOUT_DEFAULT_AJAX_FORMAT //#TODO #2.0.0 css?
-	);
+	protected static $_formatMap = [
+		'text/html' => self::DEFAULT_HTML_FORMAT,
+		'application/xhtml+xml' => self::DEFAULT_HTML_FORMAT,
+		'application/xml' => self::BASE_HTML_FORMAT,
+		'image/webp' => self::DEFAULT_FILE_FORMAT,
+		'application/json' => self::DEFAULT_AJAX_FORMAT,
+		'text/javascript' => self::DEFAULT_AJAX_FORMAT //#TODO #2.0.0 css?
+	];
 
 	/**
 	 * sets the preferred output format
@@ -39,8 +44,8 @@ class Saf_Layout
 		if (array_key_exists($format, self::$_formatMap)) {
 			$format = self::$_formatMap[$format];
 		}
-		self::$_format = $format;
-		return self::$_format;
+		self::$format = $format;
+		return self::$format;
 	}
 
 	/**
@@ -49,17 +54,17 @@ class Saf_Layout
 	 */
 	public static function getFormat()
 	{
-		return self::$_format;
+		return self::$format;
 	}
 
 	public static function formatIsHtml()
 	{
-		return strpos(self::$_format, 'html') === 0;
+		return strpos(self::$format, 'html') === 0;
 	}
 
 	public static function formatIsJson()
 	{
-		return strpos(self::$_format, 'json') === 0;
+		return strpos(self::$format, 'json') === 0;
 	}
 
 	/**
@@ -99,7 +104,7 @@ class Saf_Layout
 	 */
 	public static function getLink($url)
 	{
-		$baseUrl = Saf_Registry::get('baseUrl');
+		$baseUrl = '';//Saf_Registry::get('baseUrl');
 		if (strpos($url, '/') === 0) {
 			$url = substr($url, 1);
 		}
@@ -117,7 +122,8 @@ class Saf_Layout
 
 	public static function printCss($css, $media = 'screen')
 	{
-		$baseCssUrl = Saf_Registry::get('baseUrl') . 'css/';
+		$baseUrl = ''; //Saf_Registry::get('baseUrl')
+		$baseCssUrl =  "{$baseUrl}css/";
 		$css =
 			strpos($css, '/') === 0
 			? $css
@@ -136,12 +142,12 @@ class Saf_Layout
 	public static function autoCss($css, $media = 'screen')
 	{
 		if ($media === 'screen') {
-			self::$_css[] = $css;
+			self::$css[] = $css;
 		} else {
-			if (array_key_exists($media, self::$_css)) {
-				self::$_css[$media][] = $css;
+			if (array_key_exists($media, self::$css)) {
+				self::$css[$media][] = $css;
 			} else {
-				self::$_css[$media] = array($css);
+				self::$css[$media] = array($css);
 			}
 		}
 	}
@@ -151,7 +157,7 @@ class Saf_Layout
 	 */
 	public static function printAutoCss()
 	{
-		foreach(self::$_css as $media => $css) {
+		foreach(self::$css as $media => $css) {
 			$media = is_array($css) ? $media : 'screen';
 			$css = is_array($css) ? $css : array($css);
 			foreach($css as $currentCss) {
@@ -170,7 +176,8 @@ class Saf_Layout
 			'saf',
 			'main'
 		);
-		$baseCssUrl = Saf_Registry::get('baseUrl') . 'css/';
+		$baseUrl = ''; //Saf_Registry::get('baseUrl')
+		$baseCssUrl =  "{$baseUrl}css/";
 		$media = 'screen'; //#TODO 2.0.0
 		foreach($coreCss as $css) {
 			$css =
@@ -192,7 +199,8 @@ class Saf_Layout
 
 	public static function printJs($js)
 	{
-		$baseJsUrl = Saf_Registry::get('baseUrl') . 'javascript/';
+		$baseUrl = ''; //Saf_Registry::get('baseUrl')
+		$baseJsUrl =  "{$baseUrl}javascript/";
 		$js =
 			strpos($js, '/') === 0
 			? $js
@@ -204,7 +212,9 @@ class Saf_Layout
 
 	public static function printCoreJs()
 	{
-		$baseUrl = Saf_Registry::get('baseUrl') . 'javascript/';
+		$baseUrl = ''; //Saf_Registry::get('baseUrl')
+		$baseUrl = "{$baseUrl}javascript/";
+		$publicPath = '';
 		$coreJs = array(
 			'jquery/2/jquery-2.1.4',
 			'jquery/ui/jquery-ui',
@@ -214,8 +224,8 @@ class Saf_Layout
 		);
 		foreach($coreJs as $js) {
 			if (strpos($js, '/.cdn') !== FALSE) {
-				if (file_exists(PUBLIC_PATH . '/javascript/' . $js)) {
-					self::printJs(file_get_contents(PUBLIC_PATH . '/javascript/' . $js));
+				if (file_exists("{$publicPath}{$js}")) {
+					self::printJs(file_get_contents("{$publicPath}/javascript/{$js}"));
 				} else {
 ?>
 <!-- unavailable cdn <?php print($js);?> -->
@@ -246,7 +256,7 @@ $(document).ready(function() {
 		}
 
 	public static function autoJs($path){
-		self::$_js[] = $path;
+		self::$js[] = $path;
 	}
 
 	/**
@@ -254,7 +264,7 @@ $(document).ready(function() {
 	 */
 	public static function printAutoJs()
 	{
-		foreach(self::$_js as $script) {
+		foreach(self::$js as $script) {
 ?>
 <script src="<?php self::printLink("javascript/{$script}.js")?>"></script>
 <?php
@@ -266,7 +276,7 @@ $(document).ready(function() {
 	 */
 	public static function printBreadCrumbs()
 	{
-		$crumbs = Saf_Layout_Location::getCrumbs();
+		$crumbs = Location::getCrumbs();
 		if(count($crumbs) > 0) {
 ?>
 		<ul class="breadcrumbs">
