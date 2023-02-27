@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
+/**
+ * defines a simple extendable model object for Date Pickers
+ */
+
 namespace Saf\Util\Model;
 
 use Saf\Utils\Time;
 
 class CalendarModel
 {
-	public function __construct($config = array())
-	{
-
-	}
 
 	public function getUserMonthYear($time = null)
 	{

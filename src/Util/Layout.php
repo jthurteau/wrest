@@ -11,6 +11,11 @@ namespace Saf\Util;
 //publicPath
 
 use Saf\Util\Location;
+use Saf\Hash;
+use Saf\Utils\Filter\Truthy;
+use Saf\Debug;
+use Saf\Utils\Debug\Ui as DebugUi;
+use Saf\Client\Http;
 
 class Layout
 {
@@ -41,7 +46,7 @@ class Layout
 	 */
 	public static function setFormat($format)
 	{
-		if (array_key_exists($format, self::$_formatMap)) {
+		if (key_exists($format, self::$_formatMap)) {
 			$format = self::$_formatMap[$format];
 		}
 		self::$format = $format;
@@ -301,7 +306,7 @@ $(document).ready(function() {
 				}
 
 				if ('' != $url) {
-					$baseUrl = Saf_Registry::get('baseUrl');
+					$baseUrl = '';//Saf_Registry::get('baseUrl');
 						$url = str_replace('[[baseUrl]]', $baseUrl, $url);
 ?>
 		<li<?php print($class);?>><?php print($prefix); ?><a href="<?php print($url); ?>"><?php print($label);?></a></li>
@@ -336,24 +341,24 @@ $(document).ready(function() {
 
 	public static function debugHeader()
 	{
-		if(Saf_Debug::isVerbose()) {
-			Saf_Debug::printDebugAnchor();
-			Saf_Debug::printDebugReveal();
-			Saf_Debug::printProfileReveal();
+		if(Debug::isVerbose()) {
+			DebugUi::printDebugAnchor();
+			DebugUi::printDebugReveal();
+			DebugUi::printProfileReveal();
 		}
 	}
 
 	public static function debugFooter()
 	{
-		if(Saf_Debug::isEnabled()){
+		if(Debug::isEnabled()){
 ?>
 <!-- debug buffer -->
 <?php
-			Saf_Debug::flushBuffer();
-			Saf_Debug::printDebugExit();
+			DebugUi::flushBuffer();
+			DebugUi::printDebugExit();
 		}
-		if (Saf_Debug::isVerbose()) {
-			Saf_Debug::printDebugEntry();
+		if (Debug::isVerbose()) {
+			DebugUi::printDebugEntry();
 		}
 	}
 
@@ -391,7 +396,7 @@ $(document).ready(function() {
 	public static function stateCheck($request = array()) //#TODO #2.0.0 decouple from Session
 	{
 		if(array_key_exists('forceDesktop', $request)) {
-			if (Saf_Filter_Truthy::filter($request['forceDesktop'])) {
+			if (Truthy::filter($request['forceDesktop'])) {
 				$_SESSION['forceDesktopView'] = TRUE;
 			} else if (array_key_exists('forceDesktopView', $_SESSION)) {
 				unset($_SESSION['forceDesktopView']);
@@ -413,14 +418,14 @@ $(document).ready(function() {
 
 	public static function externalJs($name)
 	{
-		$baseUrl = Saf_Registry::get('baseUrl');
+		$baseUrl = ''; //Saf_Registry::get('baseUrl');
 		print("<script src=\"{$baseUrl}javascript/external/{$name}.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 	}
 
 	public static function foundationCss($version, $addons = array())
 	{
 		$internal = array('magellan','dropdown'); //#TODO #1.11.0 we only need to do this when not using the min version?
-		$baseUrl = Saf_Registry::get('baseUrl');
+		$baseUrl = ''; //Saf_Registry::get('baseUrl');
 		if ($version) {
 			print("<link href=\"{$baseUrl}foundation/css/foundation.min.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\"/>");
 		}
@@ -450,16 +455,16 @@ $(document).ready(function() {
 			'tooltip',
 			'topbar'
 		); //#TODO #1.11.0 we only need to do this when not using the min version?
-		$baseUrl = Saf_Registry::get('baseUrl');
+		$baseUrl = ''; //Saf_Registry::get('baseUrl');
 		if ($version) {
-			if (self::$_min) {
+			if (self::$min) {
 				print("<script src=\"{$baseUrl}foundation/js/foundation.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 			} else {
 				print("<script src=\"{$baseUrl}foundation/js/foundation/foundation.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 			}
 		}
 		foreach($addons as $name) {
-			if (in_array($name,$internal)) {
+			if (in_array($name, $internal)) {
 				print("<script src=\"{$baseUrl}foundation/js/foundation/foundation.{$name}.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 			} else {
 				print("<script src=\"{$baseUrl}foundation/js/{$name}.min.js\" type=\"text/javascript\" charset=\"utf\"></script>");
@@ -469,15 +474,15 @@ $(document).ready(function() {
 
 	public static function useMin()
 	{
-		self::$_min = TRUE;
+		self::$min = true;
 	}
 
-	public static function foundationPrerequisites($optional = array())
+	public static function foundationPrerequisites($optional = [])
 	{
 		if (!is_array($optional)) {
 			$optional = array($optional);
 		}
-		$baseUrl = Saf_Registry::get('baseUrl');
+		$baseUrl = ''; //Saf_Registry::get('baseUrl');
 		print("<script src=\"{$baseUrl}foundation/js/vendor/modernizr.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 		if (in_array('jquery', $optional)) {
 			print("<script src=\"{$baseUrl}foundation/js/vendor/jquery.js\" type=\"text/javascript\" charset=\"utf\"></script>");
@@ -486,7 +491,7 @@ $(document).ready(function() {
 
 	public static function foundationLateIncludes($include = array())
 	{
-		$baseUrl = Saf_Registry::get('baseUrl');
+		$baseUrl = ''; //Saf_Registry::get('baseUrl');
 		if (array_key_exists('fastclick', $include) || in_array('fastclick',$include)) {
 			print("<script src=\"{$baseUrl}foundation/js/vendor/fastclick.js\" type=\"text/javascript\" charset=\"utf\"></script>");
 		}
@@ -502,7 +507,7 @@ $(document).ready(function() {
 	public static function getCdnResource($url, $altContent)
 	{
 		try {
-			$curl = new Saf_Client_Http(array(
+			$curl = new Http(array(
 				'url' => $url
 			));
 			$result = $curl->go();
@@ -515,10 +520,10 @@ $(document).ready(function() {
 			) {
 				return $result['raw'];
 			} else {
-				Saf_Debug::outData(array('deficient cdn response', $url, $result));
+				Debug::outData(array('deficient cdn response', $url, $result));
 			}
-		} catch (Exception $e) {
-			Saf_Debug::outData(array('failed to curl cdn resource', $url, $e));
+		} catch (\Exception $e) {
+			Debug::outData(array('failed to curl cdn resource', $url, $e));
 		}
 		return $altContent;
 	}

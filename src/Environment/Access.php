@@ -27,6 +27,10 @@ trait Access {
     }
 
 //-- required ArrayAccess interface methods
+	/**
+	 * used with isset(), but not key_exists()/array_key_exists()
+	 * use a #TBD funtion in ArrayLike
+	 */
 
 	public function offsetExists ($offset)
 	{

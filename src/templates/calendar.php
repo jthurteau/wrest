@@ -1,4 +1,4 @@
-<?php 
+<?php //#TODO KNOWN BUGS
 (isset($disableLayout) && $disableLayout) 
     || $this->layout('layout::default', ['title' => $t('applicationName')]);
 
@@ -18,13 +18,22 @@ $monthList = array(
     12 => 'Dec',
 );
 $forwardLink = implode('/',$forward) . '/';
+if (isset($returnLink) && $returnLink) {
 ?>
-    
-    <?php
-    if ($calendarModel && $calendarModel->fullView()) {
-    ?>
     <div class="row calendarRow">
-    <?php
+        <div class="small-12 columns">
+            <a href="<?php print($returnLink); ?>"><?php print($t('return-to-app')); ?></a>
+        </div>
+    </div>
+<?php
+}
+?>
+
+<?php
+    if ($calendarModel && $calendarModel->fullView()) {
+?>
+    <div class="row calendarRow">
+<?php
         for($i = -5; $i <=5; $i++){
             $hideClass =
                 abs($i) > 2
@@ -45,26 +54,26 @@ $forwardLink = implode('/',$forward) . '/';
                     : ''
                 );
     
-    ?>
+?>
         <div class="small-2 medium-1 centerAlign columns<?php print($hideClass . $endClass . $firstClass); ?>">
-    <?php
+<?php
             if ($yearDisabled || $yearString == $year) {
-    ?>
+?>
             <span class="buttonLink calendarButton fullWidthButton bottomMargin<?php print($yearClass);?>"><?php print($yearString);?></span>
-    <?php
+<?php
             } else {
-    ?>
+?>
             <a class="buttonLink calendarButton fullWidthButton bottomMargin<?php print($yearClass);?>" href="<?php Saf\Util\Layout::printLink($yearLink);?>"><?php print($yearString);?></a>
-    <?php
+<?php
             }
-    ?>
+?>
         </div>
-    <?php 
+<?php 
         }
-    ?>
+?>
     </div>
     <div class="row hide-for-medium-up calendarRow">
-    <?php
+<?php
         $specialClass = '';
         for($i = -2; $i <=2; $i++){
             $month = $month + $i;
@@ -90,27 +99,27 @@ $forwardLink = implode('/',$forward) . '/';
                     ? ' current'
                     : ''
                 );
-    ?>
+?>
         <div class="small-2 centerAlign columns<?php print($specialClass . $endClass);?>">
-    <?php
+<?php
             if ($monthDisabled || $monthNumber == $month) {
-    ?>
+?>
             <span class="buttonLink calendarButton fullWidthButton bottomMargin<?php print($monthClass);?>"><?php print($monthString);?></span>
-    <?php
+<?php
             } else {
-    ?>
+?>
             <a class="buttonLink calendarButton fullWidthButton bottomMargin<?php print($monthClass);?>" href="<?php Saf\Util\Layout::printLink($monthLink);?>"><?php print($monthString);?></a>
-    <?php
+<?php
             }
-    ?>
+?>
         </div>
-    <?php 
+<?php 
             $specialClass = '';
         }
-    ?>
+?>
     </div>
     <div class="row hide-for-small calendarRow">
-    <?php
+<?php
         for($i = 1; $i < 13; $i++){
             $endClass = $i == 12 ? ' end': '';
             $monthString = $monthList[$i];
@@ -127,26 +136,26 @@ $forwardLink = implode('/',$forward) . '/';
                     ? ' current'
                     : ''
                 );
-    ?>
+?>
         <div class="small-2 medium-1 columns <?php print($endClass);?>">
-    <?php
+<?php
         if ($monthDisabled || $monthNumber == $month) {
-    ?>
+?>
             <span class="buttonLink calendarButton fullWidthButton bottomMargin<?php print($monthClass);?>"><?php print($monthString);?></span>
-    <?php
+<?php
         } else {
-    ?>
+?>
             <a class="buttonLink calendarButton fullWidthButton bottomMargin<?php print($monthClass);?>" href="<?php Saf\Util\Layout::printLink($monthLink);?>"><?php print($monthString);?></a>
-    <?php
+<?php
         }
-    ?>
+?>
         </div>
         
-    <?php 
+<?php 
         }
-    ?>
+?>
     </div>
-    <?php
+<?php
     } else {
         $current = strtotime("{$year}-{$month}-{$day}");
         $userDate = $calendarModel->getUserMonthYear($current);
@@ -164,50 +173,50 @@ $forwardLink = implode('/',$forward) . '/';
         $prev = strtotime("{$prevMonth}-01");
         $userPrevMonth = $calendarModel->getUserMonthYear($prev);
         $prevLink = "calendar/{$prevMonth}/{$forwardLink}";
-    ?>
+?>
     <div class="row calendarShortNav">
         <div class="small-2 columns">
-    <?php
+<?php
         $allowedYear = (int)substr($prevMonth,0,4);
         $allowedMonth = (int)substr($prevMonth,5,2);
         if ($calendarModel->allowedMonth($allowedMonth, $allowedYear)) {
-    ?>
+?>
             <a href="<?php Saf\Util\Layout::printLink($prevLink); ?>" class="largestFontSize noDecoration">
                 <span class="fa fa-chevron-left fi-arrow-left" title="<?php print($userPrevMonth); ?>"><span class="accessibleHidden"><?php print($userPrevMonth); ?></span></span>
             </a>
-    <?php
+<?php
         }
-    ?>
+?>
         &nbsp;</div>
         <div class="small-8 columns centerAlign"><span class="largestFontSize"><?php print($userDate); ?></span></div>
         <div class="small-2 columns rightAlign">&nbsp;
-    <?php
+<?php
         $allowedYear = (int)substr($nextMonth,0,4);
         $allowedMonth = (int)substr($nextMonth,5,2);
         if ($calendarModel->allowedMonth($allowedMonth, $allowedYear)) {
-    ?>
+?>
             <a href="<?php Saf\Util\Layout::printLink($nextLink); ?>" class="largestFontSize noDecoration">
                 <span class="fa fa-chevron-right fi-arrow-right" title="<?php print($userNextMonth); ?>"><span class="accessibleHidden"><?php print($userNextMonth); ?></span></span>
             </a>
-    <?php
+<?php
         }
-    ?>
+?>
         </div>
     </div>
-    <?php
+<?php
     }
-    ?>
+?>
     <div class="row topMargin calendarWeekRow">
-    <?php
+<?php
     for($i = 0; $i < 7; $i++){
         $endClass = $i == 6 ? ' end': '';
         $specialClass = '';
-    ?>
+?>
         <div class="small-1 columns bottomMargin<?php print($specialClass . $endClass);?>">
             <?php print($weekDay[$i]);?>
         </div>
         
-    <?php 
+<?php 
     }
     $s = 1;
     $firstMonthDate = strtotime("{$year}-{$month}-01");
@@ -237,9 +246,9 @@ $forwardLink = implode('/',$forward) . '/';
                     ? ' current fullWidthButton'
                     : ' calendarButton fullWidthButton'
                 );
-        ?>
+?>
         <div class="small-1 columns<?php print($specialClass . $endClass); ?>">
-    <?php 
+<?php 
             if (
                 $s <= $t
                 && (
@@ -248,30 +257,30 @@ $forwardLink = implode('/',$forward) . '/';
                 )
             ){
                 if ($dayDisabled) {
-    ?>
+?>
             <span class="buttonLink calendarButton fullWidthButton bottomMargin<?php print($dayClass);?>">
                 <?php print($s++); ?>
             </span>
-    <?php
+<?php
                 } else {
-    ?>
+?>
             <span class="halfTopMargin"><a class="buttonLink <?php print($dayClass); ?>" href="<?php Saf\Util\Layout::printLink($dayLink); ?>">
                 <?php print($s++); ?>
             </a></span>
-    <?php
+<?php
                 }
             } else {
-    ?>
+?>
             <span class="halfTopMargin">&nbsp;</span>
-    <?php 
+<?php 
     
             }
-    ?>
+?>
         </div>
-    <?php 
+<?php 
         }
     }
-    ?>
+?>
     </div>
 
 <?php 

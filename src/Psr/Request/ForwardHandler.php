@@ -7,30 +7,27 @@ namespace Saf\Psr\Request;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Saf\Psr\Container;
 use Saf\Exception\Forward;
 
 class ForwardHandler implements RequestHandlerInterface
 { //#TODO currently coded directly against Mezzio Router
-    public const MAX_COUNT = 2;
+    public const DEFAULT_MAX_COUNT = 2;
 
     protected static $baseRoute = '';
     protected static $router = null;
     protected static $forwardCount = 0;
-
-    //protected $route = '';
+    protected static $maxForwards = self::DEFAULT_MAX_COUNT;
 
     public function __construct(string $route)
     {
         if (!$route) {
             throw new \Exception('Unable to forward, no route set');
         }
-        //$this->route = $route;
     }
 
-    public static function register($base, $router)
+    public static function register($baseRoutePath, $router) //#TODO type control router
     {
-        self::$baseRoute = $base;
+        self::$baseRoute = $baseRoutePath;
         self::$router = $router;
     }
 
@@ -47,13 +44,13 @@ class ForwardHandler implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
+        if (self::$forwardCount > self::$maxForwards) {
+            throw new \Exception('Maximum internal forwards exceeded');
+        } //#TODO PHP8 allows inlie throw
         try{
             $match = self::$router->match($request);
             if ($match->isSuccess()) {
                 self::$forwardCount++;
-                if (self::$forwardCount > self::MAX_COUNT) {
-                    throw new \Exception('Maximum internal forwards exceeded');
-                }
                 return $match->process($request, $this);
             }
             throw new \Exception('Unable to match route to handler');
@@ -63,7 +60,11 @@ class ForwardHandler implements RequestHandlerInterface
 
     }
 
-
+    /**
+     * returns a new PSR ServerRequestInterface with the resourceStack attribute set 
+     * based on a best guess. During Forwarding these don't get reset when sent back
+     * through routing.
+     */
     public static function routeStack(string $route, ServerRequestInterface $request) : ServerRequestInterface
     {
         $base = self::$baseRoute;
@@ -73,21 +74,15 @@ class ForwardHandler implements RequestHandlerInterface
         $routeObject = $match->getMatchedRoute();
         $baseMatch = self::withoutTrailingSlash(self::stacklessPath($routeObject->getPath()));
         $newPath = self::resourceStackBranch($baseMatch, $fullRoute);
-        // print_r([
-        //     __FILE__,__LINE__, 'base' => $base, 'route' => $route, 
-        //     'routeObjectPath' => $routeObject->getPath(), 
-        //     'clean' => $baseMatch, 'branched' => $newPath
-        // ]); //die;
         $stackedRequest = $myRequest->withAttribute('resourceStack', $newPath);
         return $stackedRequest;
     }
 
-    // public static function truncate()
-    // {
-    //     //stackDepth
-    // }
-
-    public static function stacklessPath(string $path)
+    /**
+     * returns a FastRoute style routing path stripping out a greedy 
+     * resourceStack parameter.
+     */
+    public static function stacklessPath(string $path) : string
     {
         $stackMatch = '[{resourceStack:.*}]';
         $stackIndex = strpos($path, $stackMatch);
@@ -95,37 +90,24 @@ class ForwardHandler implements RequestHandlerInterface
         return $stackIndex !== false ? (substr($path, 0, $stackIndex) . $tail) : $path;
     }
 
-    public static function withoutTrailingSlash(string $path)
+    public static function withoutTrailingSlash(string $path) : string
     {
         $trailingSlashMatch = '[/]';
         $trailingSlashIndex = strpos($path, $trailingSlashMatch);
         return $trailingSlashIndex === (strlen($path) - strlen($trailingSlashMatch)) ? (substr($path, 0, $trailingSlashIndex)) : $path;
     }
 
-    public static function withoutInitialSlash(string $path)
+    public static function withoutInitialSlash(string $path) : string
     {
         return strpos($path, '/') === 0 ? substr($path, 1) : $path;
     }
 
-    public static function resourceStackBranch($base, $full)
+    public static function resourceStackBranch($base, $full) :string
     {
         return 
             strpos($full, $base) === 0
             ? self::withoutInitialSlash(substr($full, strlen($base)))
             : $full;
     }
-
-    // public static function stackDepth($path)
-    // {
-    //     if (strpos($path, self::$baseRoute) === 0) {
-    //         $branch = substr($path, strlen(self::$baseRoute));
-    //         if ($branch) {
-    //             print_r(['untested code',__FILE__,__LINE__,$path,self::$baseRoute,$branch]); die;
-    //         }
-    //         $parts = explode('/',$branch);
-    //         return count($parts) - 1;
-    //     }
-    //     return 0;
-    // }
 
 }

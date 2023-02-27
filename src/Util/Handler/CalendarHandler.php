@@ -1,4 +1,4 @@
-<?php
+<?php //#TODO KNOWN BUGS
 
 declare(strict_types=1);
 
@@ -84,6 +84,7 @@ class CalendarHandler extends RequestHandler implements RequestHandlerInterface
         return [
             'success' => true,
             'forward' => $forward,
+			'returnLink' => $this->baseUri . implode('/', $forward),
             'date' => $date,
             'year' => $year,
             'month' => $month,

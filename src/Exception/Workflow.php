@@ -1,14 +1,16 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/*
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ * 
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Base class for exceptions that should provide user help
+ */
 
-Base class for exceptions that should provide user help
+ namespace Saf\Exception;
 
-*******************************************************************************/
-
-class Saf_Exception_Workflow extends Exception
+class Workflow extends \Exception
 {
 	public function getTitle()
 	{
@@ -17,6 +19,6 @@ class Saf_Exception_Workflow extends Exception
 
 	public function getAdditionalInfo()
 	{//#TODO #1.5.0 pull from dict
-		return APPLICATION_BASE_ERROR_MESSAGE;
+		return '__HELP_ERROR_MESSAGE__';//Saf\APPLICATION_BASE_ERROR_MESSAGE;
 	}
 }
