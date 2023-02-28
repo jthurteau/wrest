@@ -321,6 +321,11 @@ trait RequestHandlerCommon {
 		return $default;
 	}
 
+    protected static function updateRequestStack(ServerRequestInterface $request, array $resourceStack, string $field = StandardRequestHandler::STACK_ATTRIBUTE) : ServerRequestInterface
+    {
+        return $request->withAttribute($field, implode('/', $resourceStack));
+    }
+
     protected static function requestSearch(ServerRequestInterface $request, string $order, $index)
     {  
         $order = array_unique(str_split($order));

@@ -18,7 +18,7 @@ class Workflow extends \Exception
 	}
 
 	public function getAdditionalInfo()
-	{//#TODO #1.5.0 pull from dict
-		return '__HELP_ERROR_MESSAGE__';//Saf\APPLICATION_BASE_ERROR_MESSAGE;
+	{//#TODO #2.1.0 pull from dict
+		return \Saf\APPLICATION_BASE_ERROR_MESSAGE;
 	}
 }

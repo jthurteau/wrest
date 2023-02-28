@@ -10,6 +10,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Laminas\Diactoros\Response\HtmlResponse;
 use Mezzio\Plates\PlatesRenderer;
 use Mezzio\Template\TemplateRendererInterface;
+use Saf\Util\Layout;
 
 use Saf\Psr\RequestHandlerCommon;
 use Saf\Exception\Redirect;
@@ -91,6 +92,7 @@ abstract class RequestHandler implements RequestHandlerInterface
     public function setBaseUri(string $base)
     {
         $this->baseUri = $base;
+        Layout::setBaseUri($base);
     }
 
     public function setTemplate(TemplateRendererInterface $template)

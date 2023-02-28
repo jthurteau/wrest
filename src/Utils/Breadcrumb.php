@@ -17,6 +17,10 @@ class Breadcrumb
     protected static $crumbs = ['Home' => '/'];
 
     protected static $baseUri = '/';
+    protected static $baseUriMatches = [
+        '{$baseUri}',
+        '[baseUrl]' //#TODO PHP5 version backwards compatability
+    ];
 
     public static function init($config = [], $baseUri = '/')
     {
@@ -44,7 +48,7 @@ class Breadcrumb
             if (is_array($linkConfig)) {
                 $label = array_key_exists('label', $linkConfig) ? $linkConfig['label'] : $fallBackLabel;
                 if (array_key_exists('url', $linkConfig)) {
-                    $url = str_replace('{$baseUri}', self::$baseUri, $linkConfig['url']);
+                    $url = str_replace(self::$baseUriMatches, self::$baseUri, $linkConfig['url']);
                     
                     $crumbs[$label] = ['url' => $url];
                 } else {
@@ -128,6 +132,11 @@ class Breadcrumb
         } else {
             return str_replace('{$baseUri}', self::$baseUri, $crumb);
         }
+    }
+
+    public static function getBaseUriMatches()
+    {
+        return self::$baseUriMatches;
     }
 
 }
