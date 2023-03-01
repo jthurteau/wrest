@@ -16,6 +16,8 @@ use Saf\Keys;
 use Saf\Auto;
 use Saf\Utils\UrlRewrite;
 
+use Saf\Utils\Time;
+
 trait RequestHandlerCommon {
 
     // protected function rootRequest(ServerRequestInterface $request){
@@ -352,5 +354,17 @@ trait RequestHandlerCommon {
             }
         }
         return null;
+    }
+
+    protected function &postProcess(array &$result, $request = null) : array
+    {
+        Time::getOffset() && ($result['safTimeOffset'] = Time::getOffset());
+        if ($request) {
+            // $compatMode = $_GET && array_key_exists('compat', $_GET);
+            // $result['safCompatMode'] = true;
+            // $lazyMode = $_GET && array_key_exists('lazy', $_GET);
+            // $result['safLazyMode'] = true;
+        }
+        return $result;
     }
 }

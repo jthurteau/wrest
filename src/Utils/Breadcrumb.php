@@ -73,6 +73,11 @@ class Breadcrumb
         }
         self::$crumbs = $crumbs;
     }
+
+    public static function reset()
+    {
+        self::set();
+    }
     
     public static function pushCrumb($label, $crumb = ['status' => 'current'])
     {
