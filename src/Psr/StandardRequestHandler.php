@@ -16,6 +16,8 @@ class StandardRequestHandler {
 
     public const STACK_ATTRIBUTE = 'resourceStack';
 
+    public const URI_PATH_DELIM = '/';
+
     public static function defaultRequestSearchOrder() : string
     {
         return self::DEFAULT_REQUEST_SEARCH;
