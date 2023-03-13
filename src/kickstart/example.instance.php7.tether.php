@@ -20,14 +20,14 @@ return function (&$canister = []){
     key_exists('installPath', $canister) || ($canister['installPath'] = __DIR__);
     key_exists('resolvableTools', $canister) || ($canister['resolvableTools'] = []);
     key_exists('inlineTools', $canister) || ($canister['inlineTools'] = []);
-    $toolPath = "src/tools";
+    $toolPath = "src/kickstart/tools";
     foreach($canister['inlineTools'] as $inlineTool) {
-        $inlineToolPath = "{$toolPath}/{$inlineTool}.tether";
+        $inlineToolPath = "{$toolPath}/{$inlineTool}";
         $toolError = "Error including inline {$inlineTool} tether";
         $canister['tether']($inlineToolPath, $toolError);
     }
     if (
-        key_exists('resolverPylon', $canister) 
+        key_exists('resolverPylon', $canister)  #TODO rename to gatewayQuay?
         && in_array($canister['resolverPylon'], $canister['resolvableTools'])
     ) {
         $script = $canister['resolverPylon'];
@@ -48,5 +48,5 @@ return function (&$canister = []){
             : "{$vendorPath}/Saf/src";
         $scriptErrorMessage = 'Application foundation unavailable.';
     }
-    return $canister['tether']("${path}/{$script}.tether", $scriptErrorMessage);
+    return $canister['tether']("{$path}/{$script}.tether", $scriptErrorMessage);
 };

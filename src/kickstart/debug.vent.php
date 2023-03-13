@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-return function ($trace, $data){
+return function ($trace, $data) {
     ob_start();
 ?>
     <div>

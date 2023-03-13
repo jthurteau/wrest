@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-return function ($data, $canister) {
+return function ($data, &$canister = null) {
     if(is_array($data) || ($data instanceof ArrayAccess)) {
         foreach($data as $const => $value) {
             defined($const) || define($const, $value);

@@ -156,6 +156,15 @@ class Time
 	}
 
 	/**
+	 * returns the current timestamp
+	 * @return int the modified timestamp
+	 */	
+	public static function now()
+	{
+		return self::time();
+	}
+
+	/**
 	 * returns the relative time based on $modifier
 	 */
 	public static function relative($modifier)

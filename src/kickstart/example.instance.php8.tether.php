@@ -7,7 +7,7 @@
  *
  * @author Troy Hurteau <jthurtea@ncsu.edu>
  * @link saf.src:kickstart/example.instance.php8.tether.php
- * @link install:/config/kickstart/instance.tether.php #TODO why not /src/kickstart/instance....
+ * @link install:/src/kickstart/instance.tether.php
  * @license https://github.com/jthurteau/saf/blob/main/LICENSE GNU General Public License v3.0
  */
 
@@ -48,5 +48,5 @@ return function (array|\Saf\Canister &$canister = []) {
             : "{$vendorPath}/Saf/src";
         $scriptErrorMessage = 'Application foundation unavailable.';
     }
-    return $canister['tether']("${path}/{$script}", $scriptErrorMessage);
+    return $canister['tether']("{$path}/{$script}", $scriptErrorMessage);
 };

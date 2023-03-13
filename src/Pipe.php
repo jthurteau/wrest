@@ -25,7 +25,7 @@ class Pipe
 
     public static function optional($key, &$ref, $canister)
     {
-        key_exists($key, $canister) && ($ref &= $canister[$key]);
+        key_exists($key, $canister) && ($ref = $canister[$key]); //#NOTE don't &= here it's already a reference
     }
 
     public static function required($key, &$ref, $canister)
@@ -35,6 +35,7 @@ class Pipe
         } else {
             throw new \Exception("Required Saf/Pipe configuration option {$key} absent"); //#TODO make this a framework exception
         }
+        return $ref;
     }
 
 }

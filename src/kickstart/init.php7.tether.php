@@ -361,7 +361,7 @@ return function (&$canister) {
     //# TODO $registry['sema'] = function
 
     /**
-     * store executable state with quay 
+     * store executable state with quay //#TODO deprecate in favor on inlet
      */
     $registry['quay'] = function(string $quay, ?string $fail = null) use (&$canister) {
         $quayFile = $canister['_f']($quay, '.quay');

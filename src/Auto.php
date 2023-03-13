@@ -109,6 +109,14 @@ class Auto
             : "\\{$class}";
     }
 
+    public static function namespaceDynamicClass(string $class, string $namespace)
+    {
+        return 
+            strpos($class, '\\') === 0
+            ? $class
+            : "{$namespace}\\{$class}";
+    }
+
     public static function meditate($meditationData, $depth = 0)
     { #TODO this is also in debug, so consolidate/improve
         $tab = str_repeat('  ', $depth + 1);
