@@ -159,9 +159,9 @@ class Time
 	 * returns the current timestamp
 	 * @return int the modified timestamp
 	 */	
-	public static function now()
+	public static function now($microtime = false)
 	{
-		return self::time();
+		return $microtime ? self::time(microtime(true)) : self::time(); //#TODO look into hrtime (would require an init)
 	}
 
 	/**
@@ -186,7 +186,7 @@ class Time
 			is_null($timestamp) 
 			|| (
 				!is_int($timestamp) 
-				&& trim($timestamp) == ''
+				&& trim((string)$timestamp) == ''
 			)
 		) {
 			$timestamp = self::time();
