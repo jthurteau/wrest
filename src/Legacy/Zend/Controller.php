@@ -23,20 +23,13 @@ trait Controller {
      * the 'request' facet is anything in the controller's "request" object.
      * #NOTE the session is intentionally excluded as an option
      * @param mixed $sources string, int, array indicating one or more sources
-     * @param mixed $default value to return if no match is found, defaults to NULL
      * @param Psr\Http\Message\ServerRequestInterface|Zend_Controller_Request_Abstract $request optional alternate request object to use
+     * @param mixed $default value to return if no match is found, defaults to NULL
      * #TODO #1.5.0 add option for each source to be an array so more than one value in each can be searched
      */
-    protected function extractRequestParam($sources, $default = null, $request = null)
+    protected function extractRequestParam($sources, $request, $default = null)
     {
         $result = $default;
-        if (is_null($request)) {
-            if (is_null($this->currentRequest)) {
-                //#TODO note failure
-                return $result;
-            }
-            $request = $this->currentRequest;
-        }
         if (!is_array($sources)) {
             $sources = 
                 is_int($sources) 
@@ -85,7 +78,7 @@ trait Controller {
                     }
             }
         }
-        return $default;
+        return $result;
     }
     
     protected function extractMultiIdString($idString, $separator = '_'){

@@ -11,7 +11,8 @@
 namespace Saf\Utils\Debug;
 
 use Saf\Debug;
-//use Saf\Layout;
+use Saf\Hash;
+use Saf\Util\Layout;
 //use Saf\Utils\Debug\Mute; #in namespace
 
 class Ui 
@@ -20,6 +21,10 @@ class Ui
         'STATUS',
         'OTHER',
     ];
+	
+	public const ICON_PROFILE_INFO = 'tachometer-alt';
+	public const ICON_DEBUG_INFO = 'bug';
+
 	public static $buffer = '';
 	protected static $notifyConsole = false;
 	protected static $buffered = true;
@@ -29,13 +34,14 @@ class Ui
 	protected static $printedDebugExit = false;
 	protected static $printedDebugEntry = false;
 	protected static $printedDebugShutdown = false;
+	protected static $foundationMode = true;
 
 	public static function noop()
 	{
 		
 	}
 
-    public static function out($level, $message, $trace)
+    public static function out($level, $message, $trace = [])
     {
 		$expandIcon = self::$expandIcon;
 		$htmlLevel = self::htmlLevel($level);
@@ -61,9 +67,9 @@ class Ui
     public static function outRaw($message, $preformated)
     {
         $wrappedOutput = 
-            ($preformat ? '<pre class="message">' : '') 
+            ($preformated ? '<pre class="message">' : '') 
             . $message 
-            . ($preformat ? '</pre>' : '');
+            . ($preformated ? '</pre>' : '');
 		self::goOut($wrappedOutput, false);
     }
 
@@ -71,9 +77,9 @@ class Ui
     {
 		$output = Debug::introspectData($message);
         $wrappedOutput = 
-            ($preformat ? '<pre class="data">' : '') 
+            ($preformated ? '<pre class="data">' : '') 
             . $output 
-            . ($preformat ? '</pre>' : '');
+            . ($preformated ? '</pre>' : '');
 		self::goOut($wrappedOutput, false);
     }
 
@@ -152,7 +158,7 @@ class Ui
 	public static function flushBuffer($force = false)
 	{
 		$return = self::getBuffer();
-		if ($force || self::$_verbose) { //#TODO Debug::
+		if ($force || Debug::isVerbose()) { //#TODO Debug::
 			print('<!-- debug buffer contents ' . strlen($return) . ' -->');
 			print($return);
 		}
@@ -196,19 +202,19 @@ class Ui
 		if (!self::$printedDebugExit || $force) {
 			if (false) {
 			//if (Layout::formatIsHtml()) {
-				if (!self::isForced()) {
+				if (!Debug::isForced()) {
 					print("\n<p class=\"debugOther\"><a href=\"?nodebug=true\">Disable debugging for this session.</a></p>\n");
 				} else {
 					print("\n<p class=\"debugOther\">Debugging is forced to on.</p>\n");
 				}
 			}//#TODO #2.0.0 figure out what to do for other formats...
-			self::$printedDebugExit = TRUE;
+			self::$printedDebugExit = true;
 		}
 	}
 
-	public static function printDebugEntry($force = FALSE)
+	public static function printDebugEntry($force = false)
 	{
-		if (self::isAvailable() && !self::isVerbose()) {
+		if (Debug::isAvailable() && !Debug::isVerbose()) {
 			if (!self::$printedDebugEntry || $force) {
 				$mode = Debug::getMode();
 				if (false) {
@@ -224,8 +230,8 @@ class Ui
 	{
 		if (false) {
 		//if (!self::$printedDebugShutdown && Layout::formatIsHtml()) {
-			$loadTime = microtime(TRUE) - APPLICATION_START_TIME;
-			if (self::isVerbose()) {
+			$loadTime = microtime(true) - APPLICATION_START_TIME;
+			if (Debug::isVerbose()) {
 				if (Mute::active()) {
 					foreach (Mute::list() as $trace) {
 						//$icon = ' <span class="debugExpand"> ' . Layout::getIcon(self::LAYOUT_MORE_INFO_ICON) . '</span>';
@@ -237,14 +243,14 @@ class Ui
 					}
 				}
 			}
-			self::$buffered = FALSE;
-			if (self::isVerbose() && strlen(self::$buffer) > 0) {
+			self::$buffered = false;
+			if (Debug::isVerbose() && strlen(self::$buffer) > 0) {
 				print('<div class="debugStatus">Unsent Debug Buffer:<br/><pre>');
 				print(self::$buffer);
 				print('</pre></div>');
 			}
 			self::out("This page took {$loadTime} seconds to load.", 'STATUS');
-			self::$printedDebugShutdown = TRUE;
+			self::$printedDebugShutdown = true;
 		}
 	}
 
@@ -255,10 +261,10 @@ class Ui
 
 	public static function printDebugReveal()
 	{
-		if (false) {
+		if (self::$foundationMode) {
 		//if (Layout::isReady()) {
-			//$icon = Layout::getIcon('bug');
-			$icon = '[b]';
+			$icon = Layout::getIcon(self::ICON_DEBUG_INFO);
+			//$icon = '[b]';
 			$accessible = ' class="accessibleHidden"';
 		} else {
 			$icon = '';
@@ -271,10 +277,10 @@ class Ui
 
 	public static function printProfileReveal()
 	{
-		if (false) {
+		if (self::$foundationMode) {
 		//if (Layout::isReady()) {
-			//$icon = Layout::getIcon(self::LAYOUT_PROFILE_INFO_ICON);
-			$icon = '[p]';
+			$icon = Layout::getIcon(self::ICON_PROFILE_INFO);
+			//$icon = '[p]';
 			$accessible = ' class="accessibleHidden"';
 		} else {
 			$icon = '';

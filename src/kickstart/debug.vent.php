@@ -13,12 +13,21 @@ declare(strict_types=1);
 return function ($trace, $data) {
     ob_start();
 ?>
-    <div>
+    <div class="debug">
+        <h2 class="header data">Vent Data</h2>
+        <div class="code data">
 <?php        
     //#TODO foreach $trace
     //$TODO pretty-print $data
-    print_r([$data, $trace]);
+    print_r($data);
 ?>
+        </div>
+        <h2 class="header trace">Vent Trace</h2>
+        <div class="code trace">
+<?php
+    print_r($trace);
+?>
+        </div>
     </div>
 <?php
     $result = ob_get_contents();

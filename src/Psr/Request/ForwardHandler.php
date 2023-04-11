@@ -105,9 +105,9 @@ class ForwardHandler implements RequestHandlerInterface
     public static function resourceStackBranch($base, $full) :string
     {
         return 
-            strpos($full, $base) === 0
+            $base && strpos($full, $base) === 0
             ? self::withoutInitialSlash(substr($full, strlen($base)))
-            : $full;
+            : self::withoutInitialSlash($full);
     }
 
 }
