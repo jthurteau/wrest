@@ -497,6 +497,11 @@ class Auth
         return false;
     }
 
+    public static function simulatedLoginEnabled()
+    {
+        return count(self::$simKeys) > 0;
+    }
+
     protected static function login($username = self::USER_AUTODETECT)
     {
         $wasLoggedIn = self::isInternallyLoggedIn();

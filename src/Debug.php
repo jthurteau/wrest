@@ -83,7 +83,7 @@ class Debug
      * current debugging mode
      */
 
-    protected static $mode = null;
+    protected static ?string $mode = null;
 
     /**
      * flag indicating debugging settings have synced with session data
@@ -128,7 +128,7 @@ class Debug
         } elseif (!is_null($errorHandler) && $errorHandler != self::ERROR_MODE_EXTERNAL) {
             Handler::install($errorHandler);
         }
-        self::switchMode(strtolower(trim($mode)));
+        self::switchMode($mode);
         // print_r(['switch debug mode', __FILE__, __LINE__, self::$mode,isset($_SESSION)?$_SESSION:[],self::isEnabled(),self::isVerbose()]);
     }
 
@@ -136,7 +136,7 @@ class Debug
      * returns the current mode
      * @return string MODE_ constant
      */
-    public static function getMode() : string
+    public static function getMode() : ?string
     {
         return self::$mode;
     }
@@ -171,7 +171,7 @@ class Debug
      * @param string $mode MODE_ constant to switch to
      * @return string resulting MODE_
      */
-    public static function switchMode($mode)
+    public static function switchMode(string $mode)
     {
         if (self::isForced() || !self::isAvailable()) {
             return;
@@ -191,6 +191,7 @@ class Debug
                 self::on();
                 break;
             default:
+        print_r([__FILE__,__LINE__,self::$mode, $mode]); die;
                 $badMode = self::$mode;
                 self::$mode = $previousMode;
                 throw new ConfigurationMeditation("Unknown Debug Mode: {$badMode}");
@@ -294,11 +295,14 @@ class Debug
         switch (self::$mode) {
             case self::MODE_OFF:
                 self::off();
+                break;
             case self::MODE_SILENT:
                 //self::on();
                 self::hush();
+                break;
             case self::MODE_ON:
                 self::on();
+                break;
             default:
                 $badMode = self::$mode;
                 self::$mode = $oldMode;
