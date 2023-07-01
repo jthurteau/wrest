@@ -191,7 +191,6 @@ class Debug
                 self::on();
                 break;
             default:
-        print_r([__FILE__,__LINE__,self::$mode, $mode]); die;
                 $badMode = self::$mode;
                 self::$mode = $previousMode;
                 throw new ConfigurationMeditation("Unknown Debug Mode: {$badMode}");
