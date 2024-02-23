@@ -32,12 +32,12 @@ trait Access {
 	 * use a #TBD funtion in ArrayLike
 	 */
 
-	public function offsetExists ($offset)
+	public function offsetExists (mixed $offset) : bool
 	{
 		return key_exists($offset, $this->environment);
 	}
 
-	public function &offsetGet ($offset)
+	public function &offsetGet (mixed $offset) : mixed
 	{
 		$result = null;
 		if (key_exists($offset, $this->environment)) {
@@ -46,7 +46,7 @@ trait Access {
 		return $result;
 	}
 
-	public function offsetSet ($offset, $value)//&$value)
+	public function offsetSet (mixed $offset, mixed $value) : void //&$value)
 	{
 		if (is_null($offset)) {
 			$offset = max(array_keys($this->environment)) + 1;
@@ -54,7 +54,7 @@ trait Access {
 		$this->environment[$offset] = &$value;
 	}
 
-	public function offsetUnset ($offset)
+	public function offsetUnset (mixed $offset) : void
 	{
 		unset($this->environment[$offset]);
 	}
