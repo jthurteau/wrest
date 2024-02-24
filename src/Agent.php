@@ -337,21 +337,27 @@ class Agent implements \ArrayAccess {
     public function prep($options)
     {
         $force = key_exists('forceDebug', $options) && $options['forceDebug'];
-        $auto = 
+        $enabled = key_exists('enableDebug', $options) && $options['enableDebug'];
+        $auto = (
             key_exists('debug', $options)
-            && key_exists('forceDebug', $options) && $options['enableDebug'];
-        if( $force || $auto) {
+            || $enabled
+        );
+        if ($force || $auto) {
+            $liveOption = 
+                key_exists('debug', $options)
+                ? ( 
+                    is_array($options['debug']) && key_exists('mode', $options['debug']) 
+                    ? (string)$options['debug']['mode']
+                    : (
+                        is_array($options['debug']) 
+                        ? Debug::MODE_OFF 
+                        : (string)$options['debug']
+                    )
+                ) : ($enabled ? Debug::MODE_SILENT : Debug::MODE_DISABLE);
             $debugMode = 
                 $force && !key_exists('debug', $options)
                 ? Debug::MODE_FORCE
-                : (
-                    is_array($options['debug'])
-                    ? (
-                        key_exists('mode', $options['debug'])
-                        ? (string)$options['debug']['mode']
-                        : Debug::MODE_SILENT
-                    ) : $options['debug']
-                ); 
+                : $liveOption; 
             Debug::init($debugMode);
         }
     }
