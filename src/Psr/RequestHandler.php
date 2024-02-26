@@ -47,12 +47,12 @@ abstract class RequestHandler implements RequestHandlerInterface
         
     // }
 
-    public static function defaultRequestSearchOrder()
+    public static function defaultRequestSearchOrder() : string
     {
         return self::DEFAULT_REQUEST_SEARCH;
     }
 
-    public static function stackAttributeField()
+    public static function stackAttributeField() : string
     {
         return self::STACK_ATTRIBUTE;
     }
