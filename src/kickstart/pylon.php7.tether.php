@@ -23,7 +23,7 @@ return static function (&$canister = []) {
 				'json:{$storageRoot}/{$applicationHandle}/cache', 
 				'app'
 			]);
-		$tetherPath = __DIR__ . 'gateway.tether.php';
+		$tetherPath = __DIR__ . '/gateway.tether.php';
 		$fileException = new Exception($tetherPath);
 		if (!is_readable($tetherPath)) {
 			throw new Exception('Gateway Unavailable', 127, $fileException);
