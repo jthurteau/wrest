@@ -18,6 +18,7 @@ use Saf\Utils\Filter\Truthy;
 use Saf\Auto;
 use Saf\Hash;
 use Saf\Session;
+use Saf\Util\Ground;
 use Saf\Keys; //#TODO improve this integration (maybe switch to direct Plugin\Key dependency)
 use Saf\Layout; //#TODO clean up this integration
 use Saf\Audit; //#TODO clean up this integration
@@ -68,6 +69,7 @@ class Auth
     public function __invoke(ContainerInterface $container, string $name, callable $callback) : Object
     {
 		$containerConfig = Container::getOptional($container, 'config', []);
+        $containerConfig =& Ground::ground($containerConfig);
         $authConfig = Hash::extractIfArray('auth', $containerConfig, []);
         self::init($authConfig);
         $keys = Hash::extractIfArray('keys', $containerConfig, null);
@@ -127,7 +129,7 @@ class Auth
                 $pluginName = $pluginConfig['name'];
                 $pluginConfig = $pluginConfig;
             } else {
-                $pluginName = trim($pluginConfig);
+                $pluginName = $pluginConfig ? trim($pluginConfig) : $pluginConfig;
                 $pluginConfig = [];
             }
             if ($firstPass) {
@@ -137,7 +139,10 @@ class Auth
             } else if (key_exists('default', $pluginConfig) && $pluginConfig['default']) {
                 self::$defaultPlugins[] = $pluginName;
             }
-            self::registerPlugin($pluginName, $pluginConfig);
+            if (!$pluginName) {
+                //#TODO add warning to debug
+            }
+            $pluginName && self::registerPlugin($pluginName, $pluginConfig);
         }
         $hooks = key_exists('postProcess', $config)
             ? (
