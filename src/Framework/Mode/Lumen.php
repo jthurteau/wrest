@@ -37,7 +37,7 @@ class Lumen extends Manager{
     {
         $srcPath = self::srcPath($options);
         // if (key_exists('shell', $options)) {
-        //     $options = $options['shell']();
+        //     $options = $options['shell'](false);
         // }
         $app = require "{$srcPath}/bootstrap/app.php";
         $app->run();

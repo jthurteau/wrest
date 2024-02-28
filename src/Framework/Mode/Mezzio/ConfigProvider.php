@@ -36,7 +36,7 @@ class ConfigProvider
                     && method_exists($options, 'offsetExists') 
                     && $options->offsetExists('shell')
                 )
-            ? $options['shell']() 
+            ? $options['shell'](false) 
             : $options;
     }
 
