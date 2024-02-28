@@ -72,7 +72,7 @@ class Auth
         $containerConfig =& Ground::ground($containerConfig);
         $authConfig = Hash::extractIfArray('auth', $containerConfig, []);
         self::init($authConfig);
-        $keys = Hash::extractIfArray('keys', $containerConfig, null);
+        $keys = Hash::extractIfArray('keys', $containerConfig, []);
         if ($keys) {
             Keys::setServiceKeys($keys);
         }
