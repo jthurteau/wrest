@@ -21,7 +21,7 @@ use Saf\Auth as Front;
 use Saf\Keys;
 use Saf\Auth\User\Mezzio as User;
 use Saf\Agent;
-use Saf\Utils\Template;
+use Saf\Util\Template;
 
 class Mezzio implements AuthenticationInterface
 {

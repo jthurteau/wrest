@@ -8,11 +8,11 @@
  * Utility class for generating messages (e.g. XML)
  */
 
-namespace Saf\Utils;
+namespace Saf\Util;
 
 use Saf\Utils\Reflector;
 
-class Template //#TODO deprecate in favor of Util/Template
+class Template
 {
     protected static $templateOptions = [
         'php',
@@ -27,21 +27,20 @@ class Template //#TODO deprecate in favor of Util/Template
 
     public function __construct(string $messageName, string $ext = null)
     {
-        $path = self::$messagePath;
-        if (strpos($path,'application:') === 0) {
-            $path = str_replace('application:', \Saf\APPLICATION_PATH, $path);
-        }
+        
+        $path = self::autoPath($messageName);
         if (is_null($ext)) {
             foreach(self::$templateOptions as $extOption){
-                if (file_exists("{$path}/{$messageName}.{$extOption}")) {
+                if (file_exists("{$path}.{$extOption}")) {
                     $ext = $extOption;
                     break;
                 }
             }
         }
-        !is_null($ext) || throw new \Exception("No template for {$messageName} available.");
-        $messagePath ="{$path}/{$messageName}.{$ext}";
-        is_readable($messagePath) || throw new \Exception("Template for {$messageName} unavailable.");
+        $basename = basename($messageName);
+        !is_null($ext) || throw new \Exception("No template for {$basename} available.");
+        $messagePath ="{$path}.{$ext}";
+        is_readable($messagePath) || throw new \Exception("Template for {$basename} unavailable.");
         switch($ext) {
             case 'php':
                 $this->viewPath = $messagePath;
@@ -62,9 +61,6 @@ class Template //#TODO deprecate in favor of Util/Template
             require $this->viewPath;
             $buffer = ob_get_clean();
             ob_end_clean();
-            // if (key_exists('timezone',$extractParams)) {
-            //     print_r([__FILE__,__LINE__,$extractParams,$buffer]);die;
-            // }
             return $buffer;
         }
         return
@@ -91,5 +87,24 @@ class Template //#TODO deprecate in favor of Util/Template
     {
         self::$messagePath = $path;
     }
+
+    public static function getPath() : string
+    {
+        return self::$messagePath;
+    }
+
+    protected static function autoPath(string $path) : string
+    {
+        $qualified = strpos($path, ':'); // #NOTE false or 0
+        $path = $qualified ? $path: ("'application:'{$path}");
+        if (strpos($path, 'file:') === 0) {
+            $path = str_replace('file:', '', $path);
+        }
+        if (strpos($path, 'application:') === 0) {
+            $path = str_replace('application:', \Saf\APPLICATION_PATH, $path);
+        }
+        return $path;
+    }
+
 }
 

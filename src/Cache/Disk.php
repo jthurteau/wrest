@@ -13,10 +13,13 @@ namespace Saf\Cache;
 class Disk {
 
     public const DEFAULT_MAX_AGE = 60;
+    public const AGE_FUZZY = 'fuzzy';
 
     protected static ?string $defaultPath = '/var/www/storage/cache/tmp';
 
     protected static array $facetPaths = [];
+
+    //#TODO protected static array $facetMaps = []; //avoid collisions
 
     public static function init($pathOrConfig) //#TODO PHP8 string|array
     {
@@ -39,6 +42,8 @@ class Disk {
 
     public static function fuzzyLoad(?string $facet, $fuzzyAge, $default = null)
     {
+        
+       // print_r([__FILE__,__LINE__, $facet, $maxAge, $default]); die;
         return $default;
     }
 
@@ -64,15 +69,26 @@ class Disk {
         return !is_null($file) && file_exists($file) && is_readable($file);
     }
 
-    public static function load(?string $facet, $maxAge = self::DEFAULT_MAX_AGE, $default = null)
+    public static function load(?string $facet, int|string $maxAge = self::DEFAULT_MAX_AGE, $default = null)
     {
-        return null;
-        #TODO if $maxAge = fuzzy return self::fuzzyLoad(string $facet, $fuzzyAge, $default = null);
+        $facet = self::fileSafeFacet($facet);
+        if ($maxAge == self::AGE_FUZZY) {
+            $fuzzyAge = 'foo';
+            return self::fuzzyLoad($facet, $fuzzyAge, $default);
+        }
+
+        print_r([__FILE__,__LINE__, $facet, $maxAge, $default]); die;
+        #TODO if $maxAge = fuzzy return 
     }
 
     public static function save(?string $facet, $data, $maxAge = self::DEFAULT_MAX_AGE) : bool
     {
         return true;
+    }
+
+    public static function fileSafeFacet(string $facet)
+    {
+        return str_replace(['\\','::'], '_', $facet);
     }
 
 }
