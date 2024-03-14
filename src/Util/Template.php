@@ -59,7 +59,7 @@ class Template
                 extract($extractParams);
             } 
             require $this->viewPath;
-            $buffer = ob_get_clean();
+            $buffer = ob_get_contents();
             ob_end_clean();
             return $buffer;
         }
@@ -75,7 +75,7 @@ class Template
             ob_start();
             //var_export($context);
             require($phpPath);
-            $output .= ob_get_clean();
+            $output .= ob_get_contents();
             ob_end_clean();
             return $output;
         } catch (\Error | \Exception $e) {
