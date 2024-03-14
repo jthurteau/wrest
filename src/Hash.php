@@ -667,9 +667,9 @@ class Hash
         }
         $returnArray = is_array($ids);
         $ids = is_array($ids) ? $ids : array($ids);
-        $results = array();
+        $results = [];
         foreach($ids as $id) {
-            if (array_key_exists($id, $data)) {
+            if (key_exists($id, $data)) {
                 $results[$id] = $data[$id];
             }
         }
