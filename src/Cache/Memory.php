@@ -16,12 +16,12 @@ class Memory {
 
     protected static $memory = [];
 
-    public static function available(string $facet = null)
+    public static function available(string $facet)
     {
-        return !is_null($facet) && key_exists($facet, self::$memory);
+        return key_exists($facet, self::$memory);
     }
 
-    public static function load(string $facet = null, $default = null)
+    public static function load(string $facet, $default = null): mixed
     {
         return 
             self::available($facet)
@@ -29,11 +29,19 @@ class Memory {
             : $default;
     }
 
-    public static function save(string $facet = null, $data, $maxSize = self::DEFAULT_MAX_PERCENT) : bool
+    public static function save(string $facet, $data, $maxSize = self::DEFAULT_MAX_PERCENT) : bool
     {
         //#TODO test MAX_MEMORY
+        //#TODO how to handle references? (dereference?)
         !is_null($facet) && (self::$memory[$facet] = $data);
         return true;
+    }
+
+    public static function forget(string $facet): void
+    {
+        if(key_exists($facet, self::$memory)) {
+            unset(self::$memory[$facet]);
+        }
     }
 
 }
