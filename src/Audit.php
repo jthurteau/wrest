@@ -89,7 +89,7 @@ class Audit
 		if (trim($additional) != '') {
 			$additional = " {$additional}";
 		}
-		$count = Cache::get('auditFailCount', NULL);
+		$count = Cache::get('auditFailCount', null);
 		if (is_null($count)) {
 			$count = 0;
 		}

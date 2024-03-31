@@ -13,47 +13,115 @@ namespace Saf;
 class Cache
 {
 
-    public const METHOD_DEFAULT = true;
-    public const METHOD_MEMORY = true;
-    public const METHOD_FILE = true;
-    public const METHOD_DB = true;
+    public const SHORT_CACHE_EXP = 60; // one minute
+    public const MED_CACHE_EXP = 900; // fifteen minutes
+    public const LONG_CACHE_EXP = 10800; // one day
+    public const MAX_MEMORY_PERCENT = 10;
 
+    public const CONFIG_DEFAULT = 'default';
+    public const CONFIG_MAX_SIZE = 'maxSize';
+    public const CONFIG_MAX_AGE = 'maxAge';
+    public const CONGIf_AGE_FUZZY = 'fuzzy';
+    public const CONFIG_STAMP_MODE = 'stampMode';
     public const STAMP_MODE_REPLACE = 0;
 	public const STAMP_MODE_AVG = 1;
 	public const STAMP_MODE_KEEP = 2;
+    public const CONFIG_HASH_STORAGE = 'hashFacet';
 
-    protected static $memory = [];
-    protected static $hashMemory = [];
+    public const LOG_BASE = M_E; //natural log
 
-    protected static $memoryEnabled = true;
-    protected static $fileEnabled = false;
-    protected static $dbEnabled = false;
+    /**
+     * The the number of non-caches calls channeled, more cling 
+     * increases the amount of additional fuzziness per call
+     */
+    protected static int $cling = 0;
 
     /**
      * The accumluated fuzziness for non-cached calls, higher
      * fuzz increases the chance of accepting older cached data
      * in favor of loading fresh data
      */
-    protected static $fuzziness = 1;
+    protected static float $fuzziness = 1;
 
     /**
-     * The the number of non-caches calls channeled, more cling 
-     * increases the amount of additional fuzziness per call
+     * Temporary memory for stored hashes
      */
-    protected static $cling = 0;
+    protected static array $hashMemory = [];
 
-	public static function available($tag, $method = self::METHOD_DEFAULT)
+    /**
+     * Optional callback for simple get/set cache plugin
+     */
+    protected static $callback = null;
+
+    public static function getFactor():float
     {
-        return false;
+        return self::$fuzziness;
     }
 
-    public static function get($tag, $method = self::METHOD_DEFAULT)
+    public static function setFactor(float $factor):void
     {
+        self::$fuzziness = $factor;
+    }
+
+    public static function increaseCling():float
+    {
+        self::$fuzziness = 1 + log(++self::$cling, self::LOG_BASE);
+        return self::$fuzziness;
+    }
+
+    public static function fuzzyCling(int $threshold):int
+    {
+		return $threshold + rand(0, ceil($threshold * self::$fuzziness));
+    }
+
+    public static function staticCling(int $threshold):int
+    {
+		return $threshold + ceil($threshold * self::$fuzziness);
+    }
+
+    public static function resetCling():void
+    {
+        self::$cling = 0;
+        self::$fuzziness = 1;
+    }
+
+    public static function getHashed(string $facet, string $uname, $callback = null):mixed
+    {
+        $stored =
+            key_exists($facet, self::$hashMemory)
+            && key_exists($uname, self::$hashMemory[$facet]);
+        if ($stored) {
+            return self::$hashMemory[$file][$uname];
+        }
         return null;
     }
 
-    public static function store($tag)
+    public static function setHashed(string$facet, string $uname, mixed $data):void
     {
-        
+        //#TODO set limit like Saf\Memory (or delegate?)
+        key_exists($facet, self::$hashMemory) || (self::$hashMemory[$facet] = []);
+        self::$hashMemory[$facet][$uname] = $data;
     }
+
+    public static function get(string $facet)
+    {
+        if (self::$callback) {
+            return self::$callback($facet);
+        }
+        return false;
+    }
+
+    public static function store(string $facet, mixed $data)
+    {
+        if (self::$callback) {
+            self::$callback($facet, $data);
+        }
+        return false;
+    }
+
+    public static function registerCallback($callback)
+    {
+        self::$callback = $callback;
+    }
+
 }

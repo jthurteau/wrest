@@ -10,19 +10,29 @@
 
 namespace Saf\Cache;
 
+use Saf\Cache;
 use Saf\Utils\Time;
+use Saf\Util\File;
+use Saf\Cache\Strategy;
 
-class Disk {
+class Disk implements Strategy{
 
     public const DEFAULT_MAX_AGE = 60;
-    public const AGE_FUZZY = 'fuzzy';
 
     public const STAMP_MODE_REPLACE = 0;
-	public const STAMP_MODE_AVG = 1;
-	public const STAMP_MODE_KEEP = 2;
+    public const STAMP_MODE_AVG = 1;
+    public const STAMP_MODE_KEEP = 2;
 
-    protected static ?string $defaultPath = '/var/www/storage/cache/tmp';
+    public const DEFAULT_LOAD_SPEC = [
+        Cache::CONFIG_DEFAULT => null, 
+        Cache::CONFIG_MAX_AGE => self::DEFAULT_MAX_AGE
+    ];
+    public const DEFAULT_SAVE_SPEC = [
+        Cache::CONFIG_STAMP_MODE => self::STAMP_MODE_REPLACE
+    ];
 
+    protected static string $defaultPath = '/var/www/storage/cache/tmp';
+    protected static ?string $currentPath = null;
     protected static array $facetPaths = [];
 
     //#TODO protected static array $facetMaps = []; //avoid collisions
@@ -44,24 +54,77 @@ class Disk {
                 }
             }
         }
+        self::$currentPath = self::$defaultPath;
     }
 
-    public static function fuzzyLoad(?string $facet, $fuzzyAge, $default = null)
+    public static function available(string $facet): bool
     {
-        
-       // print_r([__FILE__,__LINE__, $facet, $maxAge, $default]); die;
-        return $default;
+        return self::fileAvailable(self::getFullPath($facet));
     }
 
-    protected static function getPath(string $facet) : string
+    public static function load(string $facet, mixed $spec = self::DEFAULT_LOAD_SPEC): mixed
+    {
+        $default = 
+            is_array($spec) && key_exists(Cache::CONFIG_DEFAULT, $spec) 
+            ? $spec[Cache::CONFIG_DEFAULT]
+            : null;
+        $maxAge = 
+            is_array($spec) && key_exists(Cache::CONFIG_MAX_AGE, $spec) 
+            ? $spec[Cache::CONFIG_MAX_AGE]
+            : self::DEFAULT_MAX_AGE;
+        // $facet = self::fileSafeFacet($facet);
+        $fuzzy = 
+            is_array($spec) && key_exists(Cache::CONFIG_FUZZY_AGE, $spec) 
+            ? $spec[Cache::CONFIG_FUZZY_AGE]
+            : false;
+
+        //if hash facet '/hash/perm' . Saf\Util\File::calcHashFile
+
+        $payload = null;
+
+        $maxDate = !is_null($maxAge) ? Time::time() + $maxAge : null;
+        //if fuzzy $maxDate = Cache::fuzz($maxAge)...
+
+        $path = self::getFullPath($facet);
+        self::ensurePath(dirname($path));
+        if(!self::fileAvailable($path)) {
+            return $default;
+        }
+        $contents = File::getJson($path);
+
+        if (
+            $contents && is_array($contents) && key_exists('payload', $contents)
+        ) {
+            $payload = self::valid($contents);
+        }
+        return $payload ?: $default;
+    }
+
+    /**
+     * temporarily set the path elsewhere
+     */
+    public static function target(string $path)
+    {
+        self::$currentPath = $path;
+    }
+
+    /**
+     * restore the path
+     */
+    public static function relenquish()
+    {
+        self::$currentPath = self::$defaultPath;
+    }
+
+    protected static function getPath(string $facet): string
     {
         return //#TODO support stemming? (x*)
             key_exists($facet, self::$facetPaths)
             ? self::$facetPaths[$facet]
-            : self::$defaultPath;
+            : self::$currentPath;
     }
 
-    public static function getFullPath(?string $facet) : string
+    public static function getFullPath(?string $facet): string
     {
         return 
             !is_null($facet)
@@ -69,112 +132,93 @@ class Disk {
             : null;
     }
 
-    public static function available(string $facet) : bool
-    {
-        return self::fileAvailable(self::getFullPath($facet));
-    }
-
     protected static function fileAvailable(string $file)
     {
         return !is_null($file) && file_exists($file) && is_readable($file);
     }
 
-    public static function load(?string $facet, null|int|string $maxAge = self::DEFAULT_MAX_AGE, $default = null)
+    protected static function valid(mixed $payload, $maxDate):mixed
     {
-        $facet = self::fileSafeFacet($facet);
-        $payload = null;
-        if ($maxAge == self::AGE_FUZZY) {
-            $fuzzyAge = 'foo';
-            return self::fuzzyLoad($facet, $fuzzyAge, $default);
-        }
-        $maxDate = !is_null($maxAge) ? Time::time() + $maxAge : null;
-
-        //if (true){
-        $path = self::getFullPath($facet);
-        self::ensurePath(dirname($path));
-        if(!self::fileAvailable($path)) {
-            return $default;
-        }
-        $contents = self::getJson($path);
-        //}
-        if ( //#TODO consolidate this block with getHash
-            $contents
-            && is_array($contents)
-            && key_exists('payload', $contents)
+        $valid = null;
+//\Saf\Util\Profile::profile(array('Cache', $minDate, array_key_exists('stamp', $contents) ? $contents['stamp'] : 'NONE' ), 'PROFILE');
+        if (
+            is_null($maxDate)
+            || (key_exists('stamp', $contents) && $contents['stamp'] <= $maxDate)
         ) {
-//Saf_Debug::outData(array('Cache', $minDate, array_key_exists('stamp', $contents) ? $contents['stamp'] : 'NONE' ), 'PROFILE');
-            if (
-                is_null($maxDate)
-                || (
-                    key_exists('stamp', $contents)
-                    && $contents['stamp'] <= $maxDate
-                )
-            ) {
-                $payload = $contents['payload'];
-                $stamp = key_exists('stamp', $contents) ? $contents['stamp'] : null;
-//    Saf_Debug::out("loaded cached {$file} {$stamp}" . ($cache ? ', caching to memory' : ''));
-            } //else {
-                // $cacheDate = 
-                //     array_key_exists('stamp', $contents)
-                //     ? $contents['stamp']
-                //     : null;
-                // $now = time();
-// Saf_Debug::outData(array('expired cache', $file, 
+            $valid = $contents['payload'];
+            $stamp = key_exists('stamp', $contents) ? $contents['stamp'] : null;
+// \Saf\Util\Profile::profile("loaded cached {$file} {$stamp}" . ($cache ? ', caching to memory' : ''));
+        } //else {
+            // $cacheDate = 
+            //     array_key_exists('stamp', $contents)
+            //     ? $contents['stamp']
+            //     : null;
+            // $now = time();
+// \Saf\Util\Profile::profile(array('expired cache', $file, 
 //     'now' . date(Ems::EMS_DATE_TIME_FORMAT ,$now), 
 //     'accept' . date(Ems::EMS_DATE_TIME_FORMAT ,$minDate), 
 //     'cached' . date(Ems::EMS_DATE_TIME_FORMAT ,$cacheDate)
 // ));
 //            }
-        }
-        return $payload ? $payload : $default;
+        return $valid;
     }
 
-    public static function save(?string $facet, mixed $data, int $mode = self::STAMP_MODE_REPLACE) : bool
+
+    public static function save(string $facet, mixed $data, mixed $spec = self::DEFAULT_SAVE_SPEC): bool
     {
+        $timestampMode = 
+            is_array($spec) && key_exists(Cache::CONFIG_STAMP_MODE, $spec) 
+            ? $spec[Cache::CONFIG_STAMP_MODE]
+            : self::STAMP_MODE_REPLACE;
+
+        //if hash facet
+
         if (is_null($data)) {
-            //\Saf\Debug::out("saving null value to cache, {$facet}");
+//\Saf\Debug::out("saving null value to cache, {$facet}");
             return false;
         }
         $facet = self::fileSafeFacet($facet);
         $path = self::getFullPath($facet);
-        //print_r([__FILE__,__LINE__,$facet, $data, $maxAge]); die;
-		$pointer = fopen($path, 'c+');
-		$fileLock = flock($pointer, LOCK_EX);
-		if (!$fileLock) {
-            //\Saf\Debug::out("write blocking {$facet}");
-			$fileLock = flock($pointer, LOCK_EX | LOCK_NB);
-		}
-		if ($fileLock) {
-			$oldTime = 0;
-			if ($mode) {
-				$size = filesize($path);
-                //getJson
-				$contents = $size ? fread($pointer, $size) : '';
-				$oldValue = json_decode($contents, JSON_OBJECT_AS_ARRAY);
-				if ($oldValue && is_array($oldValue) && key_exists('stamp', $oldValue)) {
-					$oldTime = $oldValue['stamp'];
-				}
-			}
-			ftruncate($pointer, 0);
-			rewind($pointer);
-			$time = 
-				$mode === self::STAMP_MODE_KEEP
-				? $oldTime
-				: (
-					$mode === self::STAMP_MODE_AVG && $oldTime > 0
-					? floor(floatval(Time::time() + $oldTime) / 2)
-					: Time::time()
-				);
-            $newContents = ['stamp' => $time, 'payload' => $data];
-            $newEncodedContents = json_encode($newContents, JSON_FORCE_OBJECT);
-			fwrite($pointer, $newEncodedContents);
-            //	\Saf\Debug::out("cached {$facet}");
-		} //else {
-            // \Saf\Debug::out("unable to save {$facet}");
-		//}
-		flock($pointer, LOCK_UN);
-		fclose($pointer);
-        return true;
+        $hold = File::hold($path);
+        if ($hold) {
+            $oldTime = 0;
+            if ($timestampMode) {
+                $size = filesize($path);
+                $oldTime = self::getHashTimestamp(File::readHeldFile($hold, $size));
+            }
+            File::wipe($hold);
+            $newTime = self::calcNewTimestamp($oldTime, $timestampMode);
+            $newContents = ['stamp' => $newTime, 'payload' => $data];
+            $newEncodedContents = File::toJson($newContents);
+            File::release($hold);
+            return true;
+        } else {
+// \Saf\Debug::out("unable to save {$facet}");
+        }
+        return false;
+    }
+
+    protected static function getHashTimestamp(?string $fileContents): ?int
+    {
+        $json = File::parseJson($fileContents);
+        return
+            $json && is_array($json) && key_exists('stamp', $json)
+            ? $json['stamp']
+            : null;
+    }
+
+    protected static function calcNewTimestamp(?int $time, int $mode): int
+    {
+        if (is_null($time)) {
+            $time = 0;
+        }
+        $mode === self::STAMP_MODE_KEEP
+        ? $time
+        : (
+            $mode === self::STAMP_MODE_AVG && $time > 0
+            ? floor(floatval(Time::time() + $time) / 2)
+            : Time::time()
+        );
     }
 
     public static function fileSafeFacet(string $facet)
@@ -189,33 +233,80 @@ class Disk {
         }
     }
 
-    public static function getJson($file): mixed
+    public static function getHashed(string $facet, string $uname, int $minDate = null, bool $memorize = false)
     {
-        $contents = self::getRaw($file);
-        $value = json_decode($contents, JSON_OBJECT_AS_ARRAY);
-        return $value;        
+        $memory = Cache::getHashed($facet, $uname);
+        if ($memory) {
+            return $memory;
+        }
+        $payload = null;
+        $contents = File::getRawJsonHash($file, $uname);
+//Saf_Debug::outData(array('from file', $file, $uname, $contents));
+        if ($contents && is_array($contents) && key_exists('payload', $contents)) {
+            if (
+                is_null($minDate)
+                || (
+                    key_exists('stamp', $contents) && $contents['stamp'] >= $minDate
+                )
+            ) {
+                $payload = $contents['payload'];
+                $stamp = key_exists('stamp', $contents) ? $contents['stamp'] : null;
+//Saf_Debug::out("loaded cached hash {$file} {$uname} {$stamp}" . ($memorize ? ', caching to memory' : ''));
+                $memorize && Cache::setHashed($facet, $uname, $payload);
+            } else {
+                $cacheDate =
+                    key_exists('stamp', $contents)
+                    ? $contents['stamp']
+                    : null;
+                $now = Time::time();
+// Saf_Debug::outData(array('expired cache', $file, 
+//     'now    ' . date(Ems::EMS_DATE_TIME_FORMAT ,$now), 
+//     'accept ' . date(Ems::EMS_DATE_TIME_FORMAT ,$minDate), 
+//     'cached ' . date(Ems::EMS_DATE_TIME_FORMAT ,$cacheDate)
+// ));
+            }
+        }
+        return $payload;
     }
 
-    public static function getRaw($file): ?string
+    // public static function getHashTime($file, $uname)
+    // {
+    //     $contents = self::getRawHash($file, $uname);
+    //     if ( //#TODO consolidate this block with get
+    //         $contents
+    //         && is_array($contents)
+    //         && array_key_exists('stamp', $contents)
+    //     ) {
+    //         return $contents['stamp'];
+    //     } else {
+    //         return NULL;
+    //     }
+    // }
+
+    //#TODO implement forget()
+    public static function forget(string $facet):void
     {
-        $value = null;
-        if (file_exists($file)) {
-            $pointer = fopen($file, 'r');
-            $fileLock = flock($pointer, LOCK_SH);
-            if (!$fileLock) {
-                // \Saf\Debug::out("read blocking {$file}");
-                $fileLock = flock($pointer, LOCK_SH | LOCK_NB);
-            }
-            if ($fileLock) {
-                $size = filesize($file);
-                $contents = $size ? fread($pointer, $size) : '';
-            } //else {
-            //    \Saf\Debug::out("unable to read {$file}");
-            //}
-            flock($pointer, LOCK_UN);
-            fclose($pointer);
-        }
-        return $contents;        
+        return self::fileAvailable(self::getFullPath($facet));
+    }
+
+    public static function canStore(mixed $data):bool
+    {
+        return !is_callable($remote);
+    }
+
+    public static function parseSpec(mixed $spec): mixed
+    {
+        return $spec;
+    }
+
+    abstract public static function getDefaultLoadSpec(): mixed
+    {
+        return self::DEFAULT_LOAD_SPEC;
+    }
+
+    abstract public static function getDefaultSaveSpec(): mixed
+    {
+        return self::DEFAULT_SAVE_SPEC;
     }
 
 }

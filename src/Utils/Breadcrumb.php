@@ -127,7 +127,10 @@ class Breadcrumb
         };
     }
 
-    public static function translateCrumb($crumb)
+    /**
+     * replace occurrances in a passed breadcrumb congfig
+     */
+    public static function translateCrumb(null|string|array $crumb): string|array
     {
         if (is_array($crumb)) {
             if (key_exists('url', $crumb)) {
@@ -135,7 +138,7 @@ class Breadcrumb
             }
             return $crumb;
         } else {
-            return str_replace('{$baseUri}', self::$baseUri, $crumb);
+            return str_replace('{$baseUri}', self::$baseUri, !is_null($crumb) ? $crumb : '');
         }
     }
 

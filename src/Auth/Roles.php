@@ -72,7 +72,7 @@ class Roles
         if ($user === self::ALL) {
             $rootRoles = array_keys(self::$registry['roles']);
         } elseif (key_exists($user, self::$registry['users'])) { //#TODO handle array of users?
-            $rootRoles = array_keys(self::$registry['users'][$user]);
+            $rootRoles = self::$registry['users'][$user];
         } else {
             return [];
         }
