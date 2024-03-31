@@ -45,13 +45,13 @@ class Front implements Cachable {
         //#TODO figure out a uid strategy for proxy (e.g. if two objects of the same class need to use the same cache facet)
         if (method_exists($this->proxy, $name)){
             $profileTime = microtime(true);
-            $memoryIndex = $this->proxy::getCacheIndex(self::MEMORY_CACHE_CLASS, $name, $arguments);
+            $memoryIndex = $this->proxy->getCacheIndex(self::MEMORY_CACHE_CLASS, $name, $arguments);
             $memory = $memoryIndex ? Memory::load($memoryIndex) : null;
             if (!is_null($memory)) {
                 $this->lastCached = self::MEMORY_CACHE_CLASS . "::{$name}";
                 return is_callable($memory) ? $memory(...$arguments) : $memory;
             } 
-            $diskIndex = $this->proxy::getCacheIndex(self::DISK_CACHE_CLASS, $name, $arguments);
+            $diskIndex = $this->proxy->getCacheIndex(self::DISK_CACHE_CLASS, $name, $arguments);
             //$this->diskPath;
             $disk =  $diskIndex ? Disk::load($diskIndex) : null;  //#TODO AGE, PATH, FUZZY
             //fuzzyLoad()
@@ -60,6 +60,7 @@ class Front implements Cachable {
                 Memory::save($memoryIndex, $disk);
                 return is_callable($disk) ? $disk(...$arguments) : $disk;
             }
+            
             $profileTime2 = microtime(true);
             $remote = $this->proxy->$name(...$arguments);
             $profileTime3 = microtime(true);
@@ -70,7 +71,7 @@ class Front implements Cachable {
             $diskIndex && Disk::canStore($remote) && Disk::save($diskIndex, $remote, $this->diskPath);
             $memoryIndex && Memory::save($memoryIndex, $remote);
 
-            \Saf\Util\Profile::outData(['uncached call', self::class, $name, $arguments, $pregate, $postgate]);
+            \Saf\Util\Profile::ping(['uncached call', self::class, $name, $arguments, $pregate, $postgate]);
 
             return $remote;
         } else {
@@ -95,7 +96,7 @@ class Front implements Cachable {
      * indicates if the last __call loaded from cache, and which cache if so
      * implementation for abstract Cachable::lastCallCached()
      */
-    public function lastCallCached(): null|string|bool
+    public function lastCallCached(?string $name = null): null|string|bool
     {
         return $this->lastCached;
     }
@@ -111,7 +112,7 @@ class Front implements Cachable {
     /**
      * implementation for abstract Cachable::getCacheIndex()
      */
-    public function getCacheIndex(string $storageMethod, string $name, $arguments): ?string
+    public function getCacheIndex(string $storageMethod, string $name, $arguments = null): ?string
     {
         return $this->proxy?->getCacheIndex($storageMethod, $name, $arguments);
     }

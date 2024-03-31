@@ -18,10 +18,10 @@ class Cache
     public const LONG_CACHE_EXP = 10800; // one day
     public const MAX_MEMORY_PERCENT = 10;
 
-    public const CONFIG_DEFAULT = 'default';
+    public const CONFIG_DEFAULT = 'DEFAULT';
     public const CONFIG_MAX_SIZE = 'maxSize';
     public const CONFIG_MAX_AGE = 'maxAge';
-    public const CONGIf_AGE_FUZZY = 'fuzzy';
+    public const CONFIG_AGE_FUZZY = 'fuzzy';
     public const CONFIG_STAMP_MODE = 'stampMode';
     public const STAMP_MODE_REPLACE = 0;
 	public const STAMP_MODE_AVG = 1;

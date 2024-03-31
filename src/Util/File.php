@@ -114,7 +114,7 @@ class File
     public static function hold(string $file):mixed //?filepointer
     {
 //print_r([__FILE__,__LINE__,$facet, $data, $maxAge]); die;
-            $pointer = fopen($path, self::FILE_MODE_EDIT);
+            $pointer = fopen($file, self::FILE_MODE_EDIT);
             $fileLock = flock($pointer, LOCK_EX);
             if (!$fileLock) {
 //\Saf\Debug::out("write blocking {$facet}");

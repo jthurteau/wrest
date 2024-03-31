@@ -37,7 +37,7 @@ class Disk implements Strategy{
 
     //#TODO protected static array $facetMaps = []; //avoid collisions
 
-    public static function init($pathOrConfig) //#TODO PHP8 string|array
+    public static function init(null|string|array $pathOrConfig):void
     {
         if (is_string($pathOrConfig)) {
             self::$defaultPath = $pathOrConfig;
@@ -74,8 +74,8 @@ class Disk implements Strategy{
             : self::DEFAULT_MAX_AGE;
         // $facet = self::fileSafeFacet($facet);
         $fuzzy = 
-            is_array($spec) && key_exists(Cache::CONFIG_FUZZY_AGE, $spec) 
-            ? $spec[Cache::CONFIG_FUZZY_AGE]
+            is_array($spec) && key_exists(Cache::CONFIG_AGE_FUZZY, $spec) 
+            ? $spec[Cache::CONFIG_AGE_FUZZY]
             : false;
 
         //if hash facet '/hash/perm' . Saf\Util\File::calcHashFile
@@ -116,7 +116,7 @@ class Disk implements Strategy{
         self::$currentPath = self::$defaultPath;
     }
 
-    protected static function getPath(string $facet): string
+    protected static function getPath(string $facet): ?string
     {
         return //#TODO support stemming? (x*)
             key_exists($facet, self::$facetPaths)
@@ -124,7 +124,7 @@ class Disk implements Strategy{
             : self::$currentPath;
     }
 
-    public static function getFullPath(?string $facet): string
+    public static function getFullPath(?string $facet): ?string
     {
         return 
             !is_null($facet)
@@ -140,21 +140,21 @@ class Disk implements Strategy{
     protected static function valid(mixed $payload, $maxDate):mixed
     {
         $valid = null;
-//\Saf\Util\Profile::profile(array('Cache', $minDate, array_key_exists('stamp', $contents) ? $contents['stamp'] : 'NONE' ), 'PROFILE');
+//\Saf\Util\Profile::ping(array('Cache', $minDate, array_key_exists('stamp', $contents) ? $contents['stamp'] : 'NONE' ), 'PROFILE');
         if (
             is_null($maxDate)
             || (key_exists('stamp', $contents) && $contents['stamp'] <= $maxDate)
         ) {
             $valid = $contents['payload'];
             $stamp = key_exists('stamp', $contents) ? $contents['stamp'] : null;
-// \Saf\Util\Profile::profile("loaded cached {$file} {$stamp}" . ($cache ? ', caching to memory' : ''));
+// \Saf\Util\Profile::ping("loaded cached {$file} {$stamp}" . ($cache ? ', caching to memory' : ''));
         } //else {
             // $cacheDate = 
             //     array_key_exists('stamp', $contents)
             //     ? $contents['stamp']
             //     : null;
             // $now = time();
-// \Saf\Util\Profile::profile(array('expired cache', $file, 
+// \Saf\Util\Profile::ping(array('expired cache', $file, 
 //     'now' . date(Ems::EMS_DATE_TIME_FORMAT ,$now), 
 //     'accept' . date(Ems::EMS_DATE_TIME_FORMAT ,$minDate), 
 //     'cached' . date(Ems::EMS_DATE_TIME_FORMAT ,$cacheDate)
@@ -212,13 +212,14 @@ class Disk implements Strategy{
         if (is_null($time)) {
             $time = 0;
         }
-        $mode === self::STAMP_MODE_KEEP
-        ? $time
-        : (
-            $mode === self::STAMP_MODE_AVG && $time > 0
-            ? floor(floatval(Time::time() + $time) / 2)
-            : Time::time()
-        );
+        return 
+            $mode === self::STAMP_MODE_KEEP
+            ? $time
+            : (
+                $mode === self::STAMP_MODE_AVG && $time > 0
+                ? floor(floatval(Time::time() + $time) / 2)
+                : Time::time()
+            );
     }
 
     public static function fileSafeFacet(string $facet)
@@ -284,14 +285,14 @@ class Disk implements Strategy{
     // }
 
     //#TODO implement forget()
-    public static function forget(string $facet):void
+    public static function forget(string $facet): void
     {
-        return self::fileAvailable(self::getFullPath($facet));
+        self::fileAvailable(self::getFullPath($facet));
     }
 
-    public static function canStore(mixed $data):bool
+    public static function canStore(mixed $data): bool
     {
-        return !is_callable($remote);
+        return !is_callable($data);
     }
 
     public static function parseSpec(mixed $spec): mixed
@@ -299,12 +300,12 @@ class Disk implements Strategy{
         return $spec;
     }
 
-    abstract public static function getDefaultLoadSpec(): mixed
+    public static function getDefaultLoadSpec(): mixed
     {
         return self::DEFAULT_LOAD_SPEC;
     }
 
-    abstract public static function getDefaultSaveSpec(): mixed
+    public static function getDefaultSaveSpec(): mixed
     {
         return self::DEFAULT_SAVE_SPEC;
     }
