@@ -35,4 +35,9 @@ interface Cachable {
      */
     public function lastCallCached(?string $name = null): null|string|bool;
 
+    /**
+     * returns a reference to the 
+     */
+    public function getProxy(): ?object;
+
 }

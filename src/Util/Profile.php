@@ -21,8 +21,7 @@ class Profile
 
     public static function ping($data)
     {
-        $preset = self::$microStartTime;
-        is_null(self::$microStartTime) && self::init();
+        $preset =  self::init();
         $now = microtime(true);
         $gateTime = $preset ? ($now - self::$microStartTime) : null; 
         $notice = (is_null($gateTime) ? 'clock not started' : $gateTime) . " ({$now})"  . ' - ';
@@ -30,22 +29,23 @@ class Profile
         Debug::out($message, Debug::LEVEL_PROFILE);
     }
 
-    protected static function init()
+    protected static function init(): ?float
     {
         if (!is_null(self::$microStartTime)) {
-            return;
+            return self::$microStartTime;
         }
         if (defined('DEBUG_START_TIME')) {
             self::$microStartTime = DEBUG_START_TIME;
             self::$timeSource = 'debug';
-            return;
+            return self::$microStartTime;
         }
         if (defined('Saf\APPLICATION_START_TIME')) {
             self::$microStartTime = Saf\APPLICATION_START_TIME;
             self::$timeSource = 'saf_app';
-            return;
+            return self::$microStartTime;
         }
         self::$microStartTime = microtime(true);
         self::$timeSource = 'init';
+        return null;
     }
 }

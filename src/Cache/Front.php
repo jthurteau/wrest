@@ -15,7 +15,7 @@ use Saf\Cache\Disk;
 use Saf\Cache\Memory;
 // use Saf\Utils\Time;
 
-class Front implements Cachable {
+abstract class Front implements Cachable {
 
     public const DISK_CACHE_CLASS = Disk::class;
     public const MEMORY_CACHE_CLASS = Memory::class;
@@ -31,11 +31,14 @@ class Front implements Cachable {
     public const CONFIG_DEFAULT = '*';
 
     protected $proxy = null;
+    protected ?Front $cache = null;
+
     protected null|string|bool $lastCached = null; //#TODO configurable reporting level for this
     protected ?string $diskPath = null;
 
     public function __construct(Cachable $proxy) {
         $this->proxy = $proxy;
+        $this->cache = $this;
         $this->diskPath = $this->proxy->getCacheSpec(Disk::class);
     }
 
@@ -52,6 +55,7 @@ class Front implements Cachable {
                 return is_callable($memory) ? $memory(...$arguments) : $memory;
             } 
             $diskIndex = $this->proxy->getCacheIndex(self::DISK_CACHE_CLASS, $name, $arguments);
+            //print_r([__FILE__,__LINE__,$name, $memoryIndex, $diskIndex, $arguments]); die;
             //$this->diskPath;
             $disk =  $diskIndex ? Disk::load($diskIndex) : null;  //#TODO AGE, PATH, FUZZY
             //fuzzyLoad()
@@ -60,19 +64,14 @@ class Front implements Cachable {
                 Memory::save($memoryIndex, $disk);
                 return is_callable($disk) ? $disk(...$arguments) : $disk;
             }
-            
             $profileTime2 = microtime(true);
             $remote = $this->proxy->$name(...$arguments);
             $profileTime3 = microtime(true);
-            
             $pregate = number_format($profileTime2 - $profileTime, 6);
             $postgate = number_format($profileTime3 - $profileTime2, 6);
-
             $diskIndex && Disk::canStore($remote) && Disk::save($diskIndex, $remote, $this->diskPath);
             $memoryIndex && Memory::save($memoryIndex, $remote);
-
             \Saf\Util\Profile::ping(['uncached call', self::class, $name, $arguments, $pregate, $postgate]);
-
             return $remote;
         } else {
             $class = get_class($this->proxy);
@@ -114,7 +113,9 @@ class Front implements Cachable {
      */
     public function getCacheIndex(string $storageMethod, string $name, $arguments = null): ?string
     {
-        return $this->proxy?->getCacheIndex($storageMethod, $name, $arguments);
+        $proxy = $this->getProxy();
+        return $proxy?->getCacheIndex($storageMethod, $name, $arguments);
+        //return $this->proxy?->getCacheIndex($storageMethod, $name, $arguments);
     }
 
     /**
@@ -122,7 +123,17 @@ class Front implements Cachable {
      */
     public function getCacheSpec(string $cacheClassName): ?string
     {
-        return $this->proxy?->getCacheSpec($cacheClassName);
+        $proxy = $this->getProxy();
+        return $proxy?->getCacheSpec($cacheClassName);
+        //return $this->proxy?->getCacheSpec($cacheClassName);
     }
+
+    // /**
+    //  * implementation for abstract Cachable::getProxy()
+    //  */
+    // public function getProxy(): ?object
+    // {
+    //     return $this->proxy;
+    // }
 
 }

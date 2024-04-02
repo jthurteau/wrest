@@ -64,6 +64,7 @@ class Disk implements Strategy{
 
     public static function load(string $facet, mixed $spec = self::DEFAULT_LOAD_SPEC): mixed
     {
+        $facet = self::fileSafeFacet($facet);
         $default = 
             is_array($spec) && key_exists(Cache::CONFIG_DEFAULT, $spec) 
             ? $spec[Cache::CONFIG_DEFAULT]
@@ -72,30 +73,31 @@ class Disk implements Strategy{
             is_array($spec) && key_exists(Cache::CONFIG_MAX_AGE, $spec) 
             ? $spec[Cache::CONFIG_MAX_AGE]
             : self::DEFAULT_MAX_AGE;
-        // $facet = self::fileSafeFacet($facet);
         $fuzzy = 
             is_array($spec) && key_exists(Cache::CONFIG_AGE_FUZZY, $spec) 
             ? $spec[Cache::CONFIG_AGE_FUZZY]
             : false;
-
+        // if fuzzy modify maxAge
+        //\Saf\Util\Profile::ping(["loading disk cache {$facet} with timeout {$maxAge}"]);
         //if hash facet '/hash/perm' . Saf\Util\File::calcHashFile
 
         $payload = null;
 
-        $maxDate = !is_null($maxAge) ? Time::time() + $maxAge : null;
+        $minDate = !is_null($maxAge) ? Time::time() - $maxAge : null;
         //if fuzzy $maxDate = Cache::fuzz($maxAge)...
 
         $path = self::getFullPath($facet);
         self::ensurePath(dirname($path));
         if(!self::fileAvailable($path)) {
+            //\Saf\Util\Profile::ping(["disk cache file {$path} for {$facet} does not exist"]);
             return $default;
         }
         $contents = File::getJson($path);
-
         if (
             $contents && is_array($contents) && key_exists('payload', $contents)
         ) {
-            $payload = self::valid($contents);
+            $payload = self::valid($contents, $minDate);
+            //$payload || \Saf\Util\Profile::ping(["disk cache {$facet} expired timeout {$minDate}"]);
         }
         return $payload ?: $default;
     }
@@ -134,32 +136,34 @@ class Disk implements Strategy{
 
     protected static function fileAvailable(string $file)
     {
+        //\Saf\Util\Profile::ping(["cache file {$file} " . (is_readable($file) ? 'exists' : 'does not exist')]);
         return !is_null($file) && file_exists($file) && is_readable($file);
     }
 
-    protected static function valid(mixed $payload, $maxDate):mixed
+    protected static function valid(mixed $payload, ?int $minDate = null):mixed
     {
         $valid = null;
-//\Saf\Util\Profile::ping(array('Cache', $minDate, array_key_exists('stamp', $contents) ? $contents['stamp'] : 'NONE' ), 'PROFILE');
+        //\Saf\Util\Profile::ping(array('Cache', $minDate, array_key_exists('stamp', $contents) ? $contents['stamp'] : 'NONE' ));
         if (
-            is_null($maxDate)
-            || (key_exists('stamp', $contents) && $contents['stamp'] <= $maxDate)
+            is_null($minDate)
+            || (key_exists('stamp', $payload) && $payload['stamp'] >= $minDate)
         ) {
-            $valid = $contents['payload'];
-            $stamp = key_exists('stamp', $contents) ? $contents['stamp'] : null;
-// \Saf\Util\Profile::ping("loaded cached {$file} {$stamp}" . ($cache ? ', caching to memory' : ''));
+            //\Saf\Util\Profile::ping(["disk cache accepted with age timeout {$payload['stamp']} ({$minDate})"]);
+            $valid = $payload['payload'];
+            //$stamp = key_exists('stamp', $payload) ? $payload['stamp'] : null;
+            // \Saf\Util\Profile::ping("loaded cached {$file} {$stamp}" . ($cache ? ', caching to memory' : ''));
         } //else {
             // $cacheDate = 
             //     array_key_exists('stamp', $contents)
             //     ? $contents['stamp']
             //     : null;
             // $now = time();
-// \Saf\Util\Profile::ping(array('expired cache', $file, 
-//     'now' . date(Ems::EMS_DATE_TIME_FORMAT ,$now), 
-//     'accept' . date(Ems::EMS_DATE_TIME_FORMAT ,$minDate), 
-//     'cached' . date(Ems::EMS_DATE_TIME_FORMAT ,$cacheDate)
-// ));
-//            }
+            // \Saf\Util\Profile::ping(array('expired cache', $file, 
+            //     'now' . date(Ems::EMS_DATE_TIME_FORMAT ,$now), 
+            //     'accept' . date(Ems::EMS_DATE_TIME_FORMAT ,$minDate), 
+            //     'cached' . date(Ems::EMS_DATE_TIME_FORMAT ,$cacheDate)
+            // ));
+        // }
         return $valid;
     }
 
@@ -170,11 +174,11 @@ class Disk implements Strategy{
             is_array($spec) && key_exists(Cache::CONFIG_STAMP_MODE, $spec) 
             ? $spec[Cache::CONFIG_STAMP_MODE]
             : self::STAMP_MODE_REPLACE;
-
+        //\Saf\Util\Profile::ping(["disk cache saving with timestamp mode {$timestampMode}"]);
         //if hash facet
 
         if (is_null($data)) {
-//\Saf\Debug::out("saving null value to cache, {$facet}");
+            //\Saf\Debug::out("saving null value to cache, {$facet}");
             return false;
         }
         $facet = self::fileSafeFacet($facet);
@@ -188,12 +192,14 @@ class Disk implements Strategy{
             }
             File::wipe($hold);
             $newTime = self::calcNewTimestamp($oldTime, $timestampMode);
+            //\Saf\Util\Profile::ping(["disk cache {$facet} timestamp old {$timestampMode}, new {$newTime}, time " . Time::time()]);
             $newContents = ['stamp' => $newTime, 'payload' => $data];
             $newEncodedContents = File::toJson($newContents);
+            File::commit($hold, $newEncodedContents);
             File::release($hold);
             return true;
         } else {
-// \Saf\Debug::out("unable to save {$facet}");
+            // \Saf\Debug::out("unable to save {$facet}");
         }
         return false;
     }
@@ -242,7 +248,7 @@ class Disk implements Strategy{
         }
         $payload = null;
         $contents = File::getRawJsonHash($file, $uname);
-//Saf_Debug::outData(array('from file', $file, $uname, $contents));
+        //Saf_Debug::outData(array('from file', $file, $uname, $contents));
         if ($contents && is_array($contents) && key_exists('payload', $contents)) {
             if (
                 is_null($minDate)
@@ -252,7 +258,7 @@ class Disk implements Strategy{
             ) {
                 $payload = $contents['payload'];
                 $stamp = key_exists('stamp', $contents) ? $contents['stamp'] : null;
-//Saf_Debug::out("loaded cached hash {$file} {$uname} {$stamp}" . ($memorize ? ', caching to memory' : ''));
+                //Saf_Debug::out("loaded cached hash {$file} {$uname} {$stamp}" . ($memorize ? ', caching to memory' : ''));
                 $memorize && Cache::setHashed($facet, $uname, $payload);
             } else {
                 $cacheDate =
@@ -260,29 +266,15 @@ class Disk implements Strategy{
                     ? $contents['stamp']
                     : null;
                 $now = Time::time();
-// Saf_Debug::outData(array('expired cache', $file, 
-//     'now    ' . date(Ems::EMS_DATE_TIME_FORMAT ,$now), 
-//     'accept ' . date(Ems::EMS_DATE_TIME_FORMAT ,$minDate), 
-//     'cached ' . date(Ems::EMS_DATE_TIME_FORMAT ,$cacheDate)
-// ));
+                // Saf_Debug::outData(array('expired cache', $file, 
+                //     'now    ' . date(Ems::EMS_DATE_TIME_FORMAT ,$now), 
+                //     'accept ' . date(Ems::EMS_DATE_TIME_FORMAT ,$minDate), 
+                //     'cached ' . date(Ems::EMS_DATE_TIME_FORMAT ,$cacheDate)
+                // ));
             }
         }
         return $payload;
     }
-
-    // public static function getHashTime($file, $uname)
-    // {
-    //     $contents = self::getRawHash($file, $uname);
-    //     if ( //#TODO consolidate this block with get
-    //         $contents
-    //         && is_array($contents)
-    //         && array_key_exists('stamp', $contents)
-    //     ) {
-    //         return $contents['stamp'];
-    //     } else {
-    //         return NULL;
-    //     }
-    // }
 
     //#TODO implement forget()
     public static function forget(string $facet): void
