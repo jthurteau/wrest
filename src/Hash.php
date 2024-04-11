@@ -512,6 +512,8 @@ class Hash
             && array_key_exists(0, $array)
             && array_key_exists(count($array) - 1, $array);
     }
+
+    //#TODO public static function isNumericallyIndexed(array|X $array, ?bool $strict = true): float|bool //actually check each index
     
     public static function keysExist($keys, $array)
     {
