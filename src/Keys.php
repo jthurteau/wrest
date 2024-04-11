@@ -17,7 +17,6 @@ use Saf\Hash;
 use Saf\Utils\Filter\Truthy;
 use Saf\Auto;
 use Saf\Auth\Plugin\Local;
-use Saf\Layout;
 use Saf\Audit;
 use Saf\Session;
 // use Saf\Environment\Define;

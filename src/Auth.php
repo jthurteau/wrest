@@ -20,7 +20,7 @@ use Saf\Hash;
 use Saf\Session;
 use Saf\Util\Ground;
 use Saf\Keys; //#TODO improve this integration (maybe switch to direct Plugin\Key dependency)
-use Saf\Layout; //#TODO clean up this integration
+use Saf\Util\Layout; //#TODO clean up this integration
 use Saf\Audit; //#TODO clean up this integration
 #TODO split out plugin functionality
 
