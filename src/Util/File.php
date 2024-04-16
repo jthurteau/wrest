@@ -84,7 +84,7 @@ class File
         return json_decode($contents, JSON_OBJECT_AS_ARRAY);
     }
 
-    public static function toJson(mixed $data):?string
+    public static function toJson(mixed $data): ?string
     {
         return json_encode($data, JSON_FORCE_OBJECT);
     }
@@ -144,7 +144,7 @@ class File
         }
     }
 
-    public static function readHeldFile(mixed $pointer, int $size):?string
+    public static function readHeldFile(mixed $pointer, int $size): ?string
     {
         return $size && $pointer ? fread($pointer, $size) : '';
     }
