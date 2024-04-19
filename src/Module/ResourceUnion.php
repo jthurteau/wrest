@@ -13,7 +13,10 @@ namespace Saf\Module;
 
 trait ResourceUnion {
 
-    public static function getFront(array $config):? object
+    abstract protected function proxyAccess(null|array|string $request = null);
+    //{($this->frontProxyAccess)($request);}
+
+    public static function getFront(array $config): ?object
     {
         $frontAccess = key_exists('front', $config) ? $config['front'] : null;
         return is_callable($frontAccess) ? $frontAccess() : $frontAccess;

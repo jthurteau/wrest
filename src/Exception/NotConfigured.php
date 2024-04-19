@@ -1,15 +1,16 @@
-<?php //#SCOPE_OS_PUBLIC
-/*******************************************************************************
-#LIC_FULL
+<?php
 
-@author Troy Hurteau <jthurtea@ncsu.edu>
+/**
+ * #SCOPE_OS_PUBLIC #LIC_FULL
+ *
+ * @author Troy Hurteau <jthurtea@ncsu.edu>
+ *
+ * Exception class when the app is not configured to do something
+ */
 
-Exception class when the app is not configured to do something
+namespace Saf\Exception;
 
-*******************************************************************************/
-require_once(LIBRARY_PATH . '/Saf/Exception/Workflow.php');
-
-class Saf_Exception_NotConfigured extends Saf_Exception_Workflow
+class NotConfigured extends Workflow
 {
 	public function getTitle()
 	{

@@ -14,7 +14,7 @@ use Saf\Auth;
 
 class Shib extends Base{
 	
-	protected $_pluginName = 'Shibboleth Auth';
+	protected $pluginName = 'Shibboleth Auth';
 
 	public function auth(){
 		$username = $this->getProvidedUsername();
@@ -37,16 +37,16 @@ class Shib extends Base{
 	public function getProvidedUsername()
 	{
 		return
-			array_key_exists('usernameField', $this->_config)
-				&& array_key_exists($this->_config['usernameField'], $_SERVER)
-			? $_SERVER[$this->_config['usernameField']]
+			array_key_exists('usernameField', $this->config)
+				&& array_key_exists($this->config['usernameField'], $_SERVER)
+			? $_SERVER[$this->config['usernameField']]
 			: null;
 	}
 
 	public function setUsername($username)
 	{
-		if (array_key_exists('usernameField', $this->_config)) {
-			$_SERVER[$this->_config['usernameField']] = $username;
+		if (array_key_exists('usernameField', $this->config)) {
+			$_SERVER[$this->config['usernameField']] = $username;
 		}
 	}
 
@@ -79,23 +79,23 @@ class Shib extends Base{
 	public function getCurrentIdp()
 	{
 		return
-			array_key_exists('idpField', $this->_config)
+			key_exists('idpField', $this->config)
 			? (
-				array_key_exists($this->_config['idpField'],$_SERVER)
-				? $_SERVER[$this->_config['idpField']]
+				key_exists($this->config['idpField'],$_SERVER)
+				? $_SERVER[$this->config['idpField']]
 				: null
 			) : null;
 	}
 
 	public function allowedIdp($idpId)
 	{
-		$searchIdps = array_key_exists('idpField', $this->_config)
-			&& array_key_exists('idps', $this->_config);
+		$searchIdps = key_exists('idpField', $this->config)
+			&& key_exists('idps', $this->config);
 		if ($searchIdps) {
-			foreach($this->_config['idps'] as $idp=>$idpData){
-				if(array_key_exists('allowed', $idpData)
+			foreach($this->config['idps'] as $idp=>$idpData){
+				if(key_exists('allowed', $idpData)
 						&& 'false' == strtolower($idpData['allowed'])
-						&& array_key_exists('idpId', $idpData)
+						&& key_exists('idpId', $idpData)
 						&& $idpId == $idpData['idpId']
 				){
 					return false;
@@ -111,25 +111,25 @@ class Shib extends Base{
 			$fullyQualified
 			? APPLICATION_BASE_URL
 			: ''
-		) .  $this->_config['logoutUrl'];
+		) .  $this->config['logoutUrl'];
 	}
 
 	public function getIdpLogoutUrl($idpId, $redirectTo = '')
 	{
-		$searchIdps = array_key_exists('idpField',  $this->_config)
-		&& array_key_exists('idps',  $this->_config);
+		$searchIdps = key_exists('idpField',  $this->config)
+		&& key_exists('idps',  $this->_config);
 		if ($searchIdps) {
 			foreach( $this->_config['idps'] as $idp=>$idpData){
 				if(
-					array_key_exists('idpLogout', $idpData)
-					&& array_key_exists('idpId', $idpData)
+					key_exists('idpLogout', $idpData)
+					&& key_exists('idpId', $idpData)
 					&& $idpId == $idpData['idpId']
 				){
 					$idpLogout = $idpData['idpLogout'];
 				}
 			}
 		} else {
-			throw new Exception('Trying to get logout URL for unknown IDP.');
+			throw new \Exception('Trying to get logout URL for unknown IDP.');
 		}
 		return $idpLogout . (
 			'' != $redirectTo

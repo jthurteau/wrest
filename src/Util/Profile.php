@@ -11,7 +11,6 @@ namespace Saf\Util;
 use Saf\Debug;
 use Saf\Utils\Debug\Ui as DebugUi;
 use Saf\Utils\Time;
-use Saf\Layout;
 
 class Profile
 {
