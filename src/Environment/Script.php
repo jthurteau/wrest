@@ -37,7 +37,7 @@ class Script { // extends Saf_Application{
         if (is_array($request)) { //#TODO #3.0.0 not supported yet
             throw new NotImplemented('Running scripts with $request as an array not supported.');
         } else {
-            $command = $this->path . ($request ? " {$request}" : '');
+            $command = $this->path . ($request ? "/{$request}" : '');
         }
         $outputLines = [];
         $status = null;
