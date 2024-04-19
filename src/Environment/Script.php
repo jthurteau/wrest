@@ -32,13 +32,14 @@ class Script { // extends Saf_Application{
         $this->path = $path;
     }
     
-    public function run(null|string|array &$request = null, ?string &$response = null, ?int &$status = null) {
+    public function run(null|string|array $request = null, ?string &$response = null, ?int &$status = null)
+    {
         if (is_array($request)) { //#TODO #3.0.0 not supported yet
             throw new NotImplemented('Running scripts with $request as an array not supported.');
         } else {
             $command = $this->path . ($request ? " {$request}" : '');
         }
-        
+        print_r([__FILE__,__LINE__,$request]); die;
         $outputLines = [];
         $status = null;
         $return = "Running {$command} \n------------------------------------------------------------\n";
