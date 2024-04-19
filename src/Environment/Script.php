@@ -39,7 +39,6 @@ class Script { // extends Saf_Application{
         } else {
             $command = $this->path . ($request ? " {$request}" : '');
         }
-        print_r([__FILE__,__LINE__,$request]); die;
         $outputLines = [];
         $status = null;
         $return = "Running {$command} \n------------------------------------------------------------\n";
