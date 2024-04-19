@@ -55,10 +55,9 @@ abstract class Front implements Cachable {
                 return is_callable($memory) ? $memory(...$arguments) : $memory;
             } 
             $diskIndex = $this->proxy->getCacheIndex(self::DISK_CACHE_CLASS, $name, $arguments);
-            //print_r([__FILE__,__LINE__,$name, $memoryIndex, $diskIndex, $arguments]); die;
-            //$this->diskPath;
-            $disk =  $diskIndex ? Disk::load($diskIndex) : null;  //#TODO AGE, PATH, FUZZY
-            //fuzzyLoad()
+            \Saf\Util\Profile::ping(['verifying cache indexes', self::class, $name, $memoryIndex, $diskIndex, $arguments]);
+            $diskAge = null; // $this->proxy->getCacheExpiration($diskIndex); // pack expiration into index?
+            $disk =  $diskIndex ? Disk::load($diskIndex) : null;  //#TODO AGE, FUZZY
             if (!is_null($disk)) {
                 $this->lastCached = self::DISK_CACHE_CLASS . "::{$name}";
                 Memory::save($memoryIndex, $disk);

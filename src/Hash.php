@@ -509,8 +509,8 @@ class Hash
     public static function isNumericArray($array)
     {
         return is_array($array)
-            && array_key_exists(0, $array)
-            && array_key_exists(count($array) - 1, $array);
+            && key_exists(0, $array)
+            && key_exists(count($array) - 1, $array);
     }
     
     public static function keysExist($keys, $array)

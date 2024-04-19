@@ -10,7 +10,7 @@
 '../../'
 $source = "{$installPath}/composer.json");
 if (file_exists($source) && is_readable($source)) {
-    $composerMeta = json_decode(file_get_contents($source), true);
+    $composerMeta = json_decode(file_get_contents($source), null, 32, JSON_OBJECT_AS_ARRAY);
     if ($composerMeta && is_array($composerMeta)) {
         $result = [
             'projectFile' => 'composer.json', 

@@ -81,7 +81,7 @@ class File
 
     public static function parseJson(string $contents):mixed
     {
-        return json_decode($contents, JSON_OBJECT_AS_ARRAY);
+        return json_decode($contents, null, 512, JSON_OBJECT_AS_ARRAY);
     }
 
     public static function toJson(mixed $data):?string
