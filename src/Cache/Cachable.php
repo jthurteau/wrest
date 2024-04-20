@@ -40,4 +40,9 @@ interface Cachable {
      */
     public function getProxy(): ?object;
 
+    /**
+     * optional support for self stored cache after load from disk
+     */
+    public function sideLoad(mixed $fromDisk, string $name, $arguments = null): self;
+
 }

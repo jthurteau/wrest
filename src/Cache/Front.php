@@ -60,7 +60,7 @@ abstract class Front implements Cachable {
             $disk =  $diskIndex ? Disk::load($diskIndex) : null;  //#TODO AGE, FUZZY
             if (!is_null($disk)) {
                 $this->lastCached = self::DISK_CACHE_CLASS . "::{$name}";
-                Memory::save($memoryIndex, $disk);
+                $memoryIndex ? Memory::save($memoryIndex, $disk) : $this->sideLoad($disk, $name, $arguments);
                 return is_callable($disk) ? $disk(...$arguments) : $disk;
             }
             $profileTime2 = microtime(true);
@@ -127,7 +127,15 @@ abstract class Front implements Cachable {
         //return $this->proxy?->getCacheSpec($cacheClassName);
     }
 
-    // /**
+    /**
+     * default sideLoad is noop
+     */
+    public function sideLoad(mixed $fromDisk, string $name, ?array $arguments = null): self
+    {
+        return $this;
+    }
+
+    // /** //#TODO figure out if this can be implemented in Front and not inheriters (there was a cyclical issue previously)
     //  * implementation for abstract Cachable::getProxy()
     //  */
     // public function getProxy(): ?object
