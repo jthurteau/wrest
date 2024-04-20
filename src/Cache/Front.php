@@ -130,7 +130,7 @@ abstract class Front implements Cachable {
     /**
      * default sideLoad is noop
      */
-    public function sideLoad(mixed $fromDisk, string $name, ?array $arguments = null): self
+    public function sideLoad(mixed $fromDisk, string $name, $arguments = null): self
     {
         return $this;
     }
