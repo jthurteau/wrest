@@ -43,6 +43,6 @@ interface Cachable {
     /**
      * optional support for self stored cache after load from disk
      */
-    public function sideLoad(mixed $fromDisk, string $name, $arguments = null): self;
+    public function sideLoad(mixed $fromDisk, string $name, $arguments = null): object;
 
 }
