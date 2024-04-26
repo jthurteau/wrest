@@ -380,7 +380,7 @@ class Db
     public function pullErrorCallback()
     {
         return function(){
-            $errorInfo = $this->connection->errorInfo();
+            $errorInfo = $this->connection?->errorInfo();
             return 
                 is_array($errorInfo)
                 ? $errorInfo[2]
