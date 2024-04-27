@@ -45,9 +45,7 @@ class Db
 
     public function init($config) : Db
     {
-        //throw new \Saf\Exception\Inspectable($config);
         $this->config = $config;
-        //\Saf\Debug::outData(['pdo config',$config]);
         if ( key_exists('dsn', $config) && is_array($config['dsn'])) {
             $this->configure($config['dsn']);
             if (
@@ -59,12 +57,12 @@ class Db
                 $this->vaultKey = Vault::noise();
                 Vault::store($this->vaultId, $this->vaultKey, $config['dsn']['password']);
             }
-            if (
-                key_exists('autoConnect', $config)
-                && $config['autoConnect']
-            ) {
-                $this->connect($config['dsn']);
-            }
+        }
+        if (
+            key_exists('autoConnect', $config)
+            && $config['autoConnect']
+        ) {
+            $this->connect(key_exists('dsn', $config) ? $config['dsn'] : null);
         }
         return $this;
     }
@@ -371,10 +369,12 @@ class Db
         if ($clear) {
             $this->clearErrors();
         }
-        return
-            is_array($error)
-            ? $error[2]
-            : $error;
+        return $error;
+    }
+
+    public function hasError(): bool
+    {
+        return count($this->errorMessage) > 0;
     }
 
     public function pullErrorCallback()
