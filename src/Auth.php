@@ -68,11 +68,12 @@ class Auth
 
     public function __invoke(ContainerInterface $container, string $name, callable $callback) : Object
     {
-		$containerConfig = Container::getOptional($container, 'config', []);
-        $containerConfig =& Ground::ground($containerConfig);
-        $authConfig = Hash::extractIfArray('auth', $containerConfig, []);
+
+        $authConfig = Container::getOptional($container, ['config', 'auth'], []);//Hash::extractIfArray('auth', $containerConfig, []));
+        $authConfig =& Ground::ground($authConfig);
         self::init($authConfig);
-        $keys = Hash::extractIfArray('keys', $containerConfig, []);
+        $keys = Container::getOptional($container, ['config', 'keys'], []);
+        $keys =& Ground::ground($keys);
         if ($keys) {
             Keys::setServiceKeys($keys);
         }

@@ -163,7 +163,8 @@ class Debug
     public static function isEnabled()
     {
         return
-            self::$mode != self::MODE_OFF 
+            self::$mode
+            && self::$mode != self::MODE_OFF
             && self::$mode != self::MODE_DISABLE;
     }
 

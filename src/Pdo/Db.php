@@ -23,6 +23,9 @@ class Db
     use PropertyAccess;
 
     public const DEFAULT_DRIVER = Pdo::TYPE_MYSQL;
+    public const STATE_NOT_CONNECTED = -2;
+    public const STATE_NOT_IN_TRANSACTION = -1;
+    public const STATE_NOT_DETECTED = -1; // last insert did not use auto-id
 
     protected $config = [];
     protected $connection = null;
@@ -33,10 +36,10 @@ class Db
     protected $userName = '';
     protected $schemaName = '';
     protected $additionalDsn = '';
-    protected $lastResult = null;
     protected $debugMode = false;
     protected $vaultId = null;
     protected $vaultKey = null;
+    protected $openQueries = [];
 
     public function __construct($options = [])
     {
@@ -121,11 +124,6 @@ class Db
         $this->connectionFailure = false;
     }
 
-//     public function enableDebug()
-//     {
-//         $this->_debugMode = TRUE;
-//     }
-
 //     public function reconnectAs($user, $password, $dbName = '')
 //     {
 //         if (!is_null($this->connection)) {
@@ -134,219 +132,79 @@ class Db
 //         return $this->_connectAs($user, $password, $dbName);
 //     }
 
-    public function query($query, $args = null)
+    public function query(?string $query = null, ?array $args = null)
     {
-        if (!$this->connection) {
-            throw new PdoException('Not Connected');
-        }
-        if ($this->lastResult) {
-            $this->lastResult->closeCursor();
-        }
-        if (!is_null($args)) {
-            return $this->prepareExecute($query, $args);
-        }
-        $statement = $this->connection->query($query, \PDO::FETCH_ASSOC);
-        if (!$statement) {
-            $this->addError('Query Failed');
-            $this->pullError();
-        }
-        $this->lastResult = $statement;
-        return $statement;
+        $statement = null;
+        $callback = function($directive, $p1 = null, $p2 = null, $p3 = null) {
+            switch ($directive) {
+                case 'prepare':
+                    $statement = $this->connection->query($p1);
+                    if (!$statement) {
+                        $this->addError('Query Failed');
+                        $this->pullError();
+                    }
+                    break;
+                case 'query':
+                    $statement =
+                        $p2
+                        ? $this->connection->query($p1, $p2)
+                        : $this->connection->query($p1);
+                    if (!$statement) {
+                        $this->addError('Query Failed');
+                        $this->pullError();
+                    }
+                    break;
+                case 'execute':
+                    $statement = $p1->execute($p2);
+                    if(Pdo::NON_ERROR != $p1->errorCode()) {
+                        $errorInfo = $p1->errorInfo();
+                        $errorMessage = (key_exists(2, $errorInfo)) && '' != trim($errorInfo[2])
+                            ? $errorInfo[2]
+                            : 'No error message given by the DB.';
+                        // #TODO #2.0.0 throw some more specific exceptions: duplicate/constraint viloations, syntax, etc.
+                        if (strpos(strtolower($errorMessage),'duplicate entry') === 0) {
+                            throw new DbDuplicate('The specified action would create a duplicate DB entry.');
+                        }
+                        throw new PdoException("Bad Query Detected. {$errorMessage}.");
+                    }
+                    break;
+                case 'error':
+                    $this->addError($p1);
+                    $p2 && $this->pullError();
+                    break;
+                default:
+                    return $this;
+            }
+            return $statement;
+        };
+        $opened = new Query($callback, $query, $args);
+        $this->openQueries[] = $opened;
+        return $opened;
     }
 
-//     protected function _prepStatement($query, $args)
-//     {
-//         return
-//             !is_null($args)
-//             ? $this->prepareExecute($query, $args)
-//             : $this->query($query);
-//     }
+     public function getVersion()
+     {
+         return $this->connection->getAttribute(PDO::ATTR_SERVER_VERSION);
+     }
 
-//     public function insert($query, $args = NULL)
-//     {
-//         if(strpos(strtoupper($query),'INSERT') === FALSE) {
-//             throw new Saf_Pdo_Exception('Attempting to call ::insert on a non-INSERT statement.');
-//         }
-//         $statement = $this->_prepStatement($query, $args);
-//         return
-//             $statement //#NOTE lastInsertId only works for autoincrement, so -1 indicates explicit id insert
-//             ? ($this->connection->lastInsertId() ? $this->connection->lastInsertId() : -1)
-//             : NULL;
-//     }
-
-//     public function delete($query, $args = NULL)
-//     {
-//         if(strpos(strtoupper($query),'DELETE') === FALSE) {
-//             throw new Saf_Pdo_Exception('Attempting to call ::delete on a non-DELETE statement.');
-//         }
-//         $statement = $this->_prepStatement($query, $args);
-//         return
-//             $statement
-//             ? $this->count()
-//             : NULL;
-//     }
-
-//     public function update($query, $args = NULL)
-//     {
-//         if(strpos(strtoupper($query),'UPDATE') === FALSE) {
-//             throw new Saf_Pdo_Exception('Attempting to call ::update on a non-UPDATE statement.');
-//         }
-//         $statement = $this->_prepStatement($query, $args);
-//         return
-//             $statement
-//             ? $this->count()
-//             : NULL;
-//     }
-
-    public function prepareExecute($query, $args)
-    {
-        if ($this->lastResult) {
-            $this->lastResult->closeCursor();
-        }
-        $cleanArgs = array();
-        if (!is_array($args)) { //#TODO Hash:: method to force indexed array
-            $cleanArgs = [$args];
-        } else {
-            foreach($args as $arg) {
-                $cleanArgs[] = $arg;
-            }
-        }
-        $explodingBinds = array();
-        foreach($cleanArgs as $key=>$arg) {
-            if (is_array($arg) && count($arg) > 1){
-                $explodingBinds[$key] = count($arg);
-            } elseif(is_array($arg)) {
-                $explodingBinds[$key] = 1;
-                $cleanArgs[$key] = key_exists(0, $arg) ? $arg[0] : null;
-            }
-        }
-        if (count($explodingBinds) > 0) { //#TODO #1.0.0 consoidate with ::query
-            $query = Pdo::explodePreparedQuery($query, $explodingBinds);
-            $cleanArgs = Pdo::flattenParams($cleanArgs);
-        }
-        $statement = $this->connection->prepare($query);
-        if (!$statement) {
-            $this->addError('Query Failed');
-            $this->pullError();
-        }
-        $this->lastResult = $statement;
-        if ($statement) {
-            $result = $statement->execute($cleanArgs);
-//print_r(array('exec', $statement, $result, $statement->rowCount()));
-            if(Pdo::NON_ERROR != $statement->errorCode()) {
-                $errorInfo = $statement->errorInfo();
-                $errorMessage = (key_exists(2, $errorInfo)) && '' != trim($errorInfo[2])
-                    ? $errorInfo[2]
-                    : 'No error message given by the DB.';
-                // #TODO #12.0.0 throw some more specific exceptions: duplicate/constraint viloations, syntax, etc.
-                if (strpos(strtolower($errorMessage),'duplicate entry') === 0) {
-                    throw new DbDuplicate('The specified action would create a duplicate DB entry.');
-                }
-                throw new PdoException("Bad Query Detected. {$errorMessage}.");
-            }
-        }
-        return $statement;
-    }
-
-//     public function all($result = NULL)
-//     {//}, $mode = PDO::FETCH_BOTH){
-//         if (is_null($result)) {
-//             $result = $this->_lastResult;
-//         }
-//         if (!$result || !method_exists($result, 'fetchAll')) {
-//             $this->addError('Unable to fetchAll, no result to pull from.');
-//         }
-//         return ($result ? $result->fetchAll(PDO::FETCH_ASSOC) : NULL);
-//     }
-
-    public function next($result = null)
-    {//, $mode = PDO::FETCH_BOTH){
-        if (is_null($result)) {
-            $result = $this->lastResult;
-        }
-        if (!$result || !method_exists($result, 'fetch')) {
-            $this->addError('Unable to fetch, no result to pull from.');
-        }
-        return ($result ? $result->fetch(\PDO::FETCH_ASSOC) : null);
-    }
-
-//     public function one($result = NULL)
-//     {//, $mode = PDO::FETCH_BOTH){
-//         if (is_null($result)) {
-//             $result = $this->_lastResult;
-//         }
-//         if (!$result || !method_exists($result, 'fetch')) {
-//             $this->addError('Unable to fetch, no result to pull from.');
-//             return NULL;
-//         }
-//         $row = ($result ? $result->fetch(PDO::FETCH_ASSOC) : NULL);
-//         if (is_null($row) || $row === FALSE) {
-//             $this->addError('Unable to fetch, no rows in result.');
-//             return NULL;
-//         }
-//         return current($row);
-//     }
-
-//     public function count($result = NULL)
-//     {
-//         if (is_null($result)) {
-//             $result = $this->_lastResult;
-//         }
-//         if ($this->_debugMode) {
-//             Saf_Debug::outData(array('count', $result, $result->rowCount()));
-//         }
-//         return ($result ? $result->rowCount() : NULL);
-//     }
-
-//     public function getVersion()
-//     {
-//         return $tihs->connection->getAttribute(PDO::ATTR_SERVER_VERSION);
-//     }
-
-//     public function hasTable($tableName)
-//     {//#TODO #1.0.0 this isn't driver agnostic yet.
-//         $result = $this->connection->query('SHOW TABLES;', PDO::FETCH_NUM);
-//         $tables =  $result->fetchAll();
-//         foreach($tables as $table) {
-//             if($table[0] == $tableName) {
-//                 return TRUE;
-//             }
-//         }
-//         return FALSE;
-//     }
-
-//     public function getError()
-//     {
-//         if ($this->connection) {
-//             return $this->connection->errorInfo();
-//         }
-//         return array(0, NULL, 'Not Connected');
-//     }
-
-//     public function getInfo()
-//     {
-//         if ($this->_lastResult) {
-//             ob_start();
-//             $this->_lastResult->debugDumpParams();
-//             $debug = ob_get_contents();
-//             ob_end_clean();
-//             return array(
-//                 'debug' => $debug,
-//                 'count' => $this->_lastResult->rowCount(),
-//                 'status' => $this->_lastResult->errorInfo()
-//             );
-//         }
-//         return NULL;
-//     }
-
-//     public function hasError(){
-//         if (!$this->connection) {
-//             return $this->hasInternalError();
-//         }
-//         $error =  $this->connection->errorInfo();
-//         return $error && is_array($error) && array_key_exists(1, $error) ? $error[1] : $this->hasInternalError();
-//     }
-
+     public function hasTable($tableName)
+     {
+         $queries = [ //#TODO #2.0.0 this isn't driver agnostic yet.
+             0 => 'SHOW TABLES;',
+         ];
+         $tableQuery =
+             key_exists($this->driverName, $queries)
+             ? $queries[$this->driverName]
+             : $queries[0];
+         $result = $this->connection->query($tableQuery); //, PDO::FETCH_NUM
+         $tables =  $result->all();
+         foreach($tables as $table) {
+             if($table[0] == $tableName) {
+                 return true;
+             }
+         }
+         return false;
+     }
 
     public function getErrorMessage($clear = false){
         $currentError =
@@ -388,6 +246,103 @@ class Db
         };
     }
 
+     public function beginTransaction()
+     {
+         if (!$this->connection) {
+             return self::STATE_NOT_CONNECTED;
+         }
+         return $this->connection->beginTransaction();
+     }
+
+     public function inTransaction()
+     {
+         return $this->connection?->inTransaction();
+     }
+
+     public function rollback()
+     {
+         if (!$this->connection) {
+             return self::STATE_NOT_CONNECTED;
+         }
+         if ($this->connection->inTransaction()) {
+             return $this->connection->rollback();
+         } else {
+             return self::STATE_NOT_IN_TRANSACTION;
+         }
+     }
+
+     public function commit()
+     {
+         if (!$this->connection) {
+             return self::STATE_NOT_CONNECTED;
+         }
+         if ($this->connection->inTransaction()) {
+             return $this->connection->commit();
+         } else {
+             return self::STATE_NOT_IN_TRANSACTION;
+         }
+     }
+
+     public function getLastInsertId(string $table)
+     {
+         $queries = [ //#TODO #2.0.0 this isn't driver agnostic yet.
+             0 => "SELECT LAST_INSERT_ID() FROM {$table};",
+         ];
+         $select =
+             key_exists($this->driverName, $queries)
+                 ? $queries[$this->driverName]
+                 : $queries[0];
+         $select =  $this->query($queries);
+         $id = $select->fetch(PDO::FETCH_NUM);
+         return $id[0];
+     }
+
+    public function isConnected()
+    {
+        return !is_null($this->connection) && !$this->connectionFailure;
+    }
+
+    public function clear()
+    {
+        foreach($this->openQueries as $index => $open) {
+            $open->close();
+        }
+        $this->openQueries = [];
+    }
+
+
+//     public function getError()
+//     {
+//         if ($this->connection) {
+//             return $this->connection->errorInfo();
+//         }
+//         return array(0, NULL, 'Not Connected');
+//     }
+
+//     public function getInfo()
+//     {
+//         if ($this->_lastResult) {
+//             ob_start();
+//             $this->_lastResult->debugDumpParams();
+//             $debug = ob_get_contents();
+//             ob_end_clean();
+//             return array(
+//                 'debug' => $debug,
+//                 'count' => $this->_lastResult->rowCount(),
+//                 'status' => $this->_lastResult->errorInfo()
+//             );
+//         }
+//         return NULL;
+//     }
+
+//     public function hasError(){
+//         if (!$this->connection) {
+//             return $this->hasInternalError();
+//         }
+//         $error =  $this->connection->errorInfo();
+//         return $error && is_array($error) && array_key_exists(1, $error) ? $error[1] : $this->hasInternalError();
+//     }
+
 //     public function isError($what = NULL)
 //     {//#TODO #1.0.0 needs refactor
 //         if (
@@ -410,70 +365,6 @@ class Db
 //             && array_key_exists(2, $error)
 //             && ($error[1] || $error[2])
 //         );
-//     }
-
-//     public function beginTransaction()
-//     {
-//         if (!$this->connection) {
-//             return -2; //#TODO #1.0.0 constants?
-//         }
-//         return $this->connection->beginTransaction();
-//     }
-
-//     public function inTransaction()
-//     {
-//         return $this->connection->inTransaction();
-//     }
-
-//     public function rollback()
-//     {
-//         if (!$this->connection) {
-//             return -2;  //#TODO #1.0.0 constants?
-//         }
-//         if ($this->connection->inTransaction()) {
-//             return $this->connection->rollback();
-//         } else {
-//             return -1;  //#TODO #1.0.0 constants?
-//         }
-//     }
-
-//     public function commit()
-//     {
-//         if (!$this->connection) {
-//             return -2;  //#TODO #1.0.0 constants?
-//         }
-//         if ($this->connection->inTransaction()) {
-//             return $this->connection->commit();
-//         } else {
-//             return -1;  //#TODO #1.0.0 constants?
-//         }
-//     }
-
-//     public function getLastInsertId($table)
-//     {
-//         $select =  $this->query("SELECT LAST_INSERT_ID() FROM {$table}");
-//         $id = $select->fetch(PDO::FETCH_NUM);
-//         return $id[0];
-//     }
-
-    public function isConnected()
-    {
-        return !is_null($this->connection) && !$this->connectionFailure;
-    }
-
-//     public static function simpleResult($result)
-//     {
-//         $return = array();
-//         if (is_bool($result)) {
-//             $return[] = $result;
-//         } else {
-//             foreach ($result as $row) {
-//                 if ($row) {
-//                     $return[] = $row;
-//                 }
-//             }
-//         }
-//         return $return;
 //     }
 
 }

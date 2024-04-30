@@ -32,7 +32,12 @@ class RedirectHandler implements RequestHandlerInterface
         $status = $request->getAttribute('permanentRedirect') ? 301 : 303; //#TODO figure out when to use 302 for older agents
         $htmlTemplate = $request->getAttribute('template', 'app::redirect');
         $useHtml = $request->getHeader('Accept');
-        $interrupt = true; //Debug::isEnabled();
+        is_array($useHtml) && ($useHtml = array_pop($useHtml));
+        $htmlWeight = strpos('text/html', $useHtml);
+        $jsonWeight = strpos('application/json', $useHtml);
+        $useHtml = $jsonWeight === FALSE || ($htmlWeight !== FALSE && $htmlWeight < $jsonWeight);
+        $interrupt = Debug::isEnabled();
+        //#TODO implement pure header redirect
         $response = 
             $useHtml
             ? new HtmlResponse($this->template->render($htmlTemplate, [
@@ -54,10 +59,13 @@ class RedirectHandler implements RequestHandlerInterface
         $scheme = $uri->getScheme();
         $host = $uri->getHost();
         $requestPort = $uri->getPort();
-        $port = 
-            $scheme == 'https'
-            ? ($requestPort == '443' ? '' : ":{$requestPort}")
-            : ($requestPort == '80' ? '' : ":{$requestPort}");
+        $port =
+            $requestPort
+            ? (
+                $scheme == 'https'
+                ? ($requestPort == '443' ? '' : ":{$requestPort}")
+                : ($requestPort == '80' ? '' : ":{$requestPort}")
+            ) : '';
         return "{$scheme}://{$host}{$port}";
     }
 }

@@ -126,6 +126,8 @@ class Mezzio extends Manager{
                     : \Saf\Debug::MODE_SILENT;
                 $debugPlugin = new \Snoop\SafPlugin($options);
                 \Saf\Debug::init($mode, $debugPlugin);
+            } elseif (key_exists('foundationLiminalCallback', $options)) {
+                $options['foundationLiminalCallback']();
             }
         };
     }
