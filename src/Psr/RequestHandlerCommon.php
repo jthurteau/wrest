@@ -40,13 +40,20 @@ trait RequestHandlerCommon {
         //$accessList = Hash::deepMerge($this->accessList,$globalAccess);
         $keys = $user ? $user->getDetail('keys') : [];
         $roles = $user ? $user->getRoles() : [];
+
         if ($this->matchRoute($resource, 'open')) {
             return 'open-access';
         }
-        if ($this->matchRoute($resource, 'any-user')) {
+        if (
+            $this->matchRoute($resource, 'any-user')
+        ) {
             if ($user->getIdentity()) {
                 return 'authorized-access';
             }
+        }
+        $userName = $user?->getIdentity() ?: 'none';
+        if ($user && $this->matchRoute($resource, "user-{$userName}")) {
+            return 'authorized-access';
         }
         if (
             count($keys) > 0 
@@ -60,12 +67,6 @@ trait RequestHandlerCommon {
                 return "{$keyName}-key-access";
             }
         }
-        // if ($user && in_array('admin', $user->getRoles())) {
-        //     return 'admin-role-access';
-        // }
-        // if ($user && in_array('sysAdmin', $user->getRoles())) {
-        //     return 'sysAdmin-role-access';
-        // }
         foreach($roles as $role) {
             $roleName = "{$role}-role";
             if ($this->matchRoute($resource, $roleName)) {
@@ -75,11 +76,18 @@ trait RequestHandlerCommon {
         return false;
     }
 
+    /**
+     * @param $resource
+     * @param $user
+     * @return array|string
+     * deprecate in favor of accessOptions
+     */
     protected function accessRecommendation($resource, $user = null)
     {
-        $recommendation = false;
+        $recommendation = [];
         //#TODO patch in with configed routes
         //$accessList = Hash::deepMerge($this->accessList,$globalAccess);
+        $list = $this->accessList;
         $keys = $user ? $user->getDetail('keys') : [];
         $roles = $user ? $user->getRoles() : [];
         if ($this->matchRoute($resource, 'open')) {
@@ -97,18 +105,65 @@ trait RequestHandlerCommon {
         } elseif ($anyKeyAccess && !$recommendation) {
             $recommendation = 'key-required';
         }
-        // foreach($keys as $key) {
-        //     $keyName = Keys::keyName($key);
-        //     if ($this->matchRoute($resource, $keyName)) {
-        //         return "{$keyName}-key-access";
-        //     }
-        // }
-        // foreach($roles as $role) {
-        //     $roleName = "{$role}-role";
-        //     if ($this->matchRoute($resource, $roleName)) {
-        //         return "{$roleName}-role-access";
-        //     }
-        // }
+        foreach($list as $criteria => $toss){
+            $isKeyAccess = false;
+            $isUserAccess = false;
+            $isRoleAccess = false;
+            $possibleRecommendation =
+                $isKeyAccess
+                ? 'key-required'
+                : (
+                    $isRoleAccess || $isUserAccess
+                    ? 'login-required'
+                    : false
+                );
+            if (!$recommendation && $recommendation) {
+
+            }
+        }
+        return $recommendation;
+    }
+
+    protected function accessOptions($resource, $user = null): array
+    {
+        $recommendation = [];
+        //#TODO patch in with configed routes
+        //$accessList = Hash::deepMerge($this->accessList,$globalAccess);
+        $list = $this->accessList;
+        $keys = $user ? $user->getDetail('keys') : [];
+        $roles = $user ? $user->getRoles() : [];
+        if ($this->matchRoute($resource, 'open')) {
+            return ['open-access'];
+        }
+        if ($this->matchRoute($resource, 'any-user')) {
+            if ($user->getIdentity()) {
+                return ['authorized-access'];
+            }
+            $recommendation[] = 'login-required';
+        }
+        $anyKeyAccess = $this->matchRoute($resource, 'key');
+        if (count($keys) > 0 && $anyKeyAccess) {
+            return ['key-access'];
+        } elseif ($anyKeyAccess) {
+            $recommendation[] = 'key-required';
+        }
+        foreach($list as $criteria => $toss){
+            $isKeyAccess =
+                str_ends_with($criteria, '-key')
+                && $this->matchRoute($resource, $criteria);
+            $isUserAccess =
+                str_ends_with($criteria, '-user')
+                && $this->matchRoute($resource, $criteria);
+            $isRoleAccess =
+                str_ends_with($criteria, '-role')
+                && $this->matchRoute($resource, $criteria);
+
+            $isKeyAccess && !in_array('key-required', $recommendation)
+                && ($recommendation[] = 'key-required');
+            ($isUserAccess || $isRoleAccess) && !in_array('login-required', $recommendation)
+                && ($recommendation[] = 'login-required');
+            //#TODO add an optional scoping param to allowed and return X-user-access, X-role-access, X-key-access
+        }
         return $recommendation;
     }
 

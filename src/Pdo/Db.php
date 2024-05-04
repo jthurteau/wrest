@@ -25,6 +25,8 @@ class Db
     public const DEFAULT_DRIVER = Pdo::TYPE_MYSQL;
     public const STATE_NOT_CONNECTED = -2;
     public const STATE_NOT_IN_TRANSACTION = -1;
+    public const STATE_QUERY_BUILD_FAILED = -1;
+    public const STATE_QUERY_NO_RESULT = -2;
     public const STATE_NOT_DETECTED = -1; // last insert did not use auto-id
 
     protected $config = [];
