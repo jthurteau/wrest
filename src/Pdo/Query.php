@@ -22,6 +22,7 @@ class Query
     protected $fetchMode = \PDO::FETCH_ASSOC;
     protected $debugMode = false;
     protected $lastResult = null;
+    //protected $lastResultIterator = null;
 
     public function __construct($connectionCallback, ?string $query = null, ?array $args = null)
     {
@@ -129,7 +130,7 @@ class Query
     public function all($result = null)
     {
         if (is_null($result)) {
-            $result = $this->_lastResult;
+            $result = $this->lastResult;
         }
         if (!$result || !method_exists($result, 'fetchAll')) {
             ($this->connection)('error', 'Unable to fetchAll, no result to pull from.');
@@ -217,5 +218,44 @@ class Query
              $args = Pdo::flattenParams($cleanArgs);
          }
      }
+
+//    public function current(): mixed
+//    {
+//        return $this->updateIterator()->lastResultIterator?->current();
+//    }
+//
+//    public function key(): mixed
+//    {
+//        return $this->updateIterator()->lastResultIterator?->key();
+//    }
+//
+//    public function next(): mixed
+//    {
+//        return $this->updateIterator()->lastResultIterator?->next();
+//    }
+//
+//    public function rewind(): mixed
+//    {
+//        return $this->updateIterator()->lastResultIterator?->rewind();
+//    }
+//
+//    public function valid(): mixed
+//    {
+//        return $this->updateIterator()->lastResultIterator?->valid() ?: false;
+//    }
+
+//    protected function updateIterator(): Query
+//    {
+//        static $lastCheckResult = null;
+//        if (is_null($this->lastResultIterator)) {
+//            if ($this->lastResult) {
+//                $this->lastResultIterator = $this->lastResult->getIterator();
+//            }
+//        } elseif ($this->lastResult !== $lastCheckResult) {
+//            $this->lastResultIterator = $this->lastResult?->getIterator();
+//        }
+//        $lastCheckResult = $this->lastResult;
+//        return $this;
+//    }
 
 }

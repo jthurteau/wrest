@@ -22,6 +22,8 @@ class Pdo
 
     const NON_ERROR = '00000';
 
+    const DELIM_DEFAULT = ',';
+
     public function __invoke(ContainerInterface $container, string $name, callable $callback) : Db
     {
         $return = $callback();
@@ -61,7 +63,7 @@ class Pdo
         //#TODO #1.0.0 throw mismatched sizes
         $replacements = [];
         foreach ($map as $position => $count) {
-            $replacements[$position] = implode(',', array_fill(0, $count, '?'));
+            $replacements[$position] = implode(self::DELIM_DEFAULT, array_fill(0, $count, '?'));
         }
         $query = $queryBits[0];
         for ($i = 0; key_exists($i+1, $queryBits); $i++) {
@@ -160,7 +162,7 @@ class Pdo
         return is_numeric($param) ? self::escapeNumber($param): self::escapeString($param);
     }
 
-    public static function escapeArray($array, $delimiter = ',', $cast = 'auto')
+    public static function escapeArray($array, $delimiter = self::DELIM_DEFAULT, $cast = 'auto')
     {
         if (!is_array($array)) {
             $array = explode($delimiter, $array);
@@ -186,7 +188,7 @@ class Pdo
         return $array;
     }
 
-    public static function escapeList($array, $delimiter = ',', $cast = 'auto'){
+    public static function escapeList($array, $delimiter = self::DELIM_DEFAULT, $cast = 'auto'){
         $return = self::escapeArray($array,$delimiter,$cast);
         return (implode(', ', $return));
     }

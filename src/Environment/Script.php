@@ -11,8 +11,9 @@
 namespace Saf\Environment;
 
 use Saf\Exception\NotImplemented;
+use Saf\Pdo\Exception;
 
-class Script { // extends Saf_Application{
+class Script { // extends Saf/Application{
 
     public const ERROR_CODES = [
         0 => 'Script executed.',

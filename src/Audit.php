@@ -154,8 +154,8 @@ class Audit
 				$cols .= ', `username`';
 				$values .= ', ' . Pdo::escapeString(trim($user));
 			}
-			$query = "INSERT INTO {$table} ({$cols}) VALUES ({$values});";
-			$result = self::$db->insert($query);
+            $insert = "INSERT INTO {$table} ({$cols}) VALUES ({$values});";
+            $result = self::$db->query()->insert($insert);
 			if (!$result) {
 				self::auditFail('query fail.');
 			}
@@ -217,8 +217,8 @@ class Audit
 			if (!is_null($user)) {
 				$cols .= ', `username` = ' . Pdo::escapeString(trim($user));
 			}
-			$query = "UPDATE {$table} SET {$cols} WHERE `id` = {$id};";
-			$result = self::$db->update($query);
+			$update = "UPDATE {$table} SET {$cols} WHERE `id` = {$id};";
+			$result = self::$db->query()->update($update);
 			if (!$result) {
 				$count = Cache::get('auditFailCount', null);
 				if (is_null($count)) {
@@ -257,7 +257,7 @@ class Audit
 				$where .= ' AND `user` = ' . Pdo::escapeString(trim($user));
 			}
 			$query = "SELECT `id` FROM {$table} WHERE {$where}";
-			$result = self::$db->all(self::$db->query($query));
+			$result = self::$db->query($query)->all();
 			if (!count($result)){
 				return self::add($classification, $message, $request, $user);
 			} else {
@@ -406,12 +406,12 @@ class Audit
 		$limit = Pdo::escapeInt($limit);
 		$page = Pdo::escapeInt($page);
 		$limitString = "LIMIT {$limit} OFFSET {$page}";
-		$query = "SELECT * FROM {$table} WHERE {$where}";
+		$select = "SELECT * FROM {$table} WHERE {$where}";
 		$countQuery = "SELECT COUNT(`id`) FROM {$table} WHERE {$where} {$limitString}";
 //		$query2 = $query . $where2 . " ORDER BY {$sortString} {$limitString}";
-		$query .= " ORDER BY {$sortString} {$limitString}";
-		Debug::outData(['query', $query]);
-		$result = self::$db->all(self::$db->query($query));
+        $select .= " ORDER BY {$sortString} {$limitString}";
+		Debug::outData(['query', $select]);
+		$result = self::$db->query($select)->all();
 //		$result2 = self::$_db->all(self::$_db->query($query2));
 		if (is_null($result)) {
 			$return = ['success' => false];
@@ -423,7 +423,7 @@ class Audit
 		// if (!is_null($payload) && trim($payload) != '') {
 		// 	print_r([__FILE__,__LINE__,$result, $result2, $where2, $payload, $escapedPayload, $matchPayload]); die;
 		// }
-		$countResult = self::$db->one(self::$db->query($countQuery));
+		$countResult = self::$db->query($countQuery)->one();
 		return [
 			'success' => true, 
 			'recordCount' => count($result), 
@@ -439,8 +439,8 @@ class Audit
 		}
 		$values = [];
 		$table = self::$path;
-		$query = "SELECT DISTINCT classification FROM {$table};";
-		$result = self::$db->all(self::$db->query($query));
+		$select = "SELECT DISTINCT classification FROM {$table};";
+		$result = self::$db->query($select)->all();
 		if (!$result) {
 			Debug::outData(['failed to get audit classifications', self::$db->getErrorMessage(),self::$db]);
 		}
@@ -451,5 +451,15 @@ class Audit
 		}
 		return $values;
 	}
+
+    public static function enterCriticalPath(): void
+    {
+        self::$critical = true;
+    }
+
+    public static function exitCriticalPath(): void
+    {
+        self::$critical = false;
+    }
 
 }

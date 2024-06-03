@@ -137,48 +137,7 @@ class Db
     public function query(?string $query = null, ?array $args = null)
     {
         $statement = null;
-        $callback = function($directive, $p1 = null, $p2 = null, $p3 = null) {
-            switch ($directive) {
-                case 'prepare':
-                    $statement = $this->connection->query($p1);
-                    if (!$statement) {
-                        $this->addError('Query Failed');
-                        $this->pullError();
-                    }
-                    break;
-                case 'query':
-                    $statement =
-                        $p2
-                        ? $this->connection->query($p1, $p2)
-                        : $this->connection->query($p1);
-                    if (!$statement) {
-                        $this->addError('Query Failed');
-                        $this->pullError();
-                    }
-                    break;
-                case 'execute':
-                    $statement = $p1->execute($p2);
-                    if(Pdo::NON_ERROR != $p1->errorCode()) {
-                        $errorInfo = $p1->errorInfo();
-                        $errorMessage = (key_exists(2, $errorInfo)) && '' != trim($errorInfo[2])
-                            ? $errorInfo[2]
-                            : 'No error message given by the DB.';
-                        // #TODO #2.0.0 throw some more specific exceptions: duplicate/constraint viloations, syntax, etc.
-                        if (strpos(strtolower($errorMessage),'duplicate entry') === 0) {
-                            throw new DbDuplicate('The specified action would create a duplicate DB entry.');
-                        }
-                        throw new PdoException("Bad Query Detected. {$errorMessage}.");
-                    }
-                    break;
-                case 'error':
-                    $this->addError($p1);
-                    $p2 && $this->pullError();
-                    break;
-                default:
-                    return $this;
-            }
-            return $statement;
-        };
+        $callback = $this->getCallback();
         $opened = new Query($callback, $query, $args);
         $this->openQueries[] = $opened;
         return $opened;
@@ -310,6 +269,63 @@ class Db
             $open->close();
         }
         $this->openQueries = [];
+    }
+
+    public function getHostName(): ?string
+    {
+        return $this->hostName;
+    }
+
+    public function getSchemaName(): ?string
+    {
+        return $this->schemaName;
+    }
+
+    protected function getCallback(): callable
+    {
+        return function($directive, $p1 = null, $p2 = null, $p3 = null) {
+            switch ($directive) {
+                case 'prepare':
+                    $statement = $this->connection->query($p1);
+                    if (!$statement) {
+                        $this->addError('Query Failed');
+                        $this->pullError();
+                    }
+                    break;
+                case 'query':
+                    $statement =
+                        $p2
+                            ? $this->connection->query($p1, $p2)
+                            : $this->connection->query($p1);
+                    if (!$statement) {
+                        $this->addError('Query Failed');
+                        $this->pullError();
+                    }
+                    break;
+                case 'execute':
+                    $statement = $p1->execute($p2);
+                    if(Pdo::NON_ERROR != $p1->errorCode()) {
+                        $errorInfo = $p1->errorInfo();
+                        $errorMessage = (key_exists(2, $errorInfo)) && '' != trim($errorInfo[2])
+                            ? $errorInfo[2]
+                            : 'No error message given by the DB.';
+                        // #TODO #2.0.0 throw some more specific exceptions: duplicate/constraint viloations, syntax, etc.
+                        if (strpos(strtolower($errorMessage),'duplicate entry') === 0) {
+                            throw new DbDuplicate('The specified action would create a duplicate DB entry.');
+                        }
+                        throw new PdoException("Bad Query Detected. {$errorMessage}.");
+                    }
+                    break;
+                case 'error':
+                    $statement = null;
+                    $this->addError($p1);
+                    $p2 && $this->pullError();
+                    break;
+                default:
+                    return $this;
+            }
+            return $statement;
+        };
     }
 
 
