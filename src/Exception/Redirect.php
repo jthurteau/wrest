@@ -23,7 +23,7 @@ class Redirect extends \Exception {
     /**
      * indicates how the agent should handle the redirect (header or body)
      */
-    protected string $method = self::METHOD_HEADER;
+    protected string $method = self::METHOD_BODY;
 	
 	/**
 	 * sets the exception's redirect to be remembered in the browser's history
