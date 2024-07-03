@@ -11,6 +11,7 @@ use Laminas\Diactoros\Response\HtmlResponse;
 use Laminas\Diactoros\Response\JsonResponse;
 use Mezzio\Template\TemplateRendererInterface;
 use Mezzio\Plates\PlatesRenderer;
+use Saf\Exception\Redirect;
 
 use Saf\Debug;
 
@@ -26,6 +27,8 @@ class RedirectHandler implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $location = $request->getAttribute('location');
+        $method = $request->getAttribute('redirectMethod', Redirect::METHOD_BODY);
+        $automatic = $method == Redirect::METHOD_HEADER;
         if (!$location) {
             throw new \Exception('Unable to redirect, no location set');
         }
@@ -36,12 +39,16 @@ class RedirectHandler implements RequestHandlerInterface
         $htmlWeight = strpos('text/html', $useHtml);
         $jsonWeight = strpos('application/json', $useHtml);
         $useHtml = $jsonWeight === FALSE || ($htmlWeight !== FALSE && $htmlWeight < $jsonWeight);
-        $interrupt = Debug::isEnabled();
+        $interrupt = Debug::isVerbose();
         //#TODO implement pure header redirect
+        if ($automatic) {
+            header("Location: $location");
+        }
         $response = 
             $useHtml
             ? new HtmlResponse($this->template->render($htmlTemplate, [
                 'location' => $location,
+                'automatic' => $automatic,
                 'interceptedText' => $interrupt ? '(intercepted by Debug Mode)' : '',
                 'hostUri' => self::autoHost($request),
                 'requestScheme' => $request->getUri()->getScheme(),

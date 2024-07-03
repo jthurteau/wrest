@@ -49,7 +49,8 @@ class FoundationMiddleware implements MiddlewareInterface
             $redirected = 
                 $request
                 ->withAttribute('location', $r->getMessage())
-                ->withAttribute('permanentRedirect', $r->isPermanent());
+                ->withAttribute('permanentRedirect', $r->isPermanent())
+                ->withAttribute('redirectMethod', $r->isAutomatic() ? Redirect::METHOD_HEADER : Redirect::METHOD_BODY);
             return (new RedirectHandler(self::$renderer))->handle($redirected);
         }
     }

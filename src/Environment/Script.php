@@ -11,7 +11,6 @@
 namespace Saf\Environment;
 
 use Saf\Exception\NotImplemented;
-use Saf\Pdo\Exception;
 
 class Script { // extends Saf/Application{
 
