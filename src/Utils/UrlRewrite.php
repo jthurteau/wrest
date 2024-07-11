@@ -13,6 +13,32 @@ namespace Saf\Utils;
 class UrlRewrite
 {
 
+    public const QUERY_DELIM = '?';
+    public const QUERY_FIELD_DELIM = '&';
+    public const QUERY_FIELD_ASSIGNMENT = '=';
+
+    /**
+     * gets the URL Query from the passed URL
+     * @param string $url
+     * @return string query portion (after the ?) of $url
+     */
+    public static function getQuery(string $url): string
+    {
+        $index = strpos($url, self::QUERY_DELIM);
+        return $index !== false ? substr($url, $index + 1) : '';
+    }
+
+    /**
+     * removes a URL Query from the passed URL
+     * @param string $url
+     * @return string $url without a trailing query
+     */
+    public static function deQuery(string $url): string
+    {
+        $index = strpos($url, self::QUERY_DELIM);
+        return $index !== false ? substr($url, 0, $index) : $url;
+    }
+
 	/**
 	 * formats a $url with provided query ($getArray) sanitized based on $config
 	 * @param string $url
@@ -30,13 +56,13 @@ class UrlRewrite
 		foreach($getArray as $getName=>$getValue){
 			if(
 				(
-					array_key_exists('include', $config)
+					key_exists('include', $config)
 					&& (
 						(is_array($config['include']) && in_array($getName, $config['include']))
 						|| $getName == $config['include']
 					)
 				) || (
-					array_key_exists('exclude', $config)
+					key_exists('exclude', $config)
 					&& (
 						(is_array($config['exclude']) && !in_array($getName, $config['exclude']))
 						|| (is_string($config['exclude']) && $getName != $config['exclude'])

@@ -28,13 +28,13 @@ class Memory implements Strategy{
 
     public static function load(string $facet, mixed $spec = self::DEFAULT_LOAD_SPEC): mixed
     {
-        $default = 
+        $default =
             is_array($spec) && key_exists(Cache::CONFIG_DEFAULT, $spec) 
             ? $spec[Cache::CONFIG_DEFAULT] 
             : null;
         return 
             self::available($facet)
-            ? self::$memory[$facet] 
+            ? self::$memory[$facet]
             : $default;
     }
 

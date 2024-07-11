@@ -36,11 +36,10 @@ class RedirectHandler implements RequestHandlerInterface
         $htmlTemplate = $request->getAttribute('template', 'app::redirect');
         $useHtml = $request->getHeader('Accept');
         is_array($useHtml) && ($useHtml = array_pop($useHtml));
-        $htmlWeight = strpos('text/html', $useHtml);
+        $htmlWeight = strpos('text/html', $useHtml); //#TODO ... we implemented a better way to do this ...somewhere
         $jsonWeight = strpos('application/json', $useHtml);
         $useHtml = $jsonWeight === FALSE || ($htmlWeight !== FALSE && $htmlWeight < $jsonWeight);
         $interrupt = Debug::isVerbose();
-        //#TODO implement pure header redirect
         if ($automatic) {
             header("Location: $location");
         }

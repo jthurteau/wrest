@@ -332,6 +332,28 @@ class Hash
         }
         return implode('&', $return);
     }
+
+    /**
+     * parses a URL query string into an array of values
+     * a query parameter with no matching value is assigned "true"
+     * all other values are returned as a literal string, including the empty string
+     * @param string $query URLesque (x=y&z=2&present) string of value pairs
+     * @return array
+     */
+    public static function fromQuery(string $query): array
+    {// #TODO add encoding/decoding filter param
+        $queryDelim = '?';
+        strpos($query, $queryDelim) === 0 && $query = substr($query, strlen($queryDelim));
+        $data = [];
+        $parts = explode('&', $query);
+        foreach ($parts as $pair) {
+            $components = explode('=', $pair, 2);
+            $field = $components[0];
+            $value = key_exists(1, $components) ? $components[1] : true;
+            $field && ($data[$field] = $value);
+        }
+        return $data;
+    }
     
     public static function toHtml($array, $ordered = false, $nested = true, $typed = false, $boolean = false)
     {

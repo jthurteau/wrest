@@ -10,6 +10,8 @@
 
 namespace Saf;
 
+use Saf\Util\File;
+
 class Cache
 {
 
@@ -18,14 +20,15 @@ class Cache
     public const LONG_CACHE_EXP = 10800; // one day
     public const MAX_MEMORY_PERCENT = 10;
 
-    public const CONFIG_DEFAULT = 'DEFAULT';
+    public const CONFIG_DEFAULT = 'default';
     public const CONFIG_MAX_SIZE = 'maxSize';
     public const CONFIG_MAX_AGE = 'maxAge';
     public const CONFIG_AGE_FUZZY = 'fuzzy';
     public const CONFIG_STAMP_MODE = 'stampMode';
+    public const CONFIG_PATH = 'path';
     public const STAMP_MODE_REPLACE = 0;
-	public const STAMP_MODE_AVG = 1;
-	public const STAMP_MODE_KEEP = 2;
+    public const STAMP_MODE_AVG = 1;
+    public const STAMP_MODE_KEEP = 2;
     public const CONFIG_HASH_STORAGE = 'hashFacet';
 
     public const LOG_BASE = M_E; //natural log
@@ -71,12 +74,12 @@ class Cache
 
     public static function fuzzyCling(int $threshold):int
     {
-		return $threshold + rand(0, ceil($threshold * self::$fuzziness));
+        return $threshold + rand(0, ceil($threshold * self::$fuzziness));
     }
 
     public static function staticCling(int $threshold):int
     {
-		return $threshold + ceil($threshold * self::$fuzziness);
+        return $threshold + ceil($threshold * self::$fuzziness);
     }
 
     public static function resetCling():void
@@ -91,7 +94,7 @@ class Cache
             key_exists($facet, self::$hashMemory)
             && key_exists($uname, self::$hashMemory[$facet]);
         if ($stored) {
-            return self::$hashMemory[$file][$uname];
+            return self::$hashMemory[$facet][$uname];
         }
         return null;
     }
@@ -106,7 +109,7 @@ class Cache
     public static function get(string $facet)
     {
         if (self::$callback) {
-            return self::$callback($facet);
+            return (self::$callback)($facet);
         }
         return false;
     }
@@ -114,7 +117,7 @@ class Cache
     public static function store(string $facet, mixed $data)
     {
         if (self::$callback) {
-            self::$callback($facet, $data);
+           return (self::$callback)($facet, $data);
         }
         return false;
     }
@@ -122,6 +125,47 @@ class Cache
     public static function registerCallback($callback)
     {
         self::$callback = $callback;
+    }
+
+    public static function scan($path): array
+    {
+        $files = [];
+        $cacheSize = 0;
+        foreach(File::dir($path, File::DIR_MODE_RECURSIVE_FLAT) as $file) {
+            $cacheSize += filesize($file);
+            $files[] = $file;
+        }
+        if ($cacheSize > 1000000) {
+            $cacheSize = floor($cacheSize / 1000000) .'M';
+        } else if($cacheSize > 1000) {
+            $cacheSize = floor($cacheSize / 1000) .'K';
+        }
+
+        return [
+            'size' => (string)$cacheSize,
+            'files' => $files,
+        ];
+    }
+
+    public static function analyze($path): ?array
+    {
+        if (file_exists($path)) {
+            $data = stat($path);
+            $info = $data
+                ? [
+                    'uid' => $data['uid'],
+                    'gid' => $data['gid'],
+                    'size' => $data['size'],
+                    'atime' => $data['atime'],
+                    'mtime' => $data['mtime'],
+                    'ctime' => $data['ctime']
+                ] : [];
+            $info['type'] = is_dir($path) ? 'dir' : 'file';
+            return $info;
+        } else {
+            return [];
+        }
+        return null;
     }
 
 }

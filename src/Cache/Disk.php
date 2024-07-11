@@ -18,6 +18,7 @@ use Saf\Cache\Strategy;
 class Disk implements Strategy{
 
     public const DEFAULT_MAX_AGE = 60;
+    public const MAX_AGE_FORCE = -1;
 
     public const STAMP_MODE_REPLACE = 0;
     public const STAMP_MODE_AVG = 1;
@@ -80,16 +81,20 @@ class Disk implements Strategy{
         // if fuzzy modify maxAge
         //\Saf\Util\Profile::ping(["loading disk cache {$facet} with timeout {$maxAge}"]);
         //if hash facet '/hash/perm' . Saf\Util\File::calcHashFile
+        // if fuzzy is an int, add it (precalculated fuzz factor), if it is a bool add a random value
 
         $payload = null;
 
-        $minDate = !is_null($maxAge) ? Time::time() - $maxAge : null;
+        $minDate =
+            !is_null($maxAge) && $maxAge != self::MAX_AGE_FORCE
+            ? Time::time() - $maxAge
+            : null;
         //if fuzzy $maxDate = Cache::fuzz($maxAge)...
 
         $path = self::getFullPath($facet);
         self::ensurePath(dirname($path));
         if(!self::fileAvailable($path)) {
-            //\Saf\Util\Profile::ping(["disk cache file {$path} for {$facet} does not exist"]);
+            \Saf\Util\Profile::ping(["disk cache file {$path} for {$facet} does not exist"]);
             return $default;
         }
         $contents = File::getJson($path);
@@ -98,6 +103,15 @@ class Disk implements Strategy{
         ) {
             $payload = self::valid($contents, $minDate);
             //$payload || \Saf\Util\Profile::ping(["disk cache {$facet} expired timeout {$minDate}"]);
+        }
+        if(!$payload) {
+            if (!is_array($contents)) {
+                \Saf\Util\Profile::ping(['disk load invalidated, invalid file contents', $facet, $spec, $minDate, gettype($contents), $contents]);
+            } elseif (!key_exists('payload', $contents)) {
+                \Saf\Util\Profile::ping(['disk load invalidated, no payload', $facet, $spec, $minDate,$contents]);
+            } else {
+                \Saf\Util\Profile::ping(['disk load invalidated', $facet, $spec, $minDate]);
+            }
         }
         return $payload ?: $default;
     }
@@ -140,16 +154,27 @@ class Disk implements Strategy{
         return !is_null($file) && file_exists($file) && is_readable($file);
     }
 
-    protected static function valid(mixed $payload, ?int $minDate = null):mixed
+    /**
+     * return a payload if it passes validation, otherwise return null
+     * @param mixed $payload
+     * @param int|null $minDate
+     * @return mixed
+     */
+    protected static function valid(mixed $loadedData, ?int $minDate = null):mixed
     {
         $valid = null;
-        //\Saf\Util\Profile::ping(array('Cache', $minDate, array_key_exists('stamp', $contents) ? $contents['stamp'] : 'NONE' ));
+        \Saf\Util\Profile::ping([
+            'Cache timestamp validation',
+            $minDate,
+            key_exists('stamp', $loadedData) ? $loadedData['stamp'] : 'NONE',
+            key_exists('stamp', $loadedData) ? $loadedData['stamp'] - $minDate : 'invalid'
+        ]);
         if (
             is_null($minDate)
-            || (key_exists('stamp', $payload) && $payload['stamp'] >= $minDate)
+            || (key_exists('stamp', $loadedData) && $loadedData['stamp'] >= $minDate)
         ) {
             //\Saf\Util\Profile::ping(["disk cache accepted with age timeout {$payload['stamp']} ({$minDate})"]);
-            $valid = $payload['payload'];
+            $valid = key_exists('payload', $loadedData) ? $loadedData['payload'] : null;
             //$stamp = key_exists('stamp', $payload) ? $payload['stamp'] : null;
             // \Saf\Util\Profile::ping("loaded cached {$file} {$stamp}" . ($cache ? ', caching to memory' : ''));
         } //else {
@@ -170,6 +195,10 @@ class Disk implements Strategy{
 
     public static function save(string $facet, mixed $data, mixed $spec = self::DEFAULT_SAVE_SPEC): bool
     {
+        if (is_null($spec) || ! $spec || $spec != self::DEFAULT_SAVE_SPEC) {
+            \Saf\Debug::outData([__CLASS__, 'using custom save spec', __FILE__,__LINE__,$facet, $spec]);
+        }
+        //#TODO accept path override from $spec;
         $timestampMode = 
             is_array($spec) && key_exists(Cache::CONFIG_STAMP_MODE, $spec) 
             ? $spec[Cache::CONFIG_STAMP_MODE]
@@ -181,6 +210,7 @@ class Disk implements Strategy{
             //\Saf\Debug::out("saving null value to cache, {$facet}");
             return false;
         }
+        $rawFacet = $facet;
         $facet = self::fileSafeFacet($facet);
         $path = self::getFullPath($facet);
         $hold = File::hold($path);
@@ -199,7 +229,12 @@ class Disk implements Strategy{
             File::release($hold);
             return true;
         } else {
-            // \Saf\Debug::out("unable to save {$facet}");
+            \Saf\Debug::out("unable to save {$facet}");
+            \Saf\Util\Profile::ping([
+                "unable to save {$rawFacet}",
+                $facet,
+                $path,
+            ]);
         }
         return false;
     }
@@ -230,7 +265,7 @@ class Disk implements Strategy{
 
     public static function fileSafeFacet(string $facet)
     {
-        return str_replace(['\\','::'], '_', $facet);
+        return str_replace('@', '_at_', str_replace(['\\','::'], '_', $facet));
     }
 
     protected static function ensurePath(string $path)
@@ -247,7 +282,7 @@ class Disk implements Strategy{
             return $memory;
         }
         $payload = null;
-        $contents = File::getRawJsonHash($file, $uname);
+        $contents = File::getRawJsonHash($facet, $uname);
         //Saf_Debug::outData(array('from file', $file, $uname, $contents));
         if ($contents && is_array($contents) && key_exists('payload', $contents)) {
             if (
@@ -279,7 +314,9 @@ class Disk implements Strategy{
     //#TODO implement forget()
     public static function forget(string $facet): void
     {
-        self::fileAvailable(self::getFullPath($facet));
+        $path = self::getFullPath(self::fileSafeFacet($facet));
+        $available = self::fileAvailable(self::getFullPath(self::fileSafeFacet($facet)));
+        $available && unlink($path);
     }
 
     public static function canStore(mixed $data): bool
