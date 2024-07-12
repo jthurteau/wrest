@@ -184,7 +184,7 @@ abstract class Front implements Cachable {
      */
     public function getCacheQuery(string $storageMethod, string $name, $arguments = null): string
     {
-        $proxy = $this->getProxy();
+        $proxy = $this->getProxy(); //#TODO on all of these test $proxy and if it is self, then return falsey
         return $proxy?->getCacheQuery($storageMethod, $name, $arguments);
     }
 

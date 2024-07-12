@@ -40,7 +40,6 @@ trait RequestHandlerCommon {
         //$accessList = Hash::deepMerge($this->accessList,$globalAccess);
         $keys = $user ? $user->getDetail('keys') : [];
         $roles = $user ? $user->getRoles() : [];
-
         if ($this->matchRoute($resource, 'open')) {
             return 'open-access';
         }
@@ -55,16 +54,17 @@ trait RequestHandlerCommon {
         if ($user && $this->matchRoute($resource, "user-{$userName}")) {
             return 'authorized-access';
         }
+        $validKeys = Keys::validKeys($keys);
         if (
-            count($keys) > 0 
+            count($validKeys) > 0
             && $this->matchRoute($resource, 'key')
         ) {
             return 'key-access';
         }
-        foreach($keys as $key) {
-            $keyName = Keys::keyName($key);
+        foreach($validKeys as $keyName=> $key) {
             if ($this->matchRoute($resource, $keyName)) {
-                return "{$keyName}-key-access";
+                $serviceName = substr($keyName, 4);
+                return "{$serviceName}-key-access";
             }
         }
         foreach($roles as $role) {

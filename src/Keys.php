@@ -38,6 +38,11 @@ class Keys
         self::$serviceKeys = $keyArray;
     }
 
+    public static function getServiceKeys()
+    {
+        return self::$serviceKeys;
+    }
+
     public static function detect($includeSession = true)
     {
         return
@@ -99,11 +104,23 @@ class Keys
         return false;
     }
 
+    public static function validKeys(array $keys): array
+    {
+        $valid = [];
+        foreach($keys as $key) {
+            $name = self::keyName($key);
+            if ($name) {
+                $valid[$name] = $key;
+            }
+        }
+        return $valid;
+    }
+
     public static function keyName($keyValue)
     {
         foreach(self::$serviceKeys as $keyName => $key) {
             if ($keyValue === trim($key)) {
-                return $keyName;
+                return "key-{$keyName}";
             }
         }
         return null;
