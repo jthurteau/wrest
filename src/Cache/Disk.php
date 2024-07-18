@@ -98,13 +98,10 @@ class Disk implements Strategy{
             return $default;
         }
         $contents = File::getJson($path);
-        if (
-            $contents && is_array($contents) && key_exists('payload', $contents)
-        ) {
-            $payload = self::valid($contents, $minDate);
-            //$payload || \Saf\Util\Profile::ping(["disk cache {$facet} expired timeout {$minDate}"]);
-        }
-        if(!$payload) {
+        $valid = self::isvalid($contents, $minDate);
+        $payload = $valid ? self::extract($contents) :null;
+        //$payload || \Saf\Util\Profile::ping(["disk cache {$facet} expired timeout {$minDate}"]);
+        if(!$valid) {
             if (!is_array($contents)) {
                 \Saf\Util\Profile::ping(['disk load invalidated, invalid file contents', $facet, $spec, $minDate, gettype($contents), $contents]);
             } elseif (!key_exists('payload', $contents)) {
@@ -113,7 +110,7 @@ class Disk implements Strategy{
                 \Saf\Util\Profile::ping(['disk load invalidated', $facet, $spec, $minDate]);
             }
         }
-        return $payload ?: $default;
+        return $valid ? $payload : $default;
     }
 
     /**
@@ -160,21 +157,21 @@ class Disk implements Strategy{
      * @param int|null $minDate
      * @return mixed
      */
-    protected static function valid(mixed $loadedData, ?int $minDate = null):mixed
+    protected static function isValid(mixed $loadedData, ?int $minDate = null): bool
     {
-        $valid = null;
+        if (!$loadedData || !is_array($loadedData) || !key_exists('payload', $loadedData)) {
+            return false;
+        }
         \Saf\Util\Profile::ping([
             'Cache timestamp validation',
             $minDate,
             key_exists('stamp', $loadedData) ? $loadedData['stamp'] : 'NONE',
             key_exists('stamp', $loadedData) ? $loadedData['stamp'] - $minDate : 'invalid'
         ]);
-        if (
-            is_null($minDate)
-            || (key_exists('stamp', $loadedData) && $loadedData['stamp'] >= $minDate)
-        ) {
+        $fresh = key_exists('stamp', $loadedData) && $loadedData['stamp'] >= $minDate;
+        if (is_null($minDate) || $fresh) {
             //\Saf\Util\Profile::ping(["disk cache accepted with age timeout {$payload['stamp']} ({$minDate})"]);
-            $valid = key_exists('payload', $loadedData) ? $loadedData['payload'] : null;
+            return key_exists('payload', $loadedData);
             //$stamp = key_exists('stamp', $payload) ? $payload['stamp'] : null;
             // \Saf\Util\Profile::ping("loaded cached {$file} {$stamp}" . ($cache ? ', caching to memory' : ''));
         } //else {
@@ -189,7 +186,15 @@ class Disk implements Strategy{
             //     'cached' . date(Ems::EMS_DATE_TIME_FORMAT ,$cacheDate)
             // ));
         // }
-        return $valid;
+        return false;
+    }
+
+    public static function extract(mixed $loadedData): mixed
+    {
+        return
+            $loadedData && is_array($loadedData) && key_exists('payload', $loadedData)
+            ? $loadedData['payload']
+            : null;
     }
 
 
