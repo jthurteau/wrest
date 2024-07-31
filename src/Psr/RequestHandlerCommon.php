@@ -46,7 +46,7 @@ trait RequestHandlerCommon {
         if (
             $this->matchRoute($resource, 'any-user')
         ) {
-            if ($user->getIdentity()) {
+            if ($user?->getIdentity()) {
                 return 'authorized-access';
             }
         }

@@ -536,18 +536,18 @@ class Hash
     }
 
     //#TODO public static function isNumericallyIndexed(array|X $array, ?bool $strict = true): float|bool //actually check each index
-    
+
     public static function keysExist($keys, $array)
     {
         if (!is_array($keys)) {
             $keys = array($keys);
         }
         foreach($keys as $key){
-            if (!array_key_exists($key, $array)) {
-                return FALSE;
+            if (!key_exists($key, $array)) {
+                return false;
             }
         }
-        return TRUE;
+        return true;
     }
 
     /**
