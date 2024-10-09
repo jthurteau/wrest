@@ -147,7 +147,7 @@ class Time
 	 * @param int $now input differential, defualts to now (i.e. the native time())
 	 * @return int the modified timestamp
 	 */	
-	public static function time($now = null)
+	public static function time($now = null): int
 	{
 		if (is_null($now)) {
 			$now = time();

@@ -78,6 +78,25 @@ class Debug
      */
     const ERROR_MODE_EXTERNAL = 'default';
 
+    /**
+     * simplest trace output level that mimics Exception::traceAsString
+     */
+    const TRACE_SHALLOW = 'shallow';
+
+    /**
+     * trace output level with more detail than shallow;
+     */
+    const TRACE_DIGEST = 'digest';
+
+    /**
+     * trace output level that scans the depth of structures and generates prints
+     */
+    const TRACE_DEEP = 'deep';
+
+    /**
+     * trace output level, caches the full details of printed structures
+     */
+    const TRACE_VAULTED = 'vault';
     
     /**
      * current debugging mode
@@ -369,7 +388,7 @@ class Debug
         return Analysis::data($message);
     }
 
-    public static function getTrace($wrapped = true)
+    public static function getTrace($wrapped = true): array
     {
         try {
             throw new \Exception('debug');
@@ -380,6 +399,115 @@ class Debug
         }
     }
 
+    protected static function getTraceString(): string
+    {
+        return self::renderTrace(array_slice((new \Exception('debug'))->getTrace(),1));
+    }
+
+    public static function renderTrace(array $trace): string
+    {
+        $standardEol = "\n";
+        $out = '';
+        $count = count($trace);
+        foreach($trace as $index => $point) {
+            if (
+                array_keys($point) != ['file', 'line', 'function', 'class', 'type', 'args']
+                && array_keys($point) != ['file', 'line', 'args', 'function']
+                && array_keys($point) != ['file', 'line', 'function', 'args']
+            ) {
+                print_r([$index, array_keys($point)]); die;
+            }
+            $line =
+                key_exists('file', $point)
+                ? "{$point['file']}({$point['line']})"
+                : '';
+            $context = key_exists('function', $point)
+                ? (
+                    ": "
+                    . (
+                        key_exists('class', $point)
+                        ? "{$point['class']}{$point['type']}"
+                        : ''
+                    ) . "{$point['function']}"
+                ) : '';
+            $env = key_exists('args', $point) ? self::renderArgList($point['args']) : '';
+            $out .= "#{$index} {$line}{$context}{$env}{$standardEol}";
+        }
+        $out .= "#{$count} {main} {$standardEol}";
+        return $out;
+    }
+
+    public static function renderArgList(array $args): string
+    {
+        $out = '(';
+        $prefix = '';
+        foreach($args as $argKey => $argValue) {
+            $representation = self::renderArg($argValue);
+            $out .= "{$prefix}{$representation}";
+            $prefix = ', ';
+        }
+        return "{$out})";
+    }
+
+    public static function escapeTraceStrings(string $s, ?int $max = 512): string
+    {
+        return substr($s, 0, $max) . (strlen($s) > $max ? '[...]' : '');
+    }
+
+    public static function escapeTraceArray(array $a, ?int $max = 16): string
+    {
+        $out = '';
+        $prefix = '';
+        $count = 1;
+        foreach($a as $index => $value) {
+            if (is_string($index)) {
+                $index = "'{$index}'";
+            }
+            $rendered = self::renderArg($value);
+            $out .= "{$prefix}{$index} => {$rendered}";
+            $prefix = ', ';
+            $count++;
+            if ($max >= 0 && $count > $max) {
+                $out .= "{$prefix}...";
+                break;
+            }
+        }
+        return $out;
+    }
+
+    public static function renderArg(mixed $value, string $behavior = self::TRACE_DIGEST): string
+    {
+        $type = gettype($value);
+        $representation = '';
+        switch($type) {
+            case 'integer':
+            case 'boolean':
+                $type = $type == 'integer' ? 'int' : 'bool';
+                $representation = (string)$value;
+                return "({$type}){$representation}";
+            case 'float':
+                $representation = (string)$value;
+                return "({$type}){$representation}";
+            case 'string':
+                $type = "{$type}/" . strlen($value);
+                $escValue = self::escapeTraceStrings($value);
+                return "({$type})'$escValue'";
+            case 'array':
+                $type = "{$type}/" . count($value); //#TODO is numeric/subtype
+                $escValue = $behavior = self::TRACE_SHALLOW ? '' : self::escapeTraceArray($value);
+                return "($type)[{$escValue}]";
+            case 'object':
+                return $value::class;
+            case 'resource':
+            case 'callable':
+               return "[{$type}]";
+            case 'NULL':
+                return 'null';
+            default:
+                return "({$type})[xxx]";
+        }
+    }
+
     public static function dieSafe($message = '')
     {
         Handler::dieSafe($message);
@@ -387,9 +515,17 @@ class Debug
 
     public static function halt()
     {
-        if(self::isEnabled()) {
-            print_r([[func_get_args()],self::getTrace()]); die;
+//        try{
+        $standardEol = "\n";
+        if (self::isEnabled()) {
+            print("halting with trace:{$standardEol}");
+            print(self::renderArgList(func_get_args()) . $standardEol);
+            print(self::getTraceString());
+            die;
         }
+//        } catch (\Exception | \Error $e) {
+//            print_r([__FILE__,__LINE__,$e->getMessage(), $e->getTraceAsString()]);
+//        }
     }
 
     public static function vent()

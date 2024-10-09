@@ -462,4 +462,22 @@ class Audit
         self::$critical = false;
     }
 
+    public static function getThumbprint(): string
+    {
+        switch (self::$mode) {
+            case self::MODE_DB:
+                $host = '_';
+                $schema = '_';
+                $table = '_';
+                if (self::$db) {
+                    $host = self::$db->getHostName();
+                    $schema = self::$db->getSchemaName();
+                    $table = self::$path;
+                }
+                return "[db:{$host}/{$schema}/{$table}]";
+            case null:
+                return '[not configured]';
+        }
+    }
+
 }

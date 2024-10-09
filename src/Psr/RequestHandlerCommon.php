@@ -36,7 +36,7 @@ trait RequestHandlerCommon {
 
     protected function allowed($resource, $user = null)
     {
-        //#TODO patch in with configed routes
+        //#TODO patch in with configured routes
         //$accessList = Hash::deepMerge($this->accessList,$globalAccess);
         $keys = $user ? $user->getDetail('keys') : [];
         $roles = $user ? $user->getRoles() : [];

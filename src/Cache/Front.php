@@ -74,6 +74,7 @@ abstract class Front implements Cachable {
             //#TODO make indexes an object
             $diskIndex = $this->proxy->getCacheIndex(self::DISK_CACHE_CLASS, $name, $arguments);
             $diskFacet = $diskIndex ? UrlRewrite::deQuery($diskIndex) : null;
+//            \Saf\Debug::outData(['introspectCache' => $name, 'diskI' => $diskIndex, 'diskF' => $diskFacet]);
             $diskQuery = $this->proxy->getCacheQuery(self::DISK_CACHE_CLASS, $name, $arguments); //UrlRewrite::getQuery($diskIndex ?: '');
             //\Saf\Util\Profile::ping(['verifying cache indexes', self::class, $name, $memoryIndex, $diskIndex, $arguments]);
             //$diskAge = null; // $this->proxy->getCacheExpiration($diskIndex); // pack expiration into index?
@@ -90,6 +91,7 @@ abstract class Front implements Cachable {
             $this->cacheOnlyMode() && (\Saf\Util\Profile::ping(['cache only', $name, self::class]));
             $diskLoadConfig = $this->cacheOnlyMode() ? $forceLoadConfig : $diskSpec; #TODO AGE, FUZZY
             $disk = $diskFacet ? Disk::load($diskFacet, $diskLoadConfig + Disk::DEFAULT_LOAD_SPEC) : null;
+//            \Saf\Debug::outData(['diskF' => $diskFacet, 'diskD' => $disk, 'diskP' => Disk::getFullPath($diskFacet) ,$diskLoadConfig, $diskLoadConfig + Disk::DEFAULT_LOAD_SPEC]);
             if (!is_null($disk)) {
                 $this->lastCached = self::DISK_CACHE_CLASS . "::{$name}";
                 $memoryIndex ? Memory::save($memoryIndex, $disk) : $this->sideLoad($disk, $name, $arguments);
