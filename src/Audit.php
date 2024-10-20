@@ -94,14 +94,13 @@ class Audit
 			$count = 0;
 		}
 		Cache::store('auditFailCount', ++$count);
-		Debug::outData(['failed to audit activity.' . $additional, self::$db->getErrorMessage(), self::$db]);
+		Debug::outData(['failed to audit activity.' . $additional, self::$db?->getErrorMessage(), self::$db]);
 	}
 
 	public static function add($classification, $message = null, $request = null, $user = null)
 	{
 		try {
 			if (!self::$db) {
-				self::auditFail('not initialized.');
 				throw new \Exception('Audit not initialized');
 			}
 			$table = self::$path;

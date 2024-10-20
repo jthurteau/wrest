@@ -79,7 +79,12 @@ class Debug
     const ERROR_MODE_EXTERNAL = 'default';
 
     /**
-     * simplest trace output level that mimics Exception::traceAsString
+     * simplest trace output level that excludes args
+     */
+    const TRACE_BARE = 'bare';
+
+    /**
+     * trace output level that mimics Exception::traceAsString
      */
     const TRACE_SHALLOW = 'shallow';
 
@@ -97,6 +102,15 @@ class Debug
      * trace output level, caches the full details of printed structures
      */
     const TRACE_VAULTED = 'vault';
+
+    /**
+     * standard EOL
+     */
+    const EOL = "\n";
+
+    /**
+     * trace argument depth
+     */
     
     /**
      * current debugging mode
@@ -128,6 +142,11 @@ class Debug
      * the error_level to use for handling when disabled
      */
     protected static $disabledErrorLevel = null;
+
+    /**
+     * trace formatting rules to use on halt
+     */
+    protected static $haltRenderLevel = self::TRACE_DIGEST;
 
     /**
      * Initilizes debugging
@@ -399,13 +418,18 @@ class Debug
         }
     }
 
-    protected static function getTraceString(): string
+    protected static function currentTraceString(?string $behavior = self::TRACE_SHALLOW): string
     {
-        return self::renderTrace(array_slice((new \Exception('debug'))->getTrace(),1));
+        $e = new \Exception('debug');
+        $rendered = self::renderTrace(array_slice($e->getTrace(),1), $behavior);
+        return $rendered;
     }
 
-    public static function renderTrace(array $trace): string
+    public static function renderTrace(array|\Throwable $trace, ?string $behavior = self::TRACE_DIGEST): string
     {
+        if (is_a($trace, \Throwable::class)) {
+            $trace = $trace->getTrace();
+        }
         $standardEol = "\n";
         $out = '';
         $count = count($trace);
@@ -430,19 +454,23 @@ class Debug
                         : ''
                     ) . "{$point['function']}"
                 ) : '';
-            $env = key_exists('args', $point) ? self::renderArgList($point['args']) : '';
+            $argCount = key_exists('args', $point) && $point['args'] ? count($point['args']) : 0;
+            $env =
+                key_exists('args', $point) && $behavior != self::TRACE_BARE
+                ? self::renderArgList($point['args'], $behavior)
+                : ($argCount ? "(...[{$argCount}])" : '()');
             $out .= "#{$index} {$line}{$context}{$env}{$standardEol}";
         }
         $out .= "#{$count} {main} {$standardEol}";
         return $out;
     }
 
-    public static function renderArgList(array $args): string
+    public static function renderArgList(array $args, $behavior = self::TRACE_DIGEST): string
     {
         $out = '(';
         $prefix = '';
         foreach($args as $argKey => $argValue) {
-            $representation = self::renderArg($argValue);
+            $representation = self::renderArg($argValue, $behavior);
             $out .= "{$prefix}{$representation}";
             $prefix = ', ';
         }
@@ -454,16 +482,17 @@ class Debug
         return substr($s, 0, $max) . (strlen($s) > $max ? '[...]' : '');
     }
 
-    public static function escapeTraceArray(array $a, ?int $max = 16): string
+    public static function escapeTraceArray(array $a, null|int|string $behavior = 16): string
     {
         $out = '';
         $prefix = '';
         $count = 1;
+        $max = is_int($behavior) ? $behavior : 16;
         foreach($a as $index => $value) {
             if (is_string($index)) {
                 $index = "'{$index}'";
             }
-            $rendered = self::renderArg($value);
+            $rendered = self::renderArg($value, is_int($behavior) ? self::TRACE_DIGEST : $behavior);
             $out .= "{$prefix}{$index} => {$rendered}";
             $prefix = ', ';
             $count++;
@@ -494,7 +523,7 @@ class Debug
                 return "({$type})'$escValue'";
             case 'array':
                 $type = "{$type}/" . count($value); //#TODO is numeric/subtype
-                $escValue = $behavior = self::TRACE_SHALLOW ? '' : self::escapeTraceArray($value);
+                $escValue = $behavior = self::TRACE_BARE ? '' : self::escapeTraceArray($value);
                 return "($type)[{$escValue}]";
             case 'object':
                 return $value::class;
@@ -513,14 +542,18 @@ class Debug
         Handler::dieSafe($message);
     }
 
-    public static function halt()
+    public static function halt(): void
     {
 //        try{
-        $standardEol = "\n";
+        $standardEol = self::EOL;
+        $data = func_get_args();
         if (self::isEnabled()) {
+            if($data) {
+                print_r(['halt data' => self::renderArgList($data, self::$haltRenderLevel)]);
+            }
             print("halting with trace:{$standardEol}");
             print(self::renderArgList(func_get_args()) . $standardEol);
-            print(self::getTraceString());
+            print(self::currentTraceString(self::$haltRenderLevel));
             die;
         }
 //        } catch (\Exception | \Error $e) {
