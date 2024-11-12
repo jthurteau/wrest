@@ -8,10 +8,12 @@
  * Base Driver for Disk Based Caching
  */
 
+declare(strict_types=1);
+
 namespace Saf\Cache;
 
 use Saf\Cache;
-use Saf\Utils\Time;
+use Saf\Util\Time;
 use Saf\Util\File;
 use Saf\Cache\Strategy;
 

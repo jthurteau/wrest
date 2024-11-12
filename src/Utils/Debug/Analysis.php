@@ -16,11 +16,7 @@ class Analysis
 {
     public static function data($message)
     {
-        ob_start();
-		print_r($message);
-		$output = ob_get_contents();
-		ob_end_clean();
-		return $output;
+        return Debug::stringR($message);
     }
 
 }

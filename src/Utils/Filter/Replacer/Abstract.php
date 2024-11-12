@@ -12,7 +12,7 @@ abstract class Saf_Filter_Replacer_Abstract
 
     public static function replace($value, $segment)
     {
-//print_r(array('default_replace', $value, $segment));
+//print(\Saf\Debug::outString('default_replace', $value, $segment));
         return is_string($segment)
         ? $segment
         : ( 

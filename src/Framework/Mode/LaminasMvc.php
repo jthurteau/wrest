@@ -19,7 +19,7 @@ class LaminasMvc extends Manager{
     public static function detect($instance, $options = null)
     {
         return false;
-        print_r(['detect lainas-mvc', $instance, $options]); die;
+        //die(\Saf\Debug::stringR('detect lainas-mvc', $instance, $options));
     }
     
     public static function autoload($instance, $options = null)
@@ -30,7 +30,7 @@ class LaminasMvc extends Manager{
     public static function run($agentId, $options = null)
     {
         // $application = \Saf_Application::load(APPLICATION_ID, APPLICATION_ENV, true);
-        print_r(['running laminas-mvc application', $instance, $options]); die;
+        die(\Saf\Debug::stringR('running laminas-mvc application', $instance, $options));
 
         // if (! class_exists(Application::class)) {
         //     throw new RuntimeException(

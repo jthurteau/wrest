@@ -46,7 +46,7 @@ class Saf extends Manager{
     public static function run($agentId, $options = [])
     {
         // $application = \Saf_Application::load(APPLICATION_ID, APPLICATION_ENV, true);
-        print_r(['running saf application', $instance, $options]); //die;
+        print(\Saf\Debug::stringR('running saf application', $instance, $options)); //die;
     }
 
 }

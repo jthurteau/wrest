@@ -11,7 +11,7 @@ use Laminas\Diactoros\Response\HtmlResponse;
 // use Mezzio\Template\TemplateRendererInterface;
 // use Mezzio\Plates\PlatesRenderer;
 
-use Saf\Utils\Time;
+use Saf\Util\Time;
 use Saf\Utils\Breadcrumb;
 // use Saf\Exception\Redirect; 
 use Saf\Psr\RequestHandler;
@@ -100,7 +100,7 @@ class CalendarHandler extends RequestHandler implements RequestHandlerInterface
 // //Saf_Debug::outData(array($this->view->timestamp, $this->view->date, $this->view->year,$this->view->month,$this->view->day)); die;
 // 		if (array_key_exists(0, $this->view->forwardResource)) {
 // 			$where = Crumb::forStack($this->view->forwardResource);
-// 			$this->view->calendarModel = $this->_getCalendar($this->view->forwardResource);
+// 			$this->view->calendarModel = $this->getCalendar($this->view->forwardResource);
 // 		}
 // 		if ('' != $where) {
 // 			Saf_Layout_Location::pushCrumb(
@@ -121,7 +121,7 @@ class CalendarHandler extends RequestHandler implements RequestHandlerInterface
 //     	$this->view->date = "{$this->view->year}-{$this->view->month}-{$this->view->day}";
 //     }
 
-	protected function _getCalendar($stack, $forward)
+	protected function getCalendar($stack, $forward)
 	{
 		if (!array_key_exists(0, $stack)) {
 			return NULL;

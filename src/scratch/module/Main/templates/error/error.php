@@ -1,4 +1,8 @@
 <?php
 
-print('<pre>');
-print_r([__FILE__, __LINE__, get_defined_vars()]);
+use Saf\Debug;
+
+?>
+<pre>
+<?php print(Debug::stringR(__FILE__, __LINE__, get_defined_vars())); ?>
+</pre>

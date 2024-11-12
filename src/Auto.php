@@ -62,11 +62,11 @@ class Auto
         // $exitTrace = false;
         // try{
         //     $trace = Debug::getTrace();
-        //     print_r([
+        //     print(Debug::stringR(
         //         __FILE__,__LINE__,
         //         $class,$externalPath,$prefix,
         //         //$trace
-        //     ]);
+        //     ));
         //     $exitTrace = true;
         // } catch (\Error | \Exception $e) {
         //     //$trace = $e->getMessage();
@@ -79,19 +79,19 @@ class Auto
         }
         $head = array_shift($parts);
         if (!$externalPath && $head != __NAMESPACE__) {
-            //print_r([__FILE__,__LINE__, $class, $externalPath, $prefix, $head,count($parts)]);
+            //print(Debug::stringR(__FILE__,__LINE__, $class, $externalPath, $prefix, $head,count($parts)));
             return null; #TODO, maybe re-head and default these to Modules? Vendor?
         } elseif (count($parts) < 1) {
-            //print_r([__FILE__,__LINE__, $class, $externalPath, $prefix, $head,count($parts)]);
+            //print(Debug::stringR(__FILE__,__LINE__, $class, $externalPath, $prefix, $head,count($parts)));
             //return null; #TODO, also possible legit standard case?
         }
         $classPath = implode('/', $parts);
         if ($head != $prefix) {
             $classPath .= "{$head}/";
         }
-        //print_r([__FILE__,__LINE__,'lookup', $class,$externalPath,$prefix,$path,$classPath]); die;
+        //die(Debug::stringR(__FILE__,__LINE__,'lookup', $class,$externalPath,$prefix,$path,$classPath));
         // if ($exitTrace) {
-        //     print_r([__FILE__,__LINE__,"{$path}/{$classPath}.php"]);
+        //     print(Debug::stringR(__FILE__,__LINE__,"{$path}/{$classPath}.php"));
         // }
         return "{$path}/{$classPath}.php";
     }
@@ -148,12 +148,12 @@ class Auto
         } elseif (is_object($meditationData)) {
             $class = get_class($meditationData);
             print("\n{$tab}{$class}<span class=\"inner-data\" style=\"display:none;\">");
-            print_r($meditationData);
+            print(Debug::stringR($meditationData));
             print('</span>');
         } else {
             $inline = true;
             $style = $depth ? ' style="display:inline;"' : '' ;
-            print_r($meditationData);
+            print(Debug::stringR($meditationData));
         }
         $blockCap = !$inline ? str_repeat('  ', $depth) : '';
         $output = ob_get_contents();

@@ -8,7 +8,7 @@
  * Utility functions for altering URLs
  */
 
-namespace Saf\Utils;
+namespace Saf\Util;
 
 class UrlRewrite
 {

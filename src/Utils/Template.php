@@ -63,7 +63,7 @@ class Template //#TODO deprecate in favor of Util/Template
             $buffer = ob_get_contents();
             ob_end_clean();
             // if (key_exists('timezone',$extractParams)) {
-            //     print_r([__FILE__,__LINE__,$extractParams,$buffer]);die;
+            //    die(\Saf\Debug::stringR([__FILE__,__LINE__,$extractParams,$buffer));
             // }
             return $buffer;
         }

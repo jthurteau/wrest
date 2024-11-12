@@ -20,7 +20,7 @@ abstract class Filter
 	public static function breakup($whole, $match)
     {
 
-//print_r(array(memory_get_usage(),memory_get_peak_usage(),128000000,ini_get('memory_limit'))); die;
+//die(\Saf\Debug::stringR(memory_get_usage(),memory_get_peak_usage(),128000000,ini_get('memory_limit')));
 		$result = array();
 		$result['start'] = strpos($whole, $match);
 		if ($result['start'] === FALSE) {
@@ -39,16 +39,16 @@ abstract class Filter
 		// $thresh = 20000000;
 		// $usage = memory_get_usage();
 		// if ($usage > $thresh) {
-		// 	print_r(array($whole,$match,$result)); die;
+		// 	die(\Saf\Debug::stringR($whole,$match,$result));
 		// 	//throw new Exception("Memory Usage Throttled at $usage");
 		// }
-//print_r(array('breakup_result', $whole, $match, $result));
+//print(\Saf\Debug::stringR('breakup_result', $whole, $match, $result));
 		return $result;
 	}
 	
 	protected static function _orderFilterMethods($prefix, $name)
     {
-//print_r(array('order methods', $prefix, $name));		
+//print(\Saf\Debug::stringR('order methods', $prefix, $name));
         $options = substr($name,strlen($prefix));
         $names = array();
         if ($options) {
@@ -83,7 +83,7 @@ abstract class Filter
 		}
 		if (!is_array($callable)) {
 			$callable = explode('::', $callable);
-//print_r(array($callable)); //die;
+//print(\Saf\Debug::stringR($callable)); //die;
 			return new ReflectionMethod($callable[0],$callable[1]);
 		} else {
 			return array($callable[0], new ReflectionMethod($callable[0],$callable[1]));

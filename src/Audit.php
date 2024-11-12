@@ -8,13 +8,15 @@
  * Utility class for auditing activity
  */
 
+declare(strict_types=1);
+
 namespace Saf;
 
 use Psr\Container\ContainerInterface;
 use Saf\Psr\Container;
 use Saf\Debug;
 use Saf\Cache;
-use Saf\Utils\Time;
+use Saf\Util\Time;
 use Saf\Exception\NotImplemented;
 use Saf\Pdo;
 use Saf\Pdo\Db;
@@ -420,7 +422,7 @@ class Audit
 			return $return;
 		}
 		// if (!is_null($payload) && trim($payload) != '') {
-		// 	print_r([__FILE__,__LINE__,$result, $result2, $where2, $payload, $escapedPayload, $matchPayload]); die;
+		// 	die([Debug::stringR(__FILE__,__LINE__,$result, $result2, $where2, $payload, $escapedPayload, $matchPayload));
 		// }
 		$countResult = self::$db->query($countQuery)->one();
 		return [

@@ -25,9 +25,12 @@ class Collection
     public const TYPE_MIXED = 0;
     public const TYPE_BOOL = 1;
     public const TYPE_INT = 2;
+    public const TYPE_FLOAT = 6;
     public const TYPE_STRING = 3;
     public const TYPE_ARRAY = 4;
     public const TYPE_OBJECT = 5;
+    public const TYPE_NUMERIC = 7;
+    public const TYPE_ATOMIC = 7;
 
 
 
@@ -92,20 +95,37 @@ class Collection
         return $return;
     }
 
-    public static function typeMatch($v, int $type) : bool
+    public static function typeMatch($v, int|string $type) : bool
     {
         switch ($type) {
             case self::TYPE_MIXED:
                 return true;
             case self::TYPE_BOOL:
+            case 'bool':
+            case 'boolean':
                 return is_bool($v);
             case self::TYPE_INT:
+            case 'int':
+            case 'integer':
                 return is_int($v);
+            case self::TYPE_FLOAT:
+            case 'float':
+            case 'double':
+                return is_float($v);
+            case self::TYPE_NUMERIC:
+            case 'numeric':
+                return is_numeric($v);
+            case self::TYPE_ATOMIC:
+            case 'atomic':
+                return is_string($v) || is_bool($v) || is_int($v) || is_float($v) || is_null($v);
             case self::TYPE_STRING:
+            case 'string':
                 return is_string($v);
             case self::TYPE_ARRAY:
+            case 'array':
                 return is_array($v);
             case self::TYPE_OBJECT:
+            case 'object':
                 return is_object($v);
             default:
                 return false;
@@ -119,73 +139,21 @@ class Collection
         return $a[array_key_first($a)];
     }
 
-//     /**
-//      * takes a value and an array, returning an array where
-//      * no value matching the first parameter appears in the new array.
-//      *
-//      * @param mixed $exclude string or array of strings to exclude
-//      * @param array $array from which some keys may be excluded
-//      * @param bool $strict indicates if type coersion is (not) allowed
-//      * @return array subset of $array
-//      */
-//     public static function exclude($exclude, $array, $strict = TRUE)
-//     {
-//         foreach ($array as $key => $value){
-//             if ($strict && $value === $exclude) {
-//                 unset($array[$key]);
-//             } else if (!$strict && $value == $exclude) {
-//                 unset($array[$key]);
-//             }
-//         }
-//         return $array;
-//     }
-    
-//     public static function isNumericArray($array)
-//     {
-//         return is_array($array)
-//             && key_exists(0, $array)
-//             && key_exists(count($array) - 1, $array);
-//     }
-
-//     protected static function introspectData($mixed, $provider = null)
-//     //protected static function introspectData(mixed $mixed, $provider = null)
-//     { #TODO this is also in debug and self::toString, so consolidate/improve
-//         ob_start();
-//         print_r($mixed);
-//         $output = ob_get_contents();
-//         ob_end_clean();
-//         return $output;
-//     }
-
-//     public static function match($ids, $data)
-//     {
-//         if (is_null($ids)) {
-//             return $data;
-//         }
-//         $returnArray = is_array($ids);
-//         $ids = is_array($ids) ? $ids : array($ids);
-//         $results = array();
-//         foreach($ids as $id) {
-//             if (array_key_exists($id, $data)) {
-//                 $results[$id] = $data[$id];
-//             }
-//         }
-//         return $returnArray ? $results : current($results);
-//     }
-
-//     public static function toTags($tagName, $values)
-//     {
-//         $return = '';
-//         if (!is_array($values)) {
-//             $values = array($values);
-//         }
-//         if (count($values) > 0) {
-//             $return =
-//                 "<{$tagName}>"
-//                 . implode("</{$tagName}><{$tagName}>",$values)
-//                 . "</{$tagName}>";
-//         }
-//         return $return;
-//     }
+    public static function deepMine(array|\Iterator $a, null|int|string $type): array
+    {
+        $result = [];
+        //print(\Saf\Debug::stringR(__FILE__,__LINE__, $a, $type));
+        foreach ($a as $value) {
+            if (is_null($type) || self::typeMatch($value, $type)){
+                //print(\Saf\Debug::stringR(__FILE__,__LINE__, 'match', $value, $type));
+                $result[] = $value;
+            } elseif (is_array($a) || is_a(\Iterator::class, $value)) {
+                //print(\Saf\Debug::stringR(__FILE__,__LINE__, 'iterate', $value));
+                $result = array_merge($result, self::deepMine($value, $type));
+            }
+        }
+        //print(\Saf\Debug::stringR(__FILE__,__LINE__, $result, $a, $type));
+        return $result;
+    }
 
 }

@@ -13,9 +13,9 @@ class Diction {
     protected static $language = [];
     protected static $dialects = [];
 
-    public static function lookup(string $string) : string
+    public static function lookup(string $string): string
     {
-        return key_exists($string, self::$language) ? self::$language : $string;
+        return key_exists($string, self::$language) ? self::$language[$string] : $string;
     }
 
     public static function learn(array $entries, ?string $dialect = null)

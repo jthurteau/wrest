@@ -46,7 +46,7 @@ class ZendMvc extends Manager{
     public static function run($agentId, $options = [])
     {
         // $application = \Saf_Application::load(APPLICATION_ID, APPLICATION_ENV, true);
-        print_r(['running saf application', $instance, $options]); //die;
+        print(\Saf\Debug::stringR(('running saf application', $instance, $options)); //die;
     }
 
     public static function negotiate($instance, $mode, &$options)

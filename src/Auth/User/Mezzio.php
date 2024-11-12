@@ -27,6 +27,9 @@ class Mezzio implements UserInterface, UserRepositoryInterface
         if (key_exists('keys', $options)) {
             $this->details['keys'] = Hash::extract('keys', $options, '');
         }
+        if (key_exists('email', $options)) {
+            $this->details['email'] = Hash::extract('email', $options, '');
+        }
     }
 
     public function authenticate(string $credential, string $password = null) : ?UserInterface
@@ -58,9 +61,9 @@ class Mezzio implements UserInterface, UserRepositoryInterface
     /**
      * Get the detail named $name if present; return $default otherwise.
      */
-    public function getDetail(string $name, $default = null)
+    public function getDetail(string $name, mixed $default = null): mixed
     {
-        return key_exists($name,$this->details) ? $this->details[$name] : $default;
+        return key_exists($name, $this->details) ? $this->details[$name] : $default;
     }
 
     /**
@@ -86,6 +89,12 @@ class Mezzio implements UserInterface, UserRepositoryInterface
         } else {
             $this->details[$name] = $newDetails;
         }
+        return $this;
+    }
+
+    public function setDetail(string $name, mixed $newDetail): Mezzio
+    {
+        $this->details[$name] = $newDetail;
         return $this;
     }
 }

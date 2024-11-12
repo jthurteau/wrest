@@ -10,6 +10,7 @@
 
 namespace Saf\Client;
 
+use Saf\Debug;
 use Saf\Hash;
 
 use Saf\Client\Http;
@@ -183,10 +184,7 @@ class Xml extends Backend
 		}
 		if (!array_key_exists('failedConnectionInfo', $rawResponseArray)) {
 			if ($rawResponseArray['status'] > 200) {
-				ob_start();
-				print_r($rawResponseArray['failedConnectionInfo']);
-				$rawFail = ob_get_contents();
-				ob_end_clean();
+				$rawFail = \Saf\Debug::stringR($rawResponseArray['failedConnectionInfo']);
 				$prev = \Saf\Debug::isEnabled() ? new \Exception(htmlentities($rawFail)) : NULL;
 				throw new BadGateway('The scheduling system failed. ', $rawResponseArray['status'], $prev);
 			}
@@ -246,10 +244,7 @@ class Xml extends Backend
 				throw new \Exception('Unable to parse response XML', 0, \Saf\Debug::isEnabled() ? new \Exception($libXmlErrors) : NULL);
 			}
 		} else {
-			ob_start();
-			print_r($rawResponseArray['failedConnectionInfo']);
-			$rawFail = ob_get_contents();
-			ob_end_clean();
+            $rawFail = \Saf\Debug::stringR($rawResponseArray['failedConnectionInfo']);
 			if ($rawResponseArray['status'] == 0) {
 				if ($rawResponseArray['failedConnectionInfo']['connect_time'] > $this->_client->getConnectionTimeout()) {
 					throw new GatewayTimeout('Connection to the remote system timed out.');

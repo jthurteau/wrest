@@ -95,7 +95,7 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
                 }
             } else {
                 Mute::deactivate($myMute);
-//print_r(array($string,$newString)); die;
+//die(\Saf\Debug::stringR($string,$newString));
                 throw new \Exception("Model Reflection Error: Unterminated term {$supplement}");
             }
             $startCut = strpos($newString, '[[', $startCut + $skipLength);
@@ -229,7 +229,7 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
             throw new \Exepction('Model Reflection error: translated tag too deeply.');
         }
 // if ('value' == $tagName) {
-// print_r(array($tagName, $tagContents, $conditional, $config));die;
+// die(\Saf\Debug::stringR($tagName, $tagContents, $conditional, $config));
 // }
         $conditionalFlag =
             $conditional
@@ -254,7 +254,7 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
                 }
             }
 // if ($tagName == 'EventName') {
-// 	print_r(array($tagName, $tagContents, $contentString, $conditional, $config, $contents)); die;
+// 	die(\Saf\Debug::stringR($tagName, $tagContents, $contentString, $conditional, $config, $contents));
 // }
             return $contentString;
         } else {
@@ -278,7 +278,7 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
                     ) : "<{$tagName}/>"
                 );
 // if ($tagName == 'EventName') {
-//  	print_r(array($tagName, $tagContents, $contents, $return, $conditional, $config, $ommitedContents,strpos($trimContents, '<!--'), strrpos($trimContents,'->'),strlen($trimContents) - 2));die;
+//  	die(\Saf\Debug::stringR($tagName, $tagContents, $contents, $return, $conditional, $config, $ommitedContents,strpos($trimContents, '<!--'), strrpos($trimContents,'->'),strlen($trimContents) - 2));
 // }
             return $return;
         }
@@ -309,12 +309,12 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
                     $config['_lateBindingParams'][$variable] = $config['params'][$name];
                 } else if (array_key_exists($name, $config['params'])) {
 //if ('$auth' != $term) {
-//	print_r(array($term, $conditional, &$config, $name, $variable)); die;
+//	die(\Saf\Debug::stringR($term, $conditional, &$config, $name, $variable));
 //}						
                     $term = str_replace($variable, $config['params'][$name], $term);
                 } else {
 //if ('$auth' != $term) {
-//	print_r(array('wut?',array_key_exists($name, $config['params']),$term, $conditional, &$config, $name, $variable)); die;
+//	die(\Saf\Debug::stringR('wut?',array_key_exists($name, $config['params']),$term, $conditional, &$config, $name, $variable));
 //}
                     $term = str_replace($variable, "<!-- ommited $name -->", $term);
                 }
@@ -359,7 +359,7 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
 // // 	&& 'Ems->getDayTimeBlocks(' != $string
 
 //  ) {
-//  			print_r(array('['.$string.']',$return)); die;
+//  			die(\Saf\Debug::stringR('['.$string.']',$return));
 //  }
         return $return;
     }
@@ -400,7 +400,7 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
 // if (
 // 		'arrayToMultiOptions(Ems->getDayTimeBlocks(`1`, 4)' == $term
 // ) {
-// 	print_r(array($termMethod, $termRest)); //die;
+// 	print(\Saf\Debug::stringR($termMethod, $termRest)); //die;
 // }
             $endParam = self::_scanParams($termRest);
             if ($endParam !== FALSE) {
@@ -414,7 +414,7 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
 // if (
 // 	'arrayToMultiOptions(Ems->getDayTimeBlocks(`1`, 4)' == $term
 // ) {
-//	print_r(array('a',$term,$termMethod,$termParam,$termRest,'params'=>$params)); 
+//	print(\Saf\Debug::stringR('a',$term,$termMethod,$termParam,$termRest,'params'=>$params));
 // }
             $paramConfig = array_merge($config, array('allowNonStrings' => TRUE));
             foreach($params as $paramIndex=>$param) {
@@ -438,9 +438,9 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
                     }
                 } else {
                     $params[$paramIndex] = self::translate($param, $paramConfig, $depth + 1); //#TODO #2.0.0 flag in config to indivate returning a non-string
-//print_r(array('b',$term,$termMethod,$termParam,$termRest,'params'=>$params,$paramIndex,$param));
+//print(\Saf\Debug::stringR('b',$term,$termMethod,$termParam,$termRest,'params'=>$params,$paramIndex,$param));
 // 	if ('4' == $param) {
-// 		print_r($params); die;
+// 		die(\Saf\Debug::stringR($params));
 // 	}
                 }
             }
@@ -546,7 +546,7 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
             $termRest = trim(substr($term, strpos($term,'->') + 2));
             if (isset($class::$$currentTerm)) {
                 $nextObject = $class::$$currentTerm;
-                print_r(array('TBR' => 'check allows non string')); die;
+                die(\Saf\Debug::stringR(['TBR' => 'check allows non string']));
                 return
                     $allowsNonString
                     ? self::_translateObject($nextObject, $termRest, $conditional, $config, $depth + 1)
@@ -559,8 +559,8 @@ class Reflector //#TODO #2.X.0 deprecate in favor of a more bare-bones view temp
                     $allowsNonString
                     ? $method->invoke(NULL)
                     : (string)$method->invoke(NULL);
-            } if (FALSE) {
-                print_r(array('TBR' => 'support constants')); die;
+            } if (false) {
+                die(\Saf\Debug::stringR(['TBR' => 'support constants']));
                 //#TODO #2.0.0 support constants
             } else {
                 return

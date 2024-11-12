@@ -118,7 +118,7 @@ class Http{
     public function __construct($urlOrConfig = '')
     {
         // if($urlOrConfig['parser'] != 'xml') {
-        //     print_r([__FILE__,__LINE__,$urlOrConfig]); die;
+        //     die(Debug::stringR(__FILE__,__LINE__,$urlOrConfig);
         // }
         $this->set($urlOrConfig);
     }
@@ -431,15 +431,10 @@ class Http{
             $return['failedConnectionInfo'] = $resultInfo;
         }
         if ($post && \Saf\Debug::isEnabled()) { //#TODO #2.0.0 make this more configurable
-            if (is_array($post) && count($post) > 0) {
-                ob_start();
-                print_r($post);
-                $rawRequest = ob_get_contents();
-                ob_end_clean();
-                $return['request'] = $rawRequest;
-            } else {
-                $return['request'] = $post;
-            }
+            $return['request'] =
+                is_array($post) && count($post) > 0
+                ? \Saf\Debug::stringR($post)
+                : $post;
         }
         return $return;
     }

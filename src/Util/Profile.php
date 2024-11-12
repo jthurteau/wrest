@@ -10,7 +10,7 @@ namespace Saf\Util;
 
 use Saf\Debug;
 use Saf\Utils\Debug\Ui as DebugUi;
-use Saf\Utils\Time;
+use Saf\Util\Time;
 
 class Profile
 {
@@ -40,7 +40,7 @@ class Profile
     public static function out(string|array $tag): void
     {
         $notice = self::generateNotice();
-        $tags = is_array($tag) ? $tag : implode(', ', $tag);
+        $tags = is_array($tag) ? implode(', ', $tag) : $tag;
         $message =  "{$notice} exit for: {$tags}";
         Debug::out($message, Debug::LEVEL_PROFILE);
         $tag && self::tag($tag, 'out');

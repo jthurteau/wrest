@@ -59,7 +59,7 @@ class SafLegacy extends Manager{
             $application = Saf\Legacy\Application::load(\APPLICATION_ENV, \APPLICATION_CONFIG, TRUE);
         }
         // $application = \Saf_Application::load(APPLICATION_ID, APPLICATION_ENV, true);
-        print_r(['running saf application', $instance, $options]); die;
+        die(\Saf\Debug::stringR('running saf application', $instance, $options));
     }
 
     public static function preboot($instance, $options = [], $prebooted = [])

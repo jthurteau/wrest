@@ -10,9 +10,9 @@
 
 namespace Saf;
 
-// use Saf\Kickstart;
-// use Saf\Hash;
-use Saf\Cast;
+//use Saf\Cast;
+//use Saf\Session;
+
 // use Saf\Utils\Status;
 //#TODO patch into Saf\Meditation;
 
@@ -167,7 +167,7 @@ class Debug
             Handler::install($errorHandler);
         }
         self::switchMode($mode);
-        // print_r(['switch debug mode', __FILE__, __LINE__, self::$mode,isset($_SESSION)?$_SESSION:[],self::isEnabled(),self::isVerbose()]);
+        // print(self::stringR('switch debug mode', __FILE__, __LINE__, self::$mode,isset($_SESSION)?$_SESSION:[],self::isEnabled(),self::isVerbose()));
     }
 
     /**
@@ -239,11 +239,9 @@ class Debug
     /**
      * @return bool session data detected
      */
-    public static function sessionCheck()
+    public static function sessionCheck(): bool
     {
-        self::$sessionReady = 
-            self::$sessionReady 
-            || (isset($_SESSION) && is_array($_SESSION));
+        self::$sessionReady = self::$sessionReady || Session::ready();
         return self::$sessionReady;
     }
 
@@ -254,7 +252,8 @@ class Debug
      */
     public static function sessionReadyListner()
     {
-        if (isset($_SESSION) && !key_exists('debug', $_SESSION)) {
+        if (!self::$sessionReady && Session::ready()) {
+            self::sessionCheck();
             self::switchMode(self::$mode);
         }
     }
@@ -262,10 +261,10 @@ class Debug
     /**
      * Updates session data (when available) with current mode
      */
-    public static function updateSession()
+    public static function updateSession(): void
     {
         if (self::$sessionReady) {
-            $_SESSION['debug'] = Cast::dmvl(self::$mode, self::MODE_ON, self::MODE_OFF);
+            Session::set('debug', Cast::dmvl(self::$mode, self::MODE_ON, self::MODE_OFF));
         }
     }
 
@@ -327,8 +326,8 @@ class Debug
             self::$mode = self::MODE_ON;
         } elseif (key_exists('silentdebug', $_GET)) {
             self::$mode = self::MODE_SILENT;
-        } elseif (self::$sessionReady && key_exists('debug', $_SESSION)) {
-            self::$mode = Cast::mvl($_SESSION['debug'], self::MODE_ON, self::MODE_OFF);
+        } elseif (self::$sessionReady && Session::has('debug')) {
+            self::$mode = Cast::mvl(Session::get('debug'), self::MODE_ON, self::MODE_OFF);
         }
         switch (self::$mode) {
             case self::MODE_OFF:
@@ -346,6 +345,7 @@ class Debug
                 self::$mode = $oldMode;
                 throw new ConfigurationMeditation("Unknown Debug Mode: {$badMode}");
         }
+
         if (self::$sessionReady) {
             self::updateSession();
         }
@@ -402,18 +402,48 @@ class Debug
         Handler::outRawData($message, $preformat);
     }
 
-    public static function introspectData($message) //#TODO consolidate with Hash:introspectData?
+    public static function introspectData(mixed $message): string //#TODO consolidate with Hash:introspectData?
     {
         return Analysis::data($message);
     }
 
-    public static function getTrace($wrapped = true): array
+    public static function stringR(mixed $data = null): string
     {
+        $args = func_get_args();
+        return count($args) > 1 ? ('...[' . print_r($args, true) . ']') : print_r($data, true);
+    }
+
+    /**
+     * die with print_r style output of the passed data (accepts multiple params),
+     * only if debug is enabled
+     * @param mixed|null $data to output
+     * @return void
+     */
+    public static function dieR(mixed $data = null): void
+    {
+        if (self::isEnabled()) {
+            $args = func_get_args();
+            count($args) > 1 ? die(self::stringR($args)) : die(self::stringR($data));
+        }
+    }
+
+    /**
+     * generates a stack trace, if wrapped is set and >0 that many levels are trimmed
+     * from the top of the stack.
+     * By default (true/1) are removed the reflect the stack at the point of the caller.
+     * @param bool $wrapped bool
+     * @return array
+     */
+    public static function getTrace(bool|int $wrapped = true): array
+    {
+        is_bool($wrapped) && ($wrapped = $wrapped ? 1 : 0);
         try {
             throw new \Exception('debug');
         } catch (\Exception $e) {
             $trace = $e->getTrace();
-            array_shift($trace); //#NOTE removes this(debug) object/method from the stack
+            while($wrapped-- > 0) { //#NOTE removes this(debug) object/method from the stack
+                array_shift($trace);
+            }
             return $trace;
         }
     }
@@ -438,8 +468,16 @@ class Debug
                 array_keys($point) != ['file', 'line', 'function', 'class', 'type', 'args']
                 && array_keys($point) != ['file', 'line', 'args', 'function']
                 && array_keys($point) != ['file', 'line', 'function', 'args']
+                && array_keys($point) != ['function', 'class', 'type', 'args']
             ) {
-                print_r([$index, array_keys($point)]); die;
+                //die(self::stringR($index, array_keys($point)));
+                \Saf\Audit::add(
+                    'saf_debug',
+                    'unmatched renderTrace signiture',
+                    [
+                        'keys' => array_keys($point)
+                    ]
+                );
             }
             $line =
                 key_exists('file', $point)
@@ -457,7 +495,7 @@ class Debug
             $argCount = key_exists('args', $point) && $point['args'] ? count($point['args']) : 0;
             $env =
                 key_exists('args', $point) && $behavior != self::TRACE_BARE
-                ? self::renderArgList($point['args'], $behavior)
+                ? ('(' . self::renderArgList($point['args'], $behavior) . ')')
                 : ($argCount ? "(...[{$argCount}])" : '()');
             $out .= "#{$index} {$line}{$context}{$env}{$standardEol}";
         }
@@ -467,19 +505,21 @@ class Debug
 
     public static function renderArgList(array $args, $behavior = self::TRACE_DIGEST): string
     {
-        $out = '(';
+        $out = '';
         $prefix = '';
         foreach($args as $argKey => $argValue) {
             $representation = self::renderArg($argValue, $behavior);
             $out .= "{$prefix}{$representation}";
             $prefix = ', ';
         }
-        return "{$out})";
+        return $out;
     }
 
     public static function escapeTraceStrings(string $s, ?int $max = 512): string
     {
-        return substr($s, 0, $max) . (strlen($s) > $max ? '[...]' : '');
+        $main = substr($s, 0, $max);
+        $suffix = strlen($s) > $max ? '[...]' : '';
+        return"'{$main}'{$suffix}";
     }
 
     public static function escapeTraceArray(array $a, null|int|string $behavior = 16): string
@@ -520,10 +560,10 @@ class Debug
             case 'string':
                 $type = "{$type}/" . strlen($value);
                 $escValue = self::escapeTraceStrings($value);
-                return "({$type})'$escValue'";
+                return "({$type})$escValue";
             case 'array':
                 $type = "{$type}/" . count($value); //#TODO is numeric/subtype
-                $escValue = $behavior = self::TRACE_BARE ? '' : self::escapeTraceArray($value);
+                $escValue = $behavior == self::TRACE_BARE ? '' : self::escapeTraceArray($value);
                 return "($type)[{$escValue}]";
             case 'object':
                 return $value::class;
@@ -548,17 +588,21 @@ class Debug
         $standardEol = self::EOL;
         $data = func_get_args();
         if (self::isEnabled()) {
-            if($data) {
-                print_r(['halt data' => self::renderArgList($data, self::$haltRenderLevel)]);
-            }
             print("halting with trace:{$standardEol}");
-            print(self::renderArgList(func_get_args()) . $standardEol);
-            print(self::currentTraceString(self::$haltRenderLevel));
+            if ($data) {
+                print(self::renderArgList($data, self::TRACE_DEEP) . $standardEol);
+            }
+            print(self::currentTraceString(self::$haltRenderLevel, self::$haltRenderLevel));
             die;
         }
 //        } catch (\Exception | \Error $e) {
-//            print_r([__FILE__,__LINE__,$e->getMessage(), $e->getTraceAsString()]);
+//            print(self::stringR(__FILE__,__LINE__,$e->getMessage(), $e->getTraceAsString()));
 //        }
+    }
+
+    public static function setHaltLevel(string $level): void
+    {
+        self::$haltRenderLevel = $level;
     }
 
     public static function vent()

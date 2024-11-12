@@ -11,7 +11,7 @@ abstract class Saf_Filter_Finder_Abstract
 {
     public static function find($value, $search)
     {
-//print_r(array('default_find', $value, $search));
+//print(\Saf\Debug::stringR('default_find', $value, $search));
         $result = array();
         foreach($search as $currentSearch) {
             $result[] = $currentSearch;

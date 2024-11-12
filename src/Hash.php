@@ -10,6 +10,7 @@
 
 namespace Saf;
 
+use MongoDB\BSON\Iterator;
 use Saf\Exception\NoDefault;
 use Saf\Exception\NotAnArray;
 use Saf\Utils\Filter\Truthy;
@@ -285,13 +286,9 @@ class Hash
      * @param array $array to serialize
      * @return string representation of $array
      */
-    public static function toString($array)
+    public static function toString(array|\Iterator|\ArrayAccess $array): string
     {
-        ob_start();
-        print_r($array);
-        $return = ob_get_contents();
-        ob_end_clean();
-        return $return;
+        return Debug::stringR($array);
     }
     
     public static function containsTokens($string, $tokenArray)
@@ -674,14 +671,10 @@ class Hash
         return $return;
     }
 
-    protected static function introspectData($mixed, $provider = null)
+    protected static function introspectData(mixed $mixed, $provider = null): string
     //protected static function introspectData(mixed $mixed, $provider = null)
     { #TODO this is also in debug and self::toString, so consolidate/improve
-        ob_start();
-        print_r($mixed);
-        $output = ob_get_contents();
-        ob_end_clean();
-        return $output;
+        return Debug::stringR($mixed);
     }
 
     public static function match($ids, $data)

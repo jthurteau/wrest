@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Saf\Util;
 
-use Saf\Utils\Time;
+use Saf\Util\Time;
 
 class Dst {
 

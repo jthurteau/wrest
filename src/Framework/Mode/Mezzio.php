@@ -83,7 +83,7 @@ class Mezzio extends Manager{
                 $moduleLoaderGenerator($installPath), 
                 Autoloader::POSITION_BEFORE
             );
-            //print_r([__FILE__,__LINE__,Autoloader::test('App\ConfigProvider')]); die;
+            //die(\Saf\Debug::stringR((__FILE__,__LINE__,Autoloader::test('App\ConfigProvider')));
         }
 
     }
@@ -99,7 +99,7 @@ class Mezzio extends Manager{
         /** @var \Mezzio\Application $app */
         $app = $container->get(\Mezzio\Application::class);
         $factory = $container->get(\Mezzio\MiddlewareFactory::class);
-        
+
         // Execute programmatic/declarative middleware pipeline and routing
         // configuration statements
         (require("{$installPath}/config/pipeline.php"))($app, $factory, $container);
@@ -108,7 +108,6 @@ class Mezzio extends Manager{
 // if (class_exists('Whoops\Run', false)) { #TODO move this into Saf/Framework/Mode/Mezzio::run
 //     $previousErrorHandler && $previousErrorHandler($e);
 //     return;
-
         $app->run();
 
 // }

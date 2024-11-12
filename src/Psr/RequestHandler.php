@@ -70,7 +70,7 @@ abstract class RequestHandler implements RequestHandlerInterface
                 return $this->$method($resourceStack, $request, $status);
             } else {
                 $status = 400;
-                //print_r([__FILE__,__LINE__,$function,get_class($this),$method,$request->getUri(),$request->getAttribute('resourceStack')]); die;
+                //die(\Saf\Debug::stringR(__FILE__,__LINE__,$function,get_class($this),$method,$request->getUri(),$request->getAttribute('resourceStack')));
                 return [
                     'success' => false, 
                     'message' => $this->translate(self::MESSAGE_UNSUPPORTED)

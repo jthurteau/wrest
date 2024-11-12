@@ -9,7 +9,9 @@
  * direct use of time() and microtime()
  */
 
-namespace Saf\Utils;
+declare(strict_types=1);
+
+namespace Saf\Util;
 
 use Psr\Container\ContainerInterface;
 use Saf\Psr\Container;
@@ -173,44 +175,41 @@ class Time
 	}
 
 	/**
-	 * returns a modified timestamp
-	 * @param unknown_type $timestamp
-	 * @param unknown_type $modifier
+	 * returns a modified timestamp. if only one param is provided,
+     * the first param is used for $modifier and the current (insulated) time() is used.
+	 * @param int|string $timestamp or used as $modifier if only one param is provided
+	 * @param ?int $modifier modifier (MODIFIER_* class constant) to apply
+     * @return false|int the final calculation is run back
 	 */
-	public static function modify($timestamp, $modifier = null)
+	public static function modify(int|string $time, ?int $modifier = null): false|int
 	{ //#TODO #2.0.0 needs to factor in DST
 		if (is_null($modifier)) {
-			$modifier = $timestamp;
+			$modifier = $time;
 			$timestamp = self::time();
 		} else if (
-			is_null($timestamp) 
-			|| (
-				!is_int($timestamp) 
-				&& trim((string)$timestamp) == ''
-			)
+			is_null($time)
+			|| is_string($time) && trim($time) == ''
 		) {
 			$timestamp = self::time();
-		}
-		if (
-			in_array($modifier, array(
-				array(
-					self::MODIFIER_END_TODAY,
-					self::MODIFIER_START_TODAY,
-					self::MODIFIER_START_TOMORROW //#TODO #2.0.0 others as needed		
-				)		
-			))
-		) {
+		} elseif (is_string($time)) {
+            $timestamp  = is_numeric($time) ? (int)$time : strtotime($time);
+        } else {
+            $timestamp = (int)$time;
+        }//#TODO set a new "epoch" for the min timestamp to differentiate int modifiers
+		if (in_array($modifier, [
+            self::MODIFIER_END_TODAY,
+            self::MODIFIER_START_TODAY,
+            self::MODIFIER_START_TOMORROW //#TODO #2.0.0 others as needed
+		])) {
 			$timestamp = self::time();
 		}
-		if (is_null($modifier)) {
-			return $timestamp;
-		}
-		$timestamp = (int)$timestamp; //#TODO #2.0.0 debug option if 0
+
 		$min = (int)date('i', $timestamp);
 		$hour = (int)date('H', $timestamp);
 		$day = (int)date('d', $timestamp);
 		$month = (int)date('m', $timestamp);
-		$year = (int)date('Y', $timestamp);		
+		$year = (int)date('Y', $timestamp);
+        // #TODO 't' last day of month
 		$nextMin = $min < 59 ? $min + 1 : 0;
 		$nextHour = $hour < 23 ? $hour + 1 : 0;
 		$nextDay = $day < (int)date('t') ? $day + 1 : 1;
@@ -224,8 +223,8 @@ class Time
 			: (int)date('t',
 				strtotime(
 					$year. '-'
-					.  str_pad($month, 2, '0', STR_PAD_LEFT) . '-'
-					. ( str_pad($day, 2, '0', STR_PAD_LEFT))
+					.  str_pad((string)$month, 2, '0', STR_PAD_LEFT) . '-'
+					. ( str_pad((string)$day, 2, '0', STR_PAD_LEFT))
 					. 'T00:00'
 				) - 1
 			);
@@ -355,10 +354,10 @@ class Time
 			default:
 				return $timestamp;
 		}
-		$modMin = str_pad($modMin, 2, '0', STR_PAD_LEFT);
-		$modHour = str_pad($modHour, 2, '0', STR_PAD_LEFT);
-		$modDay = str_pad($modDay, 2, '0', STR_PAD_LEFT);
-		$modMonth = str_pad($modMonth, 2, '0', STR_PAD_LEFT);
+		$modMin = str_pad((string)$modMin, 2, '0', STR_PAD_LEFT);
+		$modHour = str_pad((string)$modHour, 2, '0', STR_PAD_LEFT);
+		$modDay = str_pad((string)$modDay, 2, '0', STR_PAD_LEFT);
+		$modMonth = str_pad((string)$modMonth, 2, '0', STR_PAD_LEFT);
 		return strtotime("{$modYear}-{$modMonth}-{$modDay}T{$modHour}:{$modMin}:{$modSec}");
 	}
 	
@@ -369,7 +368,7 @@ class Time
 	public static function isTimeStamp($string)
 	{
 		$numberPattern = '/^[-]?[0-9]+$/';
-		return !is_null($string) && preg_match($numberPattern, $string);
+		return !is_null($string) && preg_match($numberPattern, (string)$string);
 		//#TODO #2.0.0 does not factor in max int size
 	}
 	
@@ -382,7 +381,7 @@ class Time
 	 * @param bool $allowOverflow
 	 * @return boolean
 	 */
-	public static function isHourStamp($string, $allowOverflow = false)
+	public static function isHourStamp(mixed $string, $allowOverflow = false)
 	{
 		$allowOverflow =
 			$allowOverflow
@@ -392,7 +391,7 @@ class Time
 			$allowOverflow > self::MAX_HOUR_STAMP 
 			? '/^[0-9]{1,11}$/' 
 			: '/^[0-9]{1,5}$/';
-		$match = !is_null($string) && preg_match($numberPattern, $string);
+		$match = !is_null($string) && preg_match($numberPattern, (string)$string);
 		return $match && (int)$string <= $allowOverflow;
 	}
 	
@@ -442,7 +441,7 @@ class Time
 
 	public static function lookupMonth($number, $format = self::FORMAT_MONTH_FULL)
 	{
-		$date = '2000-' . str_pad($number, 2, '0', STR_PAD_LEFT) . '-15';
+		$date = '2000-' . str_pad((string)$number, 2, '0', STR_PAD_LEFT) . '-15';
 		return date($format,strtotime($date));
 	}
 

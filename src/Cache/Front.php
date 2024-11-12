@@ -13,10 +13,9 @@ namespace Saf\Cache;
 use Saf\Cache;
 use Saf\Cache\Disk;
 use Saf\Cache\Memory;
-// use Saf\Utils\Time;
 use Saf\Hash;
 use Saf\Util\Profile;
-use Saf\Utils\UrlRewrite;
+use Saf\Util\UrlRewrite;
 
 abstract class Front implements Cachable {
 

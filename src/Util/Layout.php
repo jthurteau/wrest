@@ -60,7 +60,7 @@ class Layout
                     return $uri;
                 }
             }
-			//print_r([__FILE__,__LINE__,self::$baseUri,$uri]); die;
+			//die(\Saf\Debug::stringR(__FILE__,__LINE__,self::$baseUri,$uri));
             return 
                 !is_null(self::$baseUri) 
                 ? (
@@ -283,7 +283,7 @@ $(document).ready(function() {
     {
         foreach(self::$js as $script) {
 			$uri = self::parseUri("javascript/{$script}") . '.js';
-			//print_r([__FILE__,__LINE__,$uri,self::$baseUri]); die;
+			//die(\Saf\Debug::stringR(__FILE__,__LINE__,$uri,self::$baseUri));
 ?>
 <script src="<?php self::printLink("{$uri}")?>"></script>
 <?php

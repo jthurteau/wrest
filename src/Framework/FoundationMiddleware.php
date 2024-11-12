@@ -38,8 +38,13 @@ class FoundationMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler) : ResponseInterface
     {
+
+        \Saf\Util\Profile::ping('foundation pipeline entered');
+        \Saf\Debug::sessionReadyListner(); // auth is before this section of the pipe and that seems to be what starts the session,
+
         try {
             ForwardHandler::register(self::$baseRoute, self::$router);
+
             try {
                 return $handler->handle($request->withAttribute('agent', Agent::last()));
             }  catch (Forward $f) {

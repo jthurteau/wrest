@@ -121,13 +121,13 @@ class Ntp{
 //#TODO use padding and not sprintf?
 		$paddedOrigFrac = sprintf('%010d', $originateFraction);
 		$return['send'] .= pack('N', $originateSeconds) . pack('N',$paddedOrigFrac);
-//		print_r(array(
-//		$localTimeParts,
-//		$return['start'],
-//		$originateSeconds, $originateFraction,
-//		$paddedOrigFrac,
-//		pack('N', $originateSeconds),pack('N', $paddedOrigFrac)
-//		)); die;
+//		die(Debug::stringR(
+//    		$localTimeParts,
+//    		$return['start'],
+//    		$originateSeconds, $originateFraction,
+//    		$paddedOrigFrac,
+//    		pack('N', $originateSeconds),pack('N', $paddedOrigFrac)
+//		));
 		return $return;
 	}
 

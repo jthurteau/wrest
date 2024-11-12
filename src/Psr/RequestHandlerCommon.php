@@ -14,9 +14,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Saf\Psr\StandardRequestHandler;
 use Saf\Keys;
 use Saf\Auto;
-use Saf\Utils\UrlRewrite;
+use Saf\Util\UrlRewrite;
 
-use Saf\Utils\Time;
+use Saf\Util\Time;
 
 trait RequestHandlerCommon {
 

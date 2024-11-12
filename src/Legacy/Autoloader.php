@@ -189,7 +189,7 @@ class Autoloader
 	 */
 	public static function autoload(string $className, $specialLoader = '')
 	{
-		//print_r([__FILE__,__LINE__,$className]);
+		//print(\Saf\Debug::stringR((__FILE__,__LINE__,$className));
 		if (class_exists($className, false)) {
 			return;
 		} elseif ($specialLoader) {
@@ -222,11 +222,11 @@ class Autoloader
 						$callableReflector = $callableSet;
 					}
 // 					if (!is_object($callableReflector)) {
-// 						print_r(array($className,$classPrefix,$callableList));
+// 						print(\Saf\Debug::stringR($className,$classPrefix,$callableList));
 // 						throw new \Exception('huh');
 // 					}
 					$classFile = $callableReflector->invoke($callableInstance, $className);
-					//print_r([__FILE__,__LINE__,$className,'lib',$name]);
+					//print(\Saf\Debug::stringR(__FILE__,__LINE__,$className,'lib',$name));
 					$result =
 						$testOnly
 						? ($classFile ? self::test($className, $classFile) : false)
@@ -259,7 +259,7 @@ class Autoloader
 						is_callable($lookup)
 						? $lookup($className)
 						: self::resolveClassPath($className, $lookup);
-					//print_r([__FILE__,__LINE__,$className,'std',$classPrefix, $classFile,$lookup, self::$autoloaders]);
+					//print(\Saf\Debug::stringR(__FILE__,__LINE__,$className,'std',$classPrefix, $classFile,$lookup, self::$autoloaders));
 					$result =
 						$testOnly
 						? ($classFile ? self::test($className, $classFile) : false)
@@ -299,7 +299,7 @@ class Autoloader
 							$callableReflector = $callableSet;
 						}
 						$classFile = $callableReflector->invoke($callableInstance, $className);
-						//print_r([__FILE__,__LINE__,$className, 'spc', $specialLoader,$name]);
+						//print(\Saf\Debug::stringR(__FILE__,__LINE__,$className, 'spc', $specialLoader,$name));
 						$result =
 							$testOnly
 							? ($classFile ? self::test($className, $classFile) : false)
@@ -651,7 +651,7 @@ class Autoloader
             self::$throws = false;
         }
 		// if (array_key_exists('zendPath',$options)) {
-		// 	print_r($options); die;
+		// 	die(\Saf\Debug::stringR($options));
 		// }
     }
 
@@ -714,7 +714,7 @@ class Autoloader
 
 	public static function test(string $class, $file = null)
 	{
-		//print_r([__FILE__,__LINE__, $class, $file]);
+		//print(\Saf\Debug::stringR(__FILE__,__LINE__, $class, $file));
 		if ($class == '') {
 			return false;
 		}
@@ -744,7 +744,7 @@ class Autoloader
 				$namespace = explode('\\', $class);
 				$className = array_pop($namespace);
 				$namespace = implode('\\', $namespace);
-				//print_r([__FILE__,__LINE__,'namespace match', $class, $namespace, $className, $classDeclaration]);
+				//print(\Saf\Debug::stringR(__FILE__,__LINE__,'namespace match', $class, $namespace, $className, $classDeclaration));
 				$namespaceMatch =
 					(
 						strpos($classDeclaration, "namespace {$namespace};") !== false

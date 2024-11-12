@@ -21,14 +21,7 @@ class Inspectable extends \Exception {
 
     public static function inspect()
     {
-        $data = func_get_args();
-        $output = '';
-        ob_start();
-        print('<pre>');
-        print_r($data);
-        print('</pre>');
-        $output = ob_get_clean();
-        return $output;
+        return \Saf\Debug::stringR(func_get_args());
     }
 
 }
