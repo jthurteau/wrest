@@ -24,13 +24,14 @@ class Ui
     
     public const ICON_PROFILE_INFO = 'tachometer-alt';
     public const ICON_DEBUG_INFO = 'bug';
+    public const ICON_EXPAND = '[B]';
 
     public static $buffer = '';
     protected static $notifyConsole = false;
     protected static $buffered = true;
     protected static $maxBufferSize = 1000000;
     protected static $bufferOverflow = false;
-    protected static $expandIcon = '<span class="debugExpand">[B]</span>';
+    protected static $expandIcon = '<span class="debugExpand">'. self::ICON_EXPAND.'</span>';
     protected static $printedDebugExit = false;
     protected static $printedDebugEntry = false;
     protected static $printedDebugShutdown = false;
@@ -58,7 +59,7 @@ class Ui
         $htmlLevel = self::htmlLevel($level);
         $htmlTrace = self::htmlTrace($trace);
         $output = "<div class=\"debug{$htmlLevel}\"><p>Data:{$expandIcon}</p>{$htmlTrace}<pre class=\"data\">";
-        $output .= Debug::introspectData($message);
+        $output .= htmlspecialchars(Debug::introspectData($message));
         $output .= "</pre></div>\n";
         $notify = in_array(strtoupper($level), self::NON_NOTIFY_LEVELS);
         self::goOut($output, $notify);
@@ -77,8 +78,8 @@ class Ui
     {
         $output = Debug::introspectData($message);
         $wrappedOutput = 
-            ($preformated ? '<pre class="data">' : '') 
-            . $output 
+            ($preformated ? '<pre class="data">' : '')
+            . htmlspecialchars($output)
             . ($preformated ? '</pre>' : '');
         self::goOut($wrappedOutput, false);
     }
@@ -197,7 +198,7 @@ class Ui
         self::goOut($output, false);
     }
 
-    public static function printDebugExit($force = FALSE)
+    public static function printDebugExit($force = false)
     {
         if (!self::$printedDebugExit || $force) {
             if (false) {

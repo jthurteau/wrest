@@ -10,7 +10,6 @@
 
 namespace Saf\Client;
 
-use Saf\Debug;
 use Saf\Hash;
 
 use Saf\Client\Http;

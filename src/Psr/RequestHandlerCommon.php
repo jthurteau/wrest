@@ -15,7 +15,6 @@ use Saf\Psr\StandardRequestHandler;
 use Saf\Keys;
 use Saf\Auto;
 use Saf\Util\UrlRewrite;
-
 use Saf\Util\Time;
 
 trait RequestHandlerCommon {

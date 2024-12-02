@@ -78,6 +78,8 @@ class Time
 	const FORMAT_MONTH_SHORT = 'F';
 	const FORMAT_MONTH_FULL = 'M';
 
+    const NUMBER_PATTERN_INF = '/^[-]?[0-9]+$/';
+
 	/**
 	 * @var string
 	 */
@@ -124,24 +126,36 @@ class Time
 		return self::$timeZone;
 	}
 
-	public static function set($seconds, $micro = 0)
+	public static function set(int $seconds, int $micro = 0): void
 	{
 		$now = microtime(true);
 		$new = $seconds + ($micro / 1000);
 		$offset = $new - $now;
-		self::$_diff = ceil($offset);
-		self::$_microDiff = $offset * 1000 % 1000;
-		// Saf_Debug::outData(
-		// 	array(
-		// 		'setting debug time', 
-		// 		$seconds, 
-		// 		$micro, 
-		// 		'effective' => array(
-		// 			time() + self::$_diff, date(self::FORMAT_DATETIME_URL . '-s', time() + self::$_diff)
-		// 		)
-		// 	)
-		// );
+		self::$_diff = (int)ceil($offset);
+		self::$_microDiff = (int)$offset;
+		\Saf\Debug::outData([
+            'setting debug time',
+            $seconds,
+            $micro,
+            'effective' => [
+                time() + self::$_diff, date(self::FORMAT_DATETIME_URL . '-s', time() + self::$_diff)
+            ]
+        ]);
 	}
+
+    public static function offset(int $seconds, int $micro = 0): void
+    {
+        self::$_diff = $seconds;
+        self::$_microDiff = $micro;
+        \Saf\Debug::outData([
+            'offsetting debug time',
+            $seconds,
+            $micro,
+            'effective' => [
+                time() + self::$_diff, date(self::FORMAT_DATETIME_URL . '-s', time() + self::$_diff)
+            ]
+        ]);
+    }
 
 	/**
 	 * returns the timestamp, including any differential
@@ -149,8 +163,8 @@ class Time
 	 * @param int $now input differential, defualts to now (i.e. the native time())
 	 * @return int the modified timestamp
 	 */	
-	public static function time($now = null): int
-	{
+	public static function time(int|float $now = null): int|float
+	{ //#TODO include microdiff when float is deteted
 		if (is_null($now)) {
 			$now = time();
 		}
@@ -161,7 +175,7 @@ class Time
 	 * returns the current timestamp
 	 * @return int the modified timestamp
 	 */	
-	public static function now($microtime = false)
+	public static function now(bool $microtime = false): int|float
 	{
 		return $microtime ? self::time(microtime(true)) : self::time(); //#TODO look into hrtime (would require an init)
 	}
@@ -363,12 +377,17 @@ class Time
 	
 	/**
 	 * detects valid timestamps
-	 * @param string $string
+	 * @param string $time
 	 */
-	public static function isTimeStamp($string)
+	public static function isTimeStamp(null|int|string|float $time): bool
 	{
-		$numberPattern = '/^[-]?[0-9]+$/';
-		return !is_null($string) && preg_match($numberPattern, (string)$string);
+		return
+            !is_null($time)
+            && (
+                is_int($time)
+                || is_float($time)
+                || preg_match(self::NUMBER_PATTERN_INF, (string)$time)
+            );
 		//#TODO #2.0.0 does not factor in max int size
 	}
 	
@@ -401,11 +420,11 @@ class Time
 	 * this is a 24 hour format, it will not look for am/pm
 	 * @param string $string
 	 */
-	public static function hourStringToStamp($string, $roundUpSeconds = true)
-	{
+	public static function hourStringToStamp(string $string, bool $roundUpSeconds = true): int
+	{ // #TODO add am/pm support
 		$tPos = strpos($string, 'T');
 		if ($tPos !== false) {
-			$string = substr($string, $tPos + 1);
+			$string = substr($string, $tPos + 1); // #TODO exclude parts after '+' ...
 		}
 		$parts = explode(':', str_replace('-',':', $string), 3);
 		if (!array_key_exists(1, $parts)) {
@@ -429,29 +448,36 @@ class Time
 		return $calc; 
 	}
 
-	public static function getOffset()
+	public static function getOffset(): int
 	{
 		return self::$_diff;
 	}
 
-	public static function getMicroOffset()
+	public static function getMicroOffset(): int
 	{
 		return self::$_microDiff;
 	}
 
-	public static function lookupMonth($number, $format = self::FORMAT_MONTH_FULL)
+	public static function lookupMonth(int|string $number, ?string $format = self::FORMAT_MONTH_FULL): string
 	{
 		$date = '2000-' . str_pad((string)$number, 2, '0', STR_PAD_LEFT) . '-15';
-		return date($format,strtotime($date));
+		return date($format, strtotime($date));
 	}
 
-	public static function hourStampToString($hourStamp, $dateStamp = null, $format = 'g:i A')
+	public static function hourStampToString(int $hourStamp, ?int $dateStamp = null, ?string $format = 'g:i A'): string
 	{
 		if (is_null($dateStamp)) {
 			$dateStamp = self::modify(self::MODIFIER_START_TODAY);
 		}
 		return date($format, $hourStamp + $dateStamp);
 	}
+    public static function hourStampToUri(int $hourStamp, ?int $dateStamp = null): string
+    {
+        if (is_null($dateStamp)) {
+            $dateStamp = self::modify(self::MODIFIER_START_TODAY);
+        }
+        return date(self::FORMAT_TIME_URL, $hourStamp + $dateStamp);
+    }
 
 	public static function detectSpringForward($date)
 	{
@@ -497,6 +523,11 @@ class Time
 		}
 		return null;
 	}
+
+    public static function timeToHour(int $time): int
+    {
+        return $time - self::modify(self::MODIFIER_START_DAY, $time);
+    }
 
 	#TODO a future goal is implement a condensed version of spring and fall once we have a proper testing framework
 	// public static function detectDstShift($date)

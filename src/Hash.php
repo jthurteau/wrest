@@ -10,7 +10,6 @@
 
 namespace Saf;
 
-use MongoDB\BSON\Iterator;
 use Saf\Exception\NoDefault;
 use Saf\Exception\NotAnArray;
 use Saf\Utils\Filter\Truthy;

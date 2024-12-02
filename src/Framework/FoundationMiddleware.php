@@ -44,7 +44,6 @@ class FoundationMiddleware implements MiddlewareInterface
 
         try {
             ForwardHandler::register(self::$baseRoute, self::$router);
-
             try {
                 return $handler->handle($request->withAttribute('agent', Agent::last()));
             }  catch (Forward $f) {

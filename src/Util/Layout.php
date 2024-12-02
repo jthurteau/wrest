@@ -369,9 +369,6 @@ $(document).ready(function() {
     public static function debugFooter()
     {
         if(Debug::isEnabled()){
-?>
-<!-- debug buffer -->
-<?php
             DebugUi::flushBuffer();
             DebugUi::printDebugExit();
         }
