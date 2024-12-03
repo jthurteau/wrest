@@ -212,6 +212,7 @@ class Debug
      */
     public static function switchMode(?string $mode = self::MODE_OFF)
     {
+        is_null($mode) && ($mode = self::MODE_OFF);
         if (self::isForced() || !self::isAvailable()) {
             return;
         }
