@@ -210,7 +210,7 @@ class Debug
      * @param string $mode MODE_ constant to switch to
      * @return string resulting MODE_
      */
-    public static function switchMode(string $mode)
+    public static function switchMode(?string $mode = self::MODE_OFF)
     {
         if (self::isForced() || !self::isAvailable()) {
             return;
